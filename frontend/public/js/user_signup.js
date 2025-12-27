@@ -1,7 +1,7 @@
 /* =========================
    API CONFIG
 ========================= */
-const API_BASE = "https://telehealth-backend-9c46.onrender.com";
+const API_BASE = "";
 
 /* =========================
    THEME TOGGLE (SAFE)
