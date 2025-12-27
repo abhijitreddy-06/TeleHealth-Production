@@ -33,10 +33,10 @@ export default function authenticate(req, res, next) {
     } catch (err) {
         console.error("JWT auth error:", err);
 
-        res.clearCookie("token", {
+        res.cookie("token", {
             httpOnly: true,
             secure: true,
-            sameSite: "Lax"
+            sameSite: "None"
         });
 
         return res.status(401).json({

@@ -44,7 +44,7 @@ export default function authRoutes(app) {
             res.cookie("token", token, {
                 httpOnly: true,
                 secure: true,
-                sameSite: "Lax"
+                sameSite: "None"
             });
 
             res.json({ success: true, role: "user" });
@@ -81,7 +81,7 @@ export default function authRoutes(app) {
             res.cookie("token", token, {
                 httpOnly: true,
                 secure: true,
-                sameSite: "Lax"
+                sameSite: "None"
             });
 
             res.json({ success: true, role: "user" });
@@ -118,7 +118,7 @@ export default function authRoutes(app) {
             res.cookie("token", token, {
                 httpOnly: true,
                 secure: true,
-                sameSite: "Lax"
+                sameSite: "None"
             });
 
             res.json({ success: true, role: "doctor" });
@@ -135,7 +135,7 @@ export default function authRoutes(app) {
         res.clearCookie("token", {
             httpOnly: true,
             secure: true,
-            sameSite: "Lax"
+            sameSite: "None"
         });
         res.json({ success: true });
     });
