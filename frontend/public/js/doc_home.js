@@ -13,10 +13,10 @@ const API_BASE = "https://telehealth-production.onrender.com";
         });
 
         if (!res.ok) {
-            window.location.href = "/doc_login.html";
+            window.location.href = "/doc_login";
         }
     } catch {
-        window.location.href = "/doc_login.html";
+        window.location.href = "/doc_login";
     }
 })();
 
@@ -126,7 +126,7 @@ async function loadDashboard() {
 
                 const startData = await startRes.json();
                 if (startRes.ok) {
-                    window.location.href = `/doc_video.html?roomId=${startData.roomId}`;
+                    window.location.href = `/doc_video?roomId=${startData.roomId}`;
                 } else {
                     alert(startData.error || "Unable to start call");
                 }

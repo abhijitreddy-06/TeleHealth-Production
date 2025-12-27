@@ -97,7 +97,7 @@ loginForm.addEventListener("submit", async (e) => {
         }
 
         // ✅ JWT cookie is now set by backend
-        window.location.href = "/doc_home.html";
+        window.location.href = "/doc_home";
 
     } catch (err) {
         console.error("Doctor login error:", err);

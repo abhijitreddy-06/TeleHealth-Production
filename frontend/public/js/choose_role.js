@@ -73,7 +73,7 @@ document.addEventListener("click", (e) => {
         });
 
         if (userRes.ok) {
-            window.location.href = "/user_home.html";
+            window.location.href = "/user_home";
             return;
         }
 
@@ -82,7 +82,7 @@ document.addEventListener("click", (e) => {
         });
 
         if (docRes.ok) {
-            window.location.href = "/doc_home.html";
+            window.location.href = "/doc_home";
         }
     } catch {
         // ignore → stay on role page
@@ -96,11 +96,11 @@ const doctorLoginBtn = document.getElementById("doctorLoginBtn");
 const patientLoginBtn = document.getElementById("patientLoginBtn");
 
 doctorLoginBtn.addEventListener("click", () => {
-    window.location.href = "/doc_login.html";
+    window.location.href = "/doc_login";
 });
 
 patientLoginBtn.addEventListener("click", () => {
-    window.location.href = "/user_login.html";
+    window.location.href = "/user_login";
 });
 
 /* =========================

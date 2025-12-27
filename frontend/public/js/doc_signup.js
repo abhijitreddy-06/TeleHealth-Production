@@ -114,7 +114,7 @@ signupForm?.addEventListener("submit", async (e) => {
 
         // ✅ Signup success → redirect to login
         alert("Signup successful. Please login.");
-        window.location.href = "/doc_login.html";
+        window.location.href = "/doc_login";
 
     } catch (err) {
         console.error(err);

@@ -118,7 +118,7 @@ signupForm?.addEventListener("submit", async (e) => {
 
         // ✅ Signup success → go to login (JWT created there)
         alert("Signup successful. Please login.");
-        window.location.href = "/user_login.html";
+        window.location.href = "/user_login";
 
     } catch (err) {
         console.error(err);
