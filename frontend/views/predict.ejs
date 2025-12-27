@@ -1065,221 +1065,225 @@
         </div>
     </footer>
 
-    <script>
+<script>
+    /* =========================
+       THEME TOGGLE
+    ========================= */
+    const themeToggle = document.getElementById("themeToggle");
+    const mobileThemeToggle = document.getElementById("mobileThemeToggle");
+    const html = document.documentElement;
 
-        const themeToggle = document.getElementById('themeToggle');
-        const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-        const html = document.documentElement;
+    const savedTheme =
+        localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
-        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        if (savedTheme) {
-            html.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
+    html.setAttribute("data-theme", savedTheme);
+    updateThemeIcon(savedTheme);
+
+    function toggleTheme() {
+        const currentTheme = html.getAttribute("data-theme");
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        html.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        updateThemeIcon(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+        const icon = theme === "dark" ? "fa-sun" : "fa-moon";
+        themeToggle && (themeToggle.innerHTML = `<i class="fas ${icon}"></i>`);
+        mobileThemeToggle && (mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`);
+    }
+
+    themeToggle?.addEventListener("click", toggleTheme);
+    mobileThemeToggle?.addEventListener("click", toggleTheme);
+
+    /* =========================
+       MOBILE MENU
+    ========================= */
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const closeMenuBtn = document.getElementById("closeMenu");
+    const mobileMenu = document.getElementById("mobileMenu");
+
+    mobileMenuBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        mobileMenu.classList.add("active");
+        document.body.style.overflow = "hidden";
+    });
+
+    closeMenuBtn?.addEventListener("click", () => {
+        mobileMenu.classList.remove("active");
+        document.body.style.overflow = "";
+    });
+
+    document.addEventListener("click", (e) => {
+        if (
+            mobileMenu?.classList.contains("active") &&
+            !mobileMenu.contains(e.target) &&
+            e.target !== mobileMenuBtn
+        ) {
+            mobileMenu.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+    });
+
+    /* =========================
+       CHARACTER COUNTER
+    ========================= */
+    const symptomsInput = document.getElementById("symptoms");
+    const charCount = document.getElementById("charCount");
+
+    if (symptomsInput && charCount) {
+        charCount.textContent = symptomsInput.value.length;
+        symptomsInput.addEventListener("input", () => {
+            charCount.textContent = symptomsInput.value.length;
+        });
+    }
+
+    /* =========================
+       AI PRECHECK
+    ========================= */
+    async function runPrecheck() {
+        const text = symptomsInput?.value.trim();
+        const analyzeBtn = document.getElementById("analyzeBtn");
+        const emptyResults = document.getElementById("emptyResults");
+        const loadingState = document.getElementById("loadingState");
+        const errorState = document.getElementById("errorState");
+        const resultsDisplay = document.getElementById("resultsDisplay");
+
+        if (!text) {
+            errorState.classList.add("active");
+            document.getElementById("errorMessage").textContent =
+                "Please enter your symptoms";
+            emptyResults.style.display = "none";
+            loadingState.classList.remove("active");
+            resultsDisplay.classList.remove("active");
+            return;
         }
 
-        function toggleTheme() {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        // Reset UI
+        emptyResults.style.display = "none";
+        errorState.classList.remove("active");
+        loadingState.classList.add("active");
+        resultsDisplay.classList.remove("active");
 
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon(newTheme);
-        }
+        analyzeBtn.disabled = true;
+        analyzeBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i><span>Analyzing...</span>';
 
-        function updateThemeIcon(theme) {
-            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-            mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-        }
+        try {
+            const res = await fetch("/api/ai/precheck", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include", // ✅ JWT SAFE
+                body: JSON.stringify({ text })
+            });
 
-        themeToggle.addEventListener('click', toggleTheme);
-        mobileThemeToggle.addEventListener('click', toggleTheme);
+            const data = await res.json();
 
+            loadingState.classList.remove("active");
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML =
+                '<i class="fas fa-search"></i><span>Analyze Symptoms</span>';
 
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const closeMenuBtn = document.getElementById('closeMenu');
-        const mobileMenu = document.getElementById('mobileMenu');
-
-        mobileMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            mobileMenu.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        });
-
-        closeMenuBtn.addEventListener('click', () => {
-            mobileMenu.classList.remove('active');
-            document.body.style.overflow = '';
-        });
-
-        document.addEventListener('click', (e) => {
-            if (mobileMenu.classList.contains('active') &&
-                !mobileMenu.contains(e.target) &&
-                e.target !== mobileMenuBtn) {
-                mobileMenu.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        });
-
-        // Character counter for symptoms textarea
-        const symptomsInput = document.getElementById('symptoms');
-        const charCount = document.getElementById('charCount');
-
-        symptomsInput.addEventListener('input', function () {
-            charCount.textContent = this.value.length;
-        });
-
-        // Original JavaScript Logic (UNCHANGED - Only enhanced with UI updates)
-        async function runPrecheck() {
-            const text = document.getElementById("symptoms").value.trim();
-            const analyzeBtn = document.getElementById("analyzeBtn");
-            const emptyResults = document.getElementById("emptyResults");
-            const loadingState = document.getElementById("loadingState");
-            const errorState = document.getElementById("errorState");
-            const resultsDisplay = document.getElementById("resultsDisplay");
-
-            if (!text) {
-                errorState.classList.add('active');
-                document.getElementById("errorMessage").textContent = "Please enter your symptoms";
-                emptyResults.style.display = 'none';
-                loadingState.classList.remove('active');
-                resultsDisplay.classList.remove('active');
+            if (!res.ok || data.error) {
+                errorState.classList.add("active");
+                document.getElementById("errorMessage").textContent =
+                    data.error || "Analysis failed";
                 return;
             }
 
-            // Reset states
-            emptyResults.style.display = 'none';
-            errorState.classList.remove('active');
-            loadingState.classList.add('active');
-            resultsDisplay.classList.remove('active');
+            displayResults(data);
+            resultsDisplay.classList.add("active");
 
-            // Disable button and show loading
-            analyzeBtn.disabled = true;
-            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Analyzing...</span>';
+        } catch (err) {
+            console.error(err);
 
-            try {
-                const res = await fetch("/api/ai/precheck", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text })
-                });
+            loadingState.classList.remove("active");
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML =
+                '<i class="fas fa-search"></i><span>Analyze Symptoms</span>';
 
-                const data = await res.json();
-
-                // Hide loading
-                loadingState.classList.remove('active');
-                analyzeBtn.disabled = false;
-                analyzeBtn.innerHTML = '<i class="fas fa-search"></i><span>Analyze Symptoms</span>';
-
-                if (data.error) {
-                    errorState.classList.add('active');
-                    document.getElementById("errorMessage").textContent = data.error;
-                    return;
-                }
-
-                // Display results
-                displayResults(data);
-                resultsDisplay.classList.add('active');
-
-            } catch (err) {
-                console.error(err);
-
-                // Hide loading
-                loadingState.classList.remove('active');
-                analyzeBtn.disabled = false;
-                analyzeBtn.innerHTML = '<i class="fas fa-search"></i><span>Analyze Symptoms</span>';
-
-                errorState.classList.add('active');
-                document.getElementById("errorMessage").textContent = "AI service is currently unavailable. Please try again later.";
-            }
+            errorState.classList.add("active");
+            document.getElementById("errorMessage").textContent =
+                "AI service is currently unavailable. Please try again later.";
         }
+    }
 
-        function displayResults(data) {
-            const resultsDisplay = document.getElementById("resultsDisplay");
+    /* =========================
+       DISPLAY RESULTS
+    ========================= */
+    function displayResults(data) {
+        const resultsDisplay = document.getElementById("resultsDisplay");
+        let html = "";
 
-            let html = '';
-
-            if (data.top_conditions && data.top_conditions.length) {
-                html += `<h4 class="text-dark" style="margin-bottom: 1rem;">Possible Conditions</h4>`;
-
-                data.top_conditions.forEach(c => {
-                    const percent = Math.round(c.confidence * 100);
-                    html += `
-                        <div class="condition-card">
-                            <div class="condition-header">
-                                <div class="condition-name text-dark">${c.condition}</div>
-                                <div class="confidence-percent">${percent}%</div>
-                            </div>
-                            <div class="confidence-bar">
-                                <div class="confidence-fill" style="width: ${percent}%"></div>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-
-            html += `
-                <div class="severity-section">
-                    <div class="severity-header">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <h4 class="text-dark">Severity Level</h4>
-                    </div>
-                    <div class="severity-badge ${data.severity}">
-                        <i class="fas fa-chart-line"></i>
-                        ${data.severity.toUpperCase()}
-                    </div>
-                </div>
-            `;
-
-            html += `
-                <div class="recommendation-section">
-                    <div class="recommendation-header">
-                        <i class="fas fa-comment-medical"></i>
-                        <h4 class="text-dark">Recommendation</h4>
-                    </div>
-                    <p class="recommendation-text text-dark">${data.recommendation}</p>
-                </div>
-            `;
-
-            if (data.red_flags && data.red_flags.length) {
+        if (data.top_conditions?.length) {
+            html += `<h4 class="text-dark" style="margin-bottom:1rem;">Possible Conditions</h4>`;
+            data.top_conditions.forEach(c => {
+                const percent = Math.round(c.confidence * 100);
                 html += `
-                    <div class="red-flags-section">
-                        <div class="red-flags-header">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <h4 class="text-dark">Red Flags Detected</h4>
-                        </div>
-                        <ul class="red-flags-list">
-                            ${data.red_flags.map(r => `<li class="text-dark">${r}</li>`).join("")}
-                        </ul>
+                <div class="condition-card">
+                    <div class="condition-header">
+                        <div class="condition-name text-dark">${c.condition}</div>
+                        <div class="confidence-percent">${percent}%</div>
                     </div>
-                `;
-            }
-
-            html += `
-                <div class="disclaimer text-medium">
-                    <i class="fas fa-info-circle"></i>
-                    ${data.disclaimer || "This AI analysis is for informational purposes only and does not replace professional medical advice. Please consult a healthcare provider for proper diagnosis and treatment."}
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width:${percent}%"></div>
+                    </div>
                 </div>
             `;
-
-            resultsDisplay.innerHTML = html;
+            });
         }
 
-        function retryAnalysis() {
-            const errorState = document.getElementById("errorState");
-            const emptyResults = document.getElementById("emptyResults");
+        html += `
+        <div class="severity-section">
+            <div class="severity-header">
+                <i class="fas fa-exclamation-circle"></i>
+                <h4 class="text-dark">Severity Level</h4>
+            </div>
+            <div class="severity-badge ${data.severity}">
+                ${data.severity.toUpperCase()}
+            </div>
+        </div>
 
-            errorState.classList.remove('active');
-            emptyResults.style.display = 'flex';
+        <div class="recommendation-section">
+            <h4 class="text-dark"><i class="fas fa-comment-medical"></i> Recommendation</h4>
+            <p class="text-dark">${data.recommendation}</p>
+        </div>
+    `;
 
-            const symptomsInput = document.getElementById("symptoms");
-            if (symptomsInput.value.trim()) {
-                runPrecheck();
-            }
+        if (data.red_flags?.length) {
+            html += `
+            <div class="red-flags-section">
+                <h4 class="text-dark">
+                    <i class="fas fa-exclamation-triangle"></i> Red Flags
+                </h4>
+                <ul>
+                    ${data.red_flags.map(r => `<li class="text-dark">${r}</li>`).join("")}
+                </ul>
+            </div>
+        `;
         }
 
-        // Initialize character count
-        charCount.textContent = symptomsInput.value.length;
-    </script>
+        html += `
+        <div class="disclaimer text-medium">
+            <i class="fas fa-info-circle"></i>
+            ${data.disclaimer || "This AI analysis is informational only."}
+        </div>
+    `;
+
+        resultsDisplay.innerHTML = html;
+    }
+
+    /* =========================
+       RETRY
+    ========================= */
+    function retryAnalysis() {
+        document.getElementById("errorState").classList.remove("active");
+        document.getElementById("emptyResults").style.display = "flex";
+        if (symptomsInput.value.trim()) runPrecheck();
+    }
+</script>
+
 </body>
 
 </html>

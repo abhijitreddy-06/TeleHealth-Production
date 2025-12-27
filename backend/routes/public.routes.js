@@ -1,63 +1,33 @@
-import path from "path";
-import blockAfterLogin from "../middleware/blockAfterLogin.js";
+/*
+  PUBLIC ROUTES – API ONLY
 
-export default function publicRoutes(app, PROJECT_ROOT) {
-    // 🚫 DO NOT serve HTML in production (Render)
-    if (process.env.NODE_ENV === "production") {
-        app.get("/", (req, res) => {
-            res.json({ status: "Backend API running" });
-        });
-        return;
-    }
+  IMPORTANT:
+  ----------
+  - Backend MUST NOT serve HTML files
+  - Backend MUST NOT redirect users
+  - Static frontend (Render Static Site) handles pages
+  - Backend only exposes API health + auth helpers
+*/
+
+export default function publicRoutes(app) {
 
     /* =========================
-       LANDING / ROLE
+       API HEALTH CHECK
+       (Used by Render & debugging)
     ========================= */
-    app.get("/role", blockAfterLogin, (req, res) => {
-        res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/role.html")
-        );
+    app.get("/", (req, res) => {
+        res.json({
+            status: "API running",
+            service: "TeleHealth Backend"
+        });
     });
 
-    app.get("/user_login", blockAfterLogin, (req, res) => {
-        res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/user_login.html")
-        );
+    /* =========================
+       BLOCK-AFTER-LOGIN CHECK
+       (Frontend calls this optionally)
+    ========================= */
+    app.get("/api/auth/guest", (req, res) => {
+        res.json({ guest: true });
     });
 
-    app.get("/user_signup", blockAfterLogin, (req, res) => {
-        res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/user_signup.html")
-        );
-    });
-
-    app.get("/doc_login", blockAfterLogin, (req, res) => {
-        res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/doc_login.html")
-        );
-    });
-
-    app.get("/doc_signup", blockAfterLogin, (req, res) => {
-        res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/doc_signup.html")
-        );
-    });
-
-    app.get("/", blockAfterLogin, (req, res) => {
-        res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/index.html")
-        );
-    });
-
-    app.get("/services", blockAfterLogin, (req, res) => {
-        res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/services.html")
-        );
-    });
-
-    app.get("/contact", blockAfterLogin, (req, res) => {
-        res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/contact.html")
-        );
-    });
 }

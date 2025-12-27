@@ -7,31 +7,42 @@ export default function docVideoRoutes(app) {
 
     /* =========================
        START VIDEO CALL (DOCTOR)
+       API ONLY – NO REDIRECTS
     ========================= */
     app.post(
-        "/doc/start-call/:appointmentId",
+        "/api/doc/start-call/:appointmentId",
         authenticate,
         authorize("doctor"),
         async (req, res) => {
             try {
+                const { appointmentId } = req.params;
                 const roomId = crypto.randomUUID();
 
-                await db.query(
+                const result = await db.query(
                     `
-                    UPDATE appointments
-                    SET room_id = $1,
-                        status = 'started'
-                    WHERE id = $2
-                      AND doctor_id = $3
-                    `,
-                    [roomId, req.params.appointmentId, req.user.id]
+          UPDATE appointments
+          SET room_id = $1,
+              status = 'started'
+          WHERE id = $2
+            AND doctor_id = $3
+            AND status = 'scheduled'
+          RETURNING room_id
+          `,
+                    [roomId, appointmentId, req.user.id]
                 );
 
-                res.redirect(`/doc_video/${roomId}`);
+                if (!result.rowCount) {
+                    return res.status(400).json({
+                        error: "Call already started or appointment invalid"
+                    });
+                }
+
+                // ✅ Frontend will handle redirect
+                res.json({ roomId });
 
             } catch (err) {
                 console.error("Start call error:", err);
-                res.status(500).send("Failed to start call");
+                res.status(500).json({ error: "Failed to start call" });
             }
         }
     );

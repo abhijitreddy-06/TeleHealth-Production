@@ -10,149 +10,133 @@ export default function authRoutes(app) {
     /* =========================
        USER SIGNUP
     ========================= */
-    app.post("/user_signup", async (req, res) => {
-        const { phone, password, confirmpassword } = req.body;
+    app.post("/api/user_signup", async (req, res) => {
+        try {
+            const { phone, password, confirmpassword } = req.body;
 
-        if (!password || password.length < 6)
-            return res.send(`<script>alert('Password must be at least 6 characters.');location='/user_signup'</script>`);
+            if (!password || password.length < 6)
+                return res.status(400).json({ error: "Password must be at least 6 characters" });
 
-        if (password !== confirmpassword)
-            return res.send(`<script>alert('Passwords must match.');location='/user_signup'</script>`);
+            if (password !== confirmpassword)
+                return res.status(400).json({ error: "Passwords do not match" });
 
-        const exists = await db.query(
-            "SELECT id FROM login WHERE phone=$1",
-            [phone]
-        );
-        if (exists.rows.length)
-            return res.send(`<script>alert('Account already exists');location='/user_signup'</script>`);
+            const exists = await db.query(
+                "SELECT id FROM login WHERE phone=$1",
+                [phone]
+            );
 
-        const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(saltRounds));
-        const result = await db.query(
-            "INSERT INTO login (phone,password) VALUES ($1,$2) RETURNING id",
-            [phone, hash]
-        );
+            if (exists.rows.length)
+                return res.status(400).json({ error: "Account already exists" });
 
-        // ✅ FIXED PAYLOAD
-        const token = jwt.sign(
-            {
-                id: result.rows[0].id,   // ← unified
-                phone,
-                role: "user"
-            },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
+            const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(saltRounds));
 
-        res.cookie("token", token, { httpOnly: true, sameSite: "Strict" });
-        res.redirect("/user_profile");
+            const result = await db.query(
+                "INSERT INTO login (phone,password) VALUES ($1,$2) RETURNING id",
+                [phone, hash]
+            );
+
+            const token = jwt.sign(
+                { id: result.rows[0].id, phone, role: "user" },
+                JWT_SECRET,
+                { expiresIn: JWT_EXPIRES_IN }
+            );
+
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "None"
+            });
+
+            res.json({ success: true, role: "user" });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: "Server error" });
+        }
     });
 
     /* =========================
        USER LOGIN
     ========================= */
-    app.post("/user_login", async (req, res) => {
-        const { phone, password } = req.body;
+    app.post("/api/user_login", async (req, res) => {
+        try {
+            const { phone, password } = req.body;
 
-        const result = await db.query(
-            "SELECT * FROM login WHERE phone=$1",
-            [phone]
-        );
+            const result = await db.query(
+                "SELECT * FROM login WHERE phone=$1",
+                [phone]
+            );
 
-        if (!result.rows.length)
-            return res.send(`<script>alert('Account not found');location='/user_login'</script>`);
+            if (!result.rows.length)
+                return res.status(400).json({ error: "Account not found" });
 
-        if (!bcrypt.compareSync(password, result.rows[0].password))
-            return res.send(`<script>alert('Incorrect password');location='/user_login'</script>`);
+            if (!bcrypt.compareSync(password, result.rows[0].password))
+                return res.status(400).json({ error: "Incorrect password" });
 
-        const token = jwt.sign(
-            {
-                id: result.rows[0].id,   // ✅ FIXED
-                phone,
-                role: "user"
-            },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
+            const token = jwt.sign(
+                { id: result.rows[0].id, phone, role: "user" },
+                JWT_SECRET,
+                { expiresIn: JWT_EXPIRES_IN }
+            );
 
-        res.cookie("token", token, { httpOnly: true, sameSite: "Strict" });
-        res.redirect("/user_home");
-    });
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "None"
+            });
 
-    /* =========================
-       DOCTOR SIGNUP
-    ========================= */
-    app.post("/doc_signup", async (req, res) => {
-        const { phone, password, confirmpassword } = req.body;
-
-        if (!password || password.length < 6)
-            return res.send(`<script>alert('Password must be at least 6 characters.');location='/doc_signup'</script>`);
-
-        if (password !== confirmpassword)
-            return res.send(`<script>alert('Passwords must match.');location='/doc_signup'</script>`);
-
-        const exists = await db.query(
-            "SELECT docid FROM doc_login WHERE phone=$1",
-            [phone]
-        );
-        if (exists.rows.length)
-            return res.send(`<script>alert('Account already exists');location='/doc_signup'</script>`);
-
-        const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(saltRounds));
-        const result = await db.query(
-            "INSERT INTO doc_login (phone,password) VALUES ($1,$2) RETURNING docid",
-            [phone, hash]
-        );
-
-        const token = jwt.sign(
-            {
-                id: result.rows[0].docid,   // ✅ FIXED
-                phone,
-                role: "doctor"
-            },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-
-        res.cookie("token", token, { httpOnly: true, sameSite: "Strict" });
-        res.redirect("/doc_profile");
+            res.json({ success: true, role: "user" });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: "Server error" });
+        }
     });
 
     /* =========================
        DOCTOR LOGIN
     ========================= */
-    app.post("/doc_login", async (req, res) => {
-        const { phone, password } = req.body;
+    app.post("/api/doc_login", async (req, res) => {
+        try {
+            const { phone, password } = req.body;
 
-        const result = await db.query(
-            "SELECT * FROM doc_login WHERE phone=$1",
-            [phone]
-        );
+            const result = await db.query(
+                "SELECT * FROM doc_login WHERE phone=$1",
+                [phone]
+            );
 
-        if (!result.rows.length)
-            return res.send(`<script>alert('Account not found');location='/doc_login'</script>`);
+            if (!result.rows.length)
+                return res.status(400).json({ error: "Account not found" });
 
-        if (!bcrypt.compareSync(password, result.rows[0].password))
-            return res.send(`<script>alert('Incorrect password');location='/doc_login'</script>`);
+            if (!bcrypt.compareSync(password, result.rows[0].password))
+                return res.status(400).json({ error: "Incorrect password" });
 
-        const token = jwt.sign(
-            {
-                id: result.rows[0].docid,   // ✅ FIXED
-                phone,
-                role: "doctor"
-            },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
+            const token = jwt.sign(
+                { id: result.rows[0].docid, phone, role: "doctor" },
+                JWT_SECRET,
+                { expiresIn: JWT_EXPIRES_IN }
+            );
 
-        res.cookie("token", token, { httpOnly: true, sameSite: "Strict" });
-        res.redirect("/doc_home");
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "None"
+            });
+
+            res.json({ success: true, role: "doctor" });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: "Server error" });
+        }
     });
 
     /* =========================
        LOGOUT
     ========================= */
-    app.get("/logout", (req, res) => {
-        res.clearCookie("token");
-        res.redirect("/role");
+    app.post("/api/logout", (req, res) => {
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "None"
+        });
+        res.json({ success: true });
     });
 }

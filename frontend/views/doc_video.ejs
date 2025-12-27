@@ -873,154 +873,223 @@
     </main>
 
     <!-- Original Scripts (Unchanged) -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    /* =========================
+       THEME TOGGLE
+    ========================= */
+    const themeToggle = document.getElementById("themeToggle");
+    const html = document.documentElement;
 
-        const themeToggle = document.getElementById('themeToggle');
-        const html = document.documentElement;
+    const savedTheme =
+        localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        if (savedTheme) {
-            html.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
-        }
+    html.setAttribute("data-theme", savedTheme);
+    updateThemeIcon(savedTheme);
 
-        function toggleTheme() {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    function toggleTheme() {
+        const current = html.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        html.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+        updateThemeIcon(next);
+    }
 
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon(newTheme);
-        }
+    function updateThemeIcon(theme) {
+        if (!themeToggle) return;
+        const icon = theme === "dark" ? "fa-sun" : "fa-moon";
+        themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
 
-        function updateThemeIcon(theme) {
-            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-        }
+    themeToggle?.addEventListener("click", toggleTheme);
 
-        themeToggle.addEventListener('click', toggleTheme);
+    /* =========================
+       NOTES UI
+    ========================= */
+    const notesText = document.getElementById("notesText");
+    const charCount = document.getElementById("charCount");
 
-        // Character counter for notes
-        const notesText = document.getElementById('notesText');
-        const charCount = document.getElementById('charCount');
-
-        notesText.addEventListener('input', function () {
-            charCount.textContent = this.value.length;
+    if (notesText && charCount) {
+        notesText.addEventListener("input", () => {
+            charCount.textContent = notesText.value.length;
         });
 
-        // Clear notes button
-        document.getElementById('clearNotes').addEventListener('click', function () {
-            if (confirm('Are you sure you want to clear all notes?')) {
-                notesText.value = '';
-                charCount.textContent = '0';
-            }
-        });
-
-        // Save notes button (local save)
-        document.getElementById('saveNotes').addEventListener('click', function () {
-            const notes = notesText.value;
-            if (notes.trim()) {
-                localStorage.setItem('consultation_notes_backup', notes);
-                alert('Notes saved locally!');
-            } else {
-                alert('No notes to save.');
-            }
-        });
-
-        // Load saved notes if any
-        const savedNotes = localStorage.getItem('consultation_notes_backup');
+        const savedNotes = localStorage.getItem("consultation_notes_backup");
         if (savedNotes) {
             notesText.value = savedNotes;
             charCount.textContent = savedNotes.length;
         }
+    }
 
-        // Video loading state
-        const videoLoading = document.getElementById('videoLoading');
+    document.getElementById("clearNotes")?.addEventListener("click", () => {
+        if (confirm("Clear all notes?")) {
+            notesText.value = "";
+            charCount.textContent = "0";
+        }
+    });
 
-        // Show loading when connecting
-        videoLoading.classList.remove('hidden');
+    document.getElementById("saveNotes")?.addEventListener("click", () => {
+        if (notesText.value.trim()) {
+            localStorage.setItem("consultation_notes_backup", notesText.value);
+            alert("Notes saved locally");
+        }
+    });
 
-        // Hide loading after 2 seconds (in real app, this would be when video connects)
-        setTimeout(() => {
-            videoLoading.classList.add('hidden');
-        }, 2000);
+    /* =========================
+       VIDEO + SOCKET SETUP
+    ========================= */
+    const socket = io();
+    const ROOM_ID = "<%= roomId %>";
+    const APPOINTMENT_ID = "<%= appointment.id %>";
 
-        // Original JavaScript Logic (Unchanged)
-        const socket = io();
-        const ROOM_ID = "<%= roomId %>";
-        const APPOINTMENT_ID = "<%= appointment.id %>";
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+    const toggleMic = document.getElementById("toggleMic");
+    const toggleCam = document.getElementById("toggleCam");
+    const endCall = document.getElementById("endCall");
+    const callTimer = document.getElementById("callTimer");
+    const videoLoading = document.getElementById("videoLoading");
 
-        let pc, localStream, mic = true, cam = true;
-        const start = Date.now();
+    let pc;
+    let localStream;
+    let mic = true;
+    let cam = true;
 
+    /* =========================
+       CALL TIMER
+    ========================= */
+    const start = Date.now();
+    if (callTimer) {
         setInterval(() => {
             const t = Date.now() - start;
             callTimer.innerText =
-                `${String(t / 3600000 | 0).padStart(2, '0')}:${String(t / 60000 % 60 | 0).padStart(2, '0')}:${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
+                `${String(t / 3600000 | 0).padStart(2, '0')}:` +
+                `${String(t / 60000 % 60 | 0).padStart(2, '0')}:` +
+                `${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
         }, 1000);
+    }
 
-        async function init() {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            localVideo.srcObject = localStream;
-            socket.emit("join-room", { roomId: ROOM_ID, role: "doctor" });
-            videoLoading.classList.add('hidden');
+    /* =========================
+       INIT MEDIA
+    ========================= */
+    async function init() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+        } catch (err) {
+            alert("Camera or microphone access denied");
+            return;
         }
-        init();
 
-        function createPeer() {
-            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-            localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-            pc.ontrack = e => remoteVideo.srcObject = e.streams[0];
-            pc.onicecandidate = e => e.candidate && socket.emit("signal", { roomId: ROOM_ID, payload: { candidate: e.candidate } });
-        }
+        localVideo.srcObject = localStream;
+        socket.emit("join-room", { roomId: ROOM_ID, role: "doctor" });
+        videoLoading?.classList.add("hidden");
+    }
 
-        socket.on("user-ready", async () => {
-            createPeer();
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            socket.emit("signal", { roomId: ROOM_ID, payload: { offer } });
+    init();
+
+    /* =========================
+       WEBRTC
+    ========================= */
+    function createPeer() {
+        pc = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
         });
 
-        socket.on("signal", async p => {
-            if (!pc) createPeer();
-            if (p.answer) await pc.setRemoteDescription(p.answer);
-            if (p.candidate) await pc.addIceCandidate(p.candidate);
+        localStream.getTracks().forEach(track =>
+            pc.addTrack(track, localStream)
+        );
+
+        pc.ontrack = e => {
+            remoteVideo.srcObject = e.streams[0];
+        };
+
+        pc.onicecandidate = e => {
+            if (e.candidate) {
+                socket.emit("signal", {
+                    roomId: ROOM_ID,
+                    payload: { candidate: e.candidate }
+                });
+            }
+        };
+    }
+
+    socket.on("user-ready", async () => {
+        createPeer();
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit("signal", {
+            roomId: ROOM_ID,
+            payload: { offer }
         });
+    });
 
-        toggleMic.onclick = () => {
-            mic = !mic;
-            localStream.getAudioTracks()[0].enabled = mic;
-            toggleMic.innerHTML = mic ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
-            toggleMic.classList.toggle('active', mic);
-        };
+    socket.on("signal", async payload => {
+        if (!pc) createPeer();
 
-        toggleCam.onclick = () => {
-            cam = !cam;
-            localStream.getVideoTracks()[0].enabled = cam;
-            toggleCam.innerHTML = cam ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
-            toggleCam.classList.toggle('active', cam);
-        };
+        if (payload.answer) {
+            await pc.setRemoteDescription(payload.answer);
+        }
 
-        endCall.onclick = async () => {
-            // Auto-save notes before ending call
+        if (payload.candidate) {
+            await pc.addIceCandidate(payload.candidate);
+        }
+    });
+
+    /* =========================
+       CONTROLS
+    ========================= */
+    toggleMic?.addEventListener("click", () => {
+        mic = !mic;
+        localStream.getAudioTracks()[0].enabled = mic;
+        toggleMic.innerHTML = mic
+            ? '<i class="fas fa-microphone"></i>'
+            : '<i class="fas fa-microphone-slash"></i>';
+    });
+
+    toggleCam?.addEventListener("click", () => {
+        cam = !cam;
+        localStream.getVideoTracks()[0].enabled = cam;
+        toggleCam.innerHTML = cam
+            ? '<i class="fas fa-video"></i>'
+            : '<i class="fas fa-video-slash"></i>';
+    });
+
+    /* =========================
+       END CALL
+    ========================= */
+    endCall?.addEventListener("click", async () => {
+
+        // Save notes only if present
+        if (notesText?.value.trim()) {
             await fetch("/api/notes/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({
                     roomId: ROOM_ID,
                     notes: notesText.value
                 })
             });
+        }
 
-            await fetch(`/appointments/${APPOINTMENT_ID}/complete`, {
-                method: "POST"
-            });
+        // Mark appointment completed
+        await fetch(`/appointments/${APPOINTMENT_ID}/complete`, {
+            method: "POST",
+            credentials: "include"
+        });
 
-            socket.emit("call-ended", { roomId: ROOM_ID });
-            location.href = "/doc_video_dashboard";
-        };
-    </script>
+        // Clear backup
+        localStorage.removeItem("consultation_notes_backup");
+
+        socket.emit("call-ended", { roomId: ROOM_ID });
+        window.location.href = "/doc_video_dashboard";
+    });
+</script>
+
 </body>
 
 </html>

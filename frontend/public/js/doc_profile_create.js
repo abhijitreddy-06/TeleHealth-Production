@@ -22,7 +22,9 @@ function toggleTheme() {
 
 function updateThemeIcon(theme) {
     const icon = theme === "dark" ? "fa-sun" : "fa-moon";
-    themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    if (themeToggle) {
+        themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
     if (mobileThemeToggle) {
         mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
     }
@@ -48,7 +50,7 @@ const specializationInput = document.getElementById("specialization");
 const experienceInput = document.getElementById("experience");
 
 // STEP 1 → STEP 2
-nextBtn1.addEventListener("click", () => {
+nextBtn1?.addEventListener("click", () => {
     if (!fullNameInput.value.trim()) {
         alert("Please enter your full name");
         return;
@@ -59,7 +61,7 @@ nextBtn1.addEventListener("click", () => {
 });
 
 // STEP 2 → STEP 3
-nextBtn2.addEventListener("click", () => {
+nextBtn2?.addEventListener("click", () => {
     if (!specializationInput.value.trim()) {
         alert("Please enter specialization");
         return;
@@ -74,13 +76,13 @@ nextBtn2.addEventListener("click", () => {
 });
 
 // BACK BUTTONS
-prevBtn1.addEventListener("click", () => {
+prevBtn1?.addEventListener("click", () => {
     step2.style.display = "none";
     step1.style.display = "block";
     updateProgress(1);
 });
 
-prevBtn2.addEventListener("click", () => {
+prevBtn2?.addEventListener("click", () => {
     step3.style.display = "none";
     step2.style.display = "block";
     updateProgress(2);
@@ -101,6 +103,7 @@ function updateProgress(step) {
         text.classList.toggle("active", i < step);
     });
 }
+
 // ===============================
 // MOBILE MENU TOGGLE
 // ===============================
@@ -109,26 +112,19 @@ const mobileMenu = document.getElementById("mobileMenu");
 const closeMenu = document.getElementById("closeMenu");
 
 // Open mobile menu
-if (mobileMenuBtn) {
-    mobileMenuBtn.addEventListener("click", () => {
-        mobileMenu.classList.add("active");
-        // Prevent body scroll when menu is open
-        document.body.style.overflow = "hidden";
-    });
-}
+mobileMenuBtn?.addEventListener("click", () => {
+    mobileMenu.classList.add("active");
+    document.body.style.overflow = "hidden";
+});
 
 // Close mobile menu
-if (closeMenu) {
-    closeMenu.addEventListener("click", () => {
-        mobileMenu.classList.remove("active");
-        // Restore body scroll
-        document.body.style.overflow = "auto";
-    });
-}
+closeMenu?.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+    document.body.style.overflow = "auto";
+});
 
 // Close menu when clicking on a link
-const mobileMenuLinks = document.querySelectorAll(".mobile-menu a");
-mobileMenuLinks.forEach(link => {
+document.querySelectorAll(".mobile-menu a").forEach(link => {
     link.addEventListener("click", () => {
         mobileMenu.classList.remove("active");
         document.body.style.overflow = "auto";
@@ -136,12 +132,9 @@ mobileMenuLinks.forEach(link => {
 });
 
 // Close menu when clicking outside
-if (mobileMenu) {
-    mobileMenu.addEventListener("click", (e) => {
-        if (e.target === mobileMenu) {
-            mobileMenu.classList.remove("active");
-            document.body.style.overflow = "auto";
-        }
-    });
-}
-
+mobileMenu?.addEventListener("click", (e) => {
+    if (e.target === mobileMenu) {
+        mobileMenu.classList.remove("active");
+        document.body.style.overflow = "auto";
+    }
+});

@@ -1,24 +1,11 @@
-
 import path from "path";
 import { fileURLToPath } from "url";
-
-/* =========================
-   FORCE LOAD backend/.env
-========================= */
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-
-
-
-/* =========================
-   NORMAL IMPORTS (UNCHANGED)
-========================= */
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 import uploadRoutes from "./routes/upload.routes.js";
 import publicRoutes from "./routes/public.routes.js";
@@ -35,22 +22,33 @@ import prescriptionRoutes from "./routes/prescription.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import db from "./config/db.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /* =========================
-   APP SETUP (UNCHANGED)
+   APP SETUP
 ========================= */
 const app = express();
 const port = process.env.PORT || 3000;
 
-const PROJECT_ROOT = path.resolve(__dirname, "..");
+/* =========================
+   CORS (MUST BE FIRST)
+========================= */
+app.use(
+  cors({
+    origin: "https://telehealth-production.onrender.com",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 
+/* =========================
+   MIDDLEWARE
+========================= */
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
-app.use("/api", uploadRoutes);
-
-
 
 app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
@@ -59,34 +57,45 @@ app.use((req, res, next) => {
   next();
 });
 
+/* =========================
+   ROUTES (API ONLY)
+========================= */
+app.use(uploadRoutes);
+publicRoutes(app);
+authRoutes(app);
+aiRoutes(app);
+protectedRoutes(app);
+profileRoutes(app);
+appointmentRoutes(app);
+videoDashboardRoutes(app);
 vaultRoutes(app);
 notesRoutes(app);
 app.use(prescriptionRoutes);
 
-publicRoutes(app, PROJECT_ROOT);
-authRoutes(app);
-aiRoutes(app);
-videoRoutes(app, PROJECT_ROOT);
-protectedRoutes(app, PROJECT_ROOT);
-profileRoutes(app);
-videoDashboardRoutes(app, PROJECT_ROOT);
-
-app.set("view engine", "ejs");
-app.set("views", path.join(PROJECT_ROOT, "views"));
-
-appointmentRoutes(app);
-
-const server = http.createServer(app);
-const io = new Server(server);
-
-videoSocket(io);
-
+/* =========================
+   404 HANDLER
+========================= */
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
+/* =========================
+   SERVER + SOCKET.IO
+========================= */
+const server = http.createServer(app);
 
+const io = new Server(server, {
+  cors: {
+    origin: "https://telehealth-production.onrender.com",
+    credentials: true
+  }
+});
 
-server.listen(port, () =>
-  console.log(`Server running on http://localhost:${port}`)
-);
+videoSocket(io);
+
+/* =========================
+   START SERVER
+========================= */
+server.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});

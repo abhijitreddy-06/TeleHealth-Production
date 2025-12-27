@@ -863,140 +863,222 @@
     </main>
 
     <!-- Original Scripts (Unchanged) -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    /* =========================
+       THEME TOGGLE
+    ========================= */
+    const themeToggle = document.getElementById("themeToggle");
+    const html = document.documentElement;
 
-        const themeToggle = document.getElementById('themeToggle');
-        const html = document.documentElement;
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    html.setAttribute("data-theme", savedTheme);
+    updateThemeIcon(savedTheme);
 
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        if (savedTheme) {
-            html.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
-        }
+    function toggleTheme() {
+        const currentTheme = html.getAttribute("data-theme");
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        html.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        updateThemeIcon(newTheme);
+    }
 
-        function toggleTheme() {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    function updateThemeIcon(theme) {
+        if (!themeToggle) return;
+        const icon = theme === "dark" ? "fa-sun" : "fa-moon";
+        themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
 
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon(newTheme);
-        }
+    themeToggle?.addEventListener("click", toggleTheme);
 
-        function updateThemeIcon(theme) {
-            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-        }
+    /* =========================
+       SOCKET + WEBRTC
+    ========================= */
+    const socket = io();
+    const ROOM_ID = "<%= roomId %>";
+    console.log("ROOM_ID =", ROOM_ID);
 
-        themeToggle.addEventListener('click', toggleTheme);
+    let pc;
+    let localStream;
+    let mic = true;
+    let cam = true;
+    const start = Date.now();
 
-        // Original JavaScript Logic (Unchanged with some enhancements)
-        const socket = io();
-        const ROOM_ID = "<%= roomId %>";
-        let pc, localStream, mic = true, cam = true;
-        const start = Date.now();
-        console.log("ROOM_ID =", ROOM_ID);
+    /* =========================
+       CALL TIMER
+    ========================= */
+    const timer = document.getElementById("timer");
 
+    if (timer) {
         setInterval(() => {
             const t = Date.now() - start;
-            timer.innerText = `${String(t / 3600000 | 0).padStart(2, '0')}:${String(t / 60000 % 60 | 0).padStart(2, '0')}:${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
+            timer.innerText =
+                `${String(t / 3600000 | 0).padStart(2, '0')}:` +
+                `${String(t / 60000 % 60 | 0).padStart(2, '0')}:` +
+                `${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
         }, 1000);
+    }
 
-        async function init() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    /* =========================
+       INIT MEDIA
+    ========================= */
+    async function init() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+
+            const localVideo = document.getElementById("localVideo");
+            if (localVideo) {
                 localVideo.srcObject = localStream;
-                socket.emit("join-room", { roomId: ROOM_ID, role: "user" });
+            }
 
-                // Update connection status
-                document.querySelector('.connection-status span').textContent = 'Waiting for doctor...';
-            } catch (error) {
-                console.error("Error accessing media devices:", error);
-                document.querySelector('.loading-overlay h2').textContent = "Permission Required";
-                document.querySelector('.loading-overlay p').textContent = "Please allow camera and microphone access to continue.";
+            socket.emit("join-room", { roomId: ROOM_ID, role: "user" });
+
+            const statusText = document.querySelector(".connection-status span");
+            if (statusText) statusText.textContent = "Waiting for doctor...";
+        } catch (err) {
+            console.error("Media error:", err);
+            const overlay = document.querySelector(".loading-overlay");
+            if (overlay) {
+                overlay.querySelector("h2").textContent = "Permission Required";
+                overlay.querySelector("p").textContent =
+                    "Please allow camera and microphone access.";
             }
         }
-        init();
+    }
+    init();
 
-        function createPeer() {
-            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-            localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-            pc.ontrack = e => {
-                remoteVideo.srcObject = e.streams[0];
-                loading.style.display = "none";
-                document.querySelector('.connection-status span').textContent = 'Connected';
-                document.querySelector('.connection-status .status-indicator').style.background = '#10b981';
-            };
-            pc.onicecandidate = e => e.candidate && socket.emit("signal", { roomId: ROOM_ID, payload: { candidate: e.candidate } });
+    /* =========================
+       PEER CONNECTION
+    ========================= */
+    function createPeer() {
+        pc = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        });
+
+        localStream.getTracks().forEach(track =>
+            pc.addTrack(track, localStream)
+        );
+
+        pc.ontrack = e => {
+            const remoteVideo = document.getElementById("remoteVideo");
+            if (remoteVideo) remoteVideo.srcObject = e.streams[0];
+
+            const loading = document.getElementById("loading");
+            if (loading) loading.style.display = "none";
+
+            const status = document.querySelector(".connection-status span");
+            const indicator = document.querySelector(".connection-status .status-indicator");
+
+            if (status) status.textContent = "Connected";
+            if (indicator) indicator.style.background = "#10b981";
+        };
+
+        pc.onicecandidate = e => {
+            if (e.candidate) {
+                socket.emit("signal", {
+                    roomId: ROOM_ID,
+                    payload: { candidate: e.candidate }
+                });
+            }
+        };
+    }
+
+    /* =========================
+       SIGNAL HANDLING
+    ========================= */
+    socket.on("signal", async payload => {
+        if (!pc) createPeer();
+
+        if (payload.offer) {
+            await pc.setRemoteDescription(payload.offer);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit("signal", {
+                roomId: ROOM_ID,
+                payload: { answer }
+            });
         }
 
-        socket.on("signal", async p => {
-            if (!pc) createPeer();
-            if (p.offer) {
-                await pc.setRemoteDescription(p.offer);
-                const ans = await pc.createAnswer();
-                await pc.setLocalDescription(ans);
-                socket.emit("signal", { roomId: ROOM_ID, payload: { answer: ans } });
-            }
-            if (p.candidate) await pc.addIceCandidate(p.candidate);
-        });
+        if (payload.candidate) {
+            await pc.addIceCandidate(payload.candidate);
+        }
+    });
 
-        micBtn.onclick = () => {
-            mic = !mic;
-            localStream.getAudioTracks()[0].enabled = mic;
-            micBtn.innerHTML = mic ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
-            micBtn.classList.toggle('active', mic);
-        };
+    /* =========================
+       CONTROLS
+    ========================= */
+    const micBtn = document.getElementById("micBtn");
+    const camBtn = document.getElementById("camBtn");
 
-        camBtn.onclick = () => {
-            cam = !cam;
-            localStream.getVideoTracks()[0].enabled = cam;
-            camBtn.innerHTML = cam ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
-            camBtn.classList.toggle('active', cam);
-        };
+    micBtn?.addEventListener("click", () => {
+        mic = !mic;
+        localStream.getAudioTracks()[0].enabled = mic;
+        micBtn.innerHTML = mic
+            ? '<i class="fas fa-microphone"></i>'
+            : '<i class="fas fa-microphone-slash"></i>';
+        micBtn.classList.toggle("active", mic);
+    });
 
-        socket.on("call-ended", () => {
-            // Show call ended overlay
-            const callEndedOverlay = document.getElementById('callEndedOverlay');
-            callEndedOverlay.style.display = 'flex';
+    camBtn?.addEventListener("click", () => {
+        cam = !cam;
+        localStream.getVideoTracks()[0].enabled = cam;
+        camBtn.innerHTML = cam
+            ? '<i class="fas fa-video"></i>'
+            : '<i class="fas fa-video-slash"></i>';
+        camBtn.classList.toggle("active", cam);
+    });
 
-            // Auto-download prescription
-            setTimeout(() => {
-                const a = document.createElement("a");
-                a.href = `/api/prescription/${ROOM_ID}`;
-                a.download = "prescription.pdf";
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            }, 1000);
+    /* =========================
+       CALL END HANDLER
+    ========================= */
+    socket.on("call-ended", () => {
+        const overlay = document.getElementById("callEndedOverlay");
+        if (overlay) overlay.style.display = "flex";
 
-            // Redirect after 5 seconds
-            setTimeout(() => {
-                location.href = "/user_video_dashboard";
-            }, 5000);
-        });
-
-        // Manual download button
-        document.getElementById('manualDownloadBtn').addEventListener('click', function () {
+        // Auto-download prescription
+        setTimeout(() => {
             const a = document.createElement("a");
-            a.href = `/api/prescription/${ROOM_ID}`;
+            a.href = `/api/prescription/download/${ROOM_ID}`;
             a.download = "prescription.pdf";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            alert("Prescription downloaded");
-        });
+        }, 1000);
 
-        // Update loading status based on connection state
-        socket.on('connect', () => {
-            console.log('Connected to signaling server');
-        });
+        // Redirect
+        setTimeout(() => {
+            window.location.href = "/user_video_dashboard";
+        }, 5000);
+    });
 
-        socket.on('disconnect', () => {
-            document.querySelector('.connection-status span').textContent = 'Disconnected - Reconnecting...';
-        });
-    </script>
+    /* =========================
+       MANUAL DOWNLOAD
+    ========================= */
+    document.getElementById("manualDownloadBtn")?.addEventListener("click", () => {
+        const a = document.createElement("a");
+        a.href = `/api/prescription/download/${ROOM_ID}`;
+        a.download = "prescription.pdf";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+
+    /* =========================
+       SOCKET STATUS
+    ========================= */
+    socket.on("connect", () => {
+        console.log("Connected to signaling server");
+    });
+
+    socket.on("disconnect", () => {
+        const status = document.querySelector(".connection-status span");
+        if (status) status.textContent = "Disconnected – reconnecting...";
+    });
+</script>
+
 </body>
 
 </html>

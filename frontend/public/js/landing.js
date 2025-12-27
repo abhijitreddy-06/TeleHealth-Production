@@ -1,68 +1,77 @@
+/* =========================
+   THEME TOGGLE
+========================= */
+const themeToggle = document.getElementById("themeToggle");
+const mobileThemeToggle = document.getElementById("mobileThemeToggle");
+const html = document.documentElement;
 
-    const themeToggle = document.getElementById('themeToggle');
-    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-    const html = document.documentElement;
+const savedTheme =
+    localStorage.getItem("theme") ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
+html.setAttribute("data-theme", savedTheme);
+updateThemeIcon(savedTheme);
 
-    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if (savedTheme) {
-        html.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
-        }
+function toggleTheme() {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+    updateThemeIcon(next);
+}
 
-    function toggleTheme() {
-            const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+function updateThemeIcon(theme) {
+    const icon = theme === "dark" ? "fa-sun" : "fa-moon";
 
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeIcon(newTheme);
-        }
+    if (themeToggle) {
+        themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
+    if (mobileThemeToggle) {
+        mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
+}
 
-    function updateThemeIcon(theme) {
-            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-    themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-    mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-        }
+themeToggle?.addEventListener("click", toggleTheme);
+mobileThemeToggle?.addEventListener("click", toggleTheme);
 
-    themeToggle.addEventListener('click', toggleTheme);
-    mobileThemeToggle.addEventListener('click', toggleTheme);
+/* =========================
+   MOBILE MENU
+========================= */
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const closeMenuBtn = document.getElementById("closeMenu");
+const mobileMenu = document.getElementById("mobileMenu");
 
+mobileMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    mobileMenu.classList.add("active");
+    document.body.style.overflow = "hidden";
+});
 
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const closeMenuBtn = document.getElementById('closeMenu');
-    const mobileMenu = document.getElementById('mobileMenu');
+closeMenuBtn?.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+    document.body.style.overflow = "auto";
+});
 
-        mobileMenuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-    mobileMenu.classList.add('active');
-    document.body.style.overflow = 'hidden';
-        });
+document.addEventListener("click", (e) => {
+    if (
+        mobileMenu?.classList.contains("active") &&
+        !mobileMenu.contains(e.target) &&
+        e.target !== mobileMenuBtn
+    ) {
+        mobileMenu.classList.remove("active");
+        document.body.style.overflow = "auto";
+    }
+});
 
-        closeMenuBtn.addEventListener('click', () => {
-        mobileMenu.classList.remove('active');
-    document.body.style.overflow = '';
-        });
+/* =========================
+   CHAT BUBBLE
+========================= */
+const chatBubble = document.getElementById("chat-bubble");
+const chatbot = document.getElementById("chatbot");
 
+setTimeout(() => {
+    chatBubble?.classList.add("active");
+}, 3000);
 
-        document.addEventListener('click', (e) => {
-            if (mobileMenu.classList.contains('active') &&
-    !mobileMenu.contains(e.target) &&
-    e.target !== mobileMenuBtn) {
-        mobileMenu.classList.remove('active');
-    document.body.style.overflow = '';
-            }
-        });
-
-    // Chatbot functionality
-    const chatBubble = document.getElementById('chat-bubble');
-    const chatbot = document.getElementById('chatbot');
-
-        // Show chat bubble after 3 seconds
-        setTimeout(() => {
-        chatBubble.classList.add('active');
-        }, 3000);
-
-        chatbot.addEventListener('click', () => {
-        alert('Chatbot feature would open here. This is a frontend demonstration.');
-        });
+chatbot?.addEventListener("click", () => {
+    alert("Chatbot feature would open here.");
+});

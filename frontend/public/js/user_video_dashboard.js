@@ -1,152 +1,189 @@
+/* =========================
+   USER VIDEO DASHBOARD
+========================= */
 
-        // Original video dashboard logic (unchanged)
-    let roomId = null;
-    let polling = null;
+let roomId = null;
+let polling = null;
 
+/* =========================
+   LOAD APPOINTMENT (USER)
+========================= */
+async function loadAppointment() {
+    try {
+        const res = await fetch("/api/appointments/user", {
+            credentials: "include"
+        });
 
-    async function loadAppointment() {
-            try {
-                const res = await fetch("/api/appointments/user");
-    const appointments = await res.json();
+        if (!res.ok) throw new Error("Failed to fetch");
 
-    // No active appointments
-    if (!appointments.length) {
-        clearInterval(polling);
-    document.getElementById("doctorName").innerText = "—";
-    document.getElementById("apptDate").innerText = "—";
-    document.getElementById("apptTime").innerText = "—";
-    document.getElementById("statusText").innerHTML = `
-    <i class="fas fa-calendar-times"></i>
-    No active appointments.
-    `;
-    document.getElementById("statusText").className = "status completed";
-    document.getElementById("joinBtn").disabled = true;
-    return;
-                }
+        const appointments = await res.json();
 
-    const appt = appointments[0];
+        // ❌ No active appointment
+        if (!appointments.length) {
+            clearInterval(polling);
+            updateUI({
+                doctor: "—",
+                date: "—",
+                time: "—",
+                statusHTML: `
+          <i class="fas fa-calendar-times"></i>
+          No active appointments.
+        `,
+                statusClass: "status completed",
+                joinDisabled: true
+            });
+            return;
+        }
 
-    document.getElementById("doctorName").innerText =
-    `${appt.doctor_name} (${appt.specialization})`;
+        const appt = appointments[0];
 
-    document.getElementById("apptDate").innerText =
-    appt.appointment_date;
+        document.getElementById("doctorName").innerText =
+            `${appt.doctor_name} (${appt.specialization})`;
 
-    document.getElementById("apptTime").innerText =
-    appt.appointment_time;
+        document.getElementById("apptDate").innerText = appt.appointment_date;
+        document.getElementById("apptTime").innerText = appt.appointment_time;
 
-    // Scheduled
-    if (appt.status === "scheduled") {
-        document.getElementById("statusText").innerHTML = `
-                        <i class="fas fa-clock"></i>
-                        Waiting for doctor to start the call...
-                    `;
-    document.getElementById("statusText").className = "status waiting";
-    document.getElementById("joinBtn").disabled = true;
-                }
+        // ⏳ Scheduled
+        if (appt.status === "scheduled") {
+            updateStatus(
+                `<i class="fas fa-clock"></i> Waiting for doctor to start the call...`,
+                "status waiting",
+                true
+            );
+        }
 
-    // Started
-    if (appt.status === "started" && appt.room_id) {
-        roomId = appt.room_id;
-    document.getElementById("statusText").innerHTML = `
-    <i class="fas fa-check-circle"></i>
-    Doctor has started the call
-    `;
-    document.getElementById("statusText").className = "status ready";
-    document.getElementById("joinBtn").disabled = false;
-                }
+        // 🎥 Started
+        if (appt.status === "started" && appt.room_id) {
+            roomId = appt.room_id;
+            updateStatus(
+                `<i class="fas fa-video"></i> Doctor has started the call`,
+                "status ready",
+                false
+            );
+        }
 
-    // Completed
-    if (appt.status === "completed") {
-        clearInterval(polling);
-    document.getElementById("statusText").innerHTML = `
-    <i class="fas fa-check-circle"></i>
-    Appointment completed
-    `;
-    document.getElementById("statusText").className = "status completed";
-    document.getElementById("joinBtn").disabled = true;
-                }
+        // ✅ Completed
+        if (appt.status === "completed") {
+            clearInterval(polling);
+            updateStatus(
+                `<i class="fas fa-check-circle"></i> Appointment completed`,
+                "status completed",
+                true
+            );
+        }
 
-            } catch (err) {
+    } catch (err) {
         console.error(err);
-    document.getElementById("statusText").innerHTML = `
-    <i class="fas fa-exclamation-triangle"></i>
-    Failed to load appointment
-    `;
-            }
-        }
+        updateStatus(
+            `<i class="fas fa-exclamation-triangle"></i> Failed to load appointment`,
+            "status error",
+            true
+        );
+    }
+}
 
-    function joinCall() {
-            if (!roomId) return;
+/* =========================
+   JOIN CALL
+========================= */
+function joinCall() {
+    if (!roomId) return;
     window.location.href = `/user_video/${roomId}`;
-        }
+}
 
-    // Theme Toggle (from user_home)
-    const themeToggle = document.getElementById('themeToggle');
-    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-    const html = document.documentElement;
+/* =========================
+   UI HELPERS
+========================= */
+function updateStatus(html, className, disableJoin) {
+    const statusText = document.getElementById("statusText");
+    const joinBtn = document.getElementById("joinBtn");
 
-    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if (savedTheme) {
-        html.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
-        }
+    statusText.innerHTML = html;
+    statusText.className = className;
+    joinBtn.disabled = disableJoin;
+}
 
-    function toggleTheme() {
-            const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+function updateUI({ doctor, date, time, statusHTML, statusClass, joinDisabled }) {
+    document.getElementById("doctorName").innerText = doctor;
+    document.getElementById("apptDate").innerText = date;
+    document.getElementById("apptTime").innerText = time;
+    updateStatus(statusHTML, statusClass, joinDisabled);
+}
 
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeIcon(newTheme);
-        }
+/* =========================
+   THEME TOGGLE (SAFE)
+========================= */
+const themeToggle = document.getElementById("themeToggle");
+const mobileThemeToggle = document.getElementById("mobileThemeToggle");
+const html = document.documentElement;
 
-    function updateThemeIcon(theme) {
-            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-    themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-    mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-        }
+const savedTheme =
+    localStorage.getItem("theme") ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
-    themeToggle.addEventListener('click', toggleTheme);
-    mobileThemeToggle.addEventListener('click', toggleTheme);
+html.setAttribute("data-theme", savedTheme);
+updateThemeIcon(savedTheme);
 
-    // Mobile Menu (from user_home)
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const closeMenuBtn = document.getElementById('closeMenu');
-    const mobileMenu = document.getElementById('mobileMenu');
+function toggleTheme() {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+    updateThemeIcon(next);
+}
 
-        mobileMenuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-    mobileMenu.classList.add('active');
-    document.body.style.overflow = 'hidden';
-        });
+function updateThemeIcon(theme) {
+    const icon = theme === "dark" ? "fa-sun" : "fa-moon";
+    if (themeToggle) themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    if (mobileThemeToggle) mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+}
 
-        closeMenuBtn.addEventListener('click', () => {
-        mobileMenu.classList.remove('active');
-    document.body.style.overflow = '';
-        });
+themeToggle?.addEventListener("click", toggleTheme);
+mobileThemeToggle?.addEventListener("click", toggleTheme);
 
-        document.addEventListener('click', (e) => {
-            if (mobileMenu.classList.contains('active') &&
-    !mobileMenu.contains(e.target) &&
-    e.target !== mobileMenuBtn) {
-        mobileMenu.classList.remove('active');
-    document.body.style.overflow = '';
-            }
-        });
+/* =========================
+   MOBILE MENU (SAFE)
+========================= */
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const closeMenuBtn = document.getElementById("closeMenu");
+const mobileMenu = document.getElementById("mobileMenu");
 
-    // Chatbot functionality (from user_home)
-    const chatBubble = document.getElementById('chat-bubble');
-    const chatbot = document.getElementById('chatbot');
+mobileMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    mobileMenu.classList.add("active");
+    document.body.style.overflow = "hidden";
+});
 
-        setTimeout(() => {
-        chatBubble.classList.add('active');
-        }, 3000);
+closeMenuBtn?.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+    document.body.style.overflow = "auto";
+});
 
-        chatbot.addEventListener('click', () => {
-        alert('Chatbot feature would open here. This is a frontend demonstration.');
-        });
+document.addEventListener("click", (e) => {
+    if (
+        mobileMenu?.classList.contains("active") &&
+        !mobileMenu.contains(e.target) &&
+        e.target !== mobileMenuBtn
+    ) {
+        mobileMenu.classList.remove("active");
+        document.body.style.overflow = "auto";
+    }
+});
 
-    // Initialize appointment loading
-    loadAppointment();
-    polling = setInterval(loadAppointment, 5000);
+/* =========================
+   CHATBOT (OPTIONAL)
+========================= */
+const chatBubble = document.getElementById("chat-bubble");
+const chatbot = document.getElementById("chatbot");
+
+setTimeout(() => {
+    chatBubble?.classList.add("active");
+}, 3000);
+
+chatbot?.addEventListener("click", () => {
+    alert("Chatbot feature would open here.");
+});
+
+/* =========================
+   INIT
+========================= */
+loadAppointment();
+polling = setInterval(loadAppointment, 5000);

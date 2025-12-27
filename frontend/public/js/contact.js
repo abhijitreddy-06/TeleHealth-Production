@@ -1,99 +1,112 @@
+/* =========================
+   API CONFIG
+========================= */
+const API_BASE = "https://telehealth-production.onrender.com";
 
-    const themeToggle = document.getElementById('themeToggle');
-    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-    const html = document.documentElement;
+/* =========================
+   THEME TOGGLE
+========================= */
+const themeToggle = document.getElementById("themeToggle");
+const mobileThemeToggle = document.getElementById("mobileThemeToggle");
+const html = document.documentElement;
 
+const savedTheme =
+    localStorage.getItem("theme") ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
-    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if (savedTheme) {
-        html.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
-        }
+html.setAttribute("data-theme", savedTheme);
+updateThemeIcon(savedTheme);
 
-    function toggleTheme() {
-            const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+function toggleTheme() {
+    const currentTheme = html.getAttribute("data-theme");
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
     updateThemeIcon(newTheme);
-        }
+}
 
-    function updateThemeIcon(theme) {
-            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+function updateThemeIcon(theme) {
+    const icon = theme === "dark" ? "fa-sun" : "fa-moon";
     themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
     mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-        }
+}
 
-    themeToggle.addEventListener('click', toggleTheme);
-    mobileThemeToggle.addEventListener('click', toggleTheme);
+themeToggle.addEventListener("click", toggleTheme);
+mobileThemeToggle.addEventListener("click", toggleTheme);
 
+/* =========================
+   MOBILE MENU
+========================= */
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const closeMenuBtn = document.getElementById("closeMenu");
+const mobileMenu = document.getElementById("mobileMenu");
 
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const closeMenuBtn = document.getElementById('closeMenu');
-    const mobileMenu = document.getElementById('mobileMenu');
+mobileMenuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    mobileMenu.classList.add("active");
+    document.body.style.overflow = "hidden";
+});
 
-        mobileMenuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-    mobileMenu.classList.add('active');
-    document.body.style.overflow = 'hidden';
-        });
+closeMenuBtn.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+    document.body.style.overflow = "";
+});
 
-        closeMenuBtn.addEventListener('click', () => {
-        mobileMenu.classList.remove('active');
-    document.body.style.overflow = '';
-        });
+document.addEventListener("click", (e) => {
+    if (
+        mobileMenu.classList.contains("active") &&
+        !mobileMenu.contains(e.target) &&
+        e.target !== mobileMenuBtn
+    ) {
+        mobileMenu.classList.remove("active");
+        document.body.style.overflow = "";
+    }
+});
 
+/* =========================
+   CONTACT FORM (FRONTEND ONLY)
+========================= */
+const contactForm = document.getElementById("contactForm");
 
-        document.addEventListener('click', (e) => {
-            if (mobileMenu.classList.contains('active') &&
-    !mobileMenu.contains(e.target) &&
-    e.target !== mobileMenuBtn) {
-        mobileMenu.classList.remove('active');
-    document.body.style.overflow = '';
-            }
-        });
+contactForm.addEventListener("submit", (e) => {
+    e.preventDefault();
 
-    const contactForm = document.getElementById('contactForm');
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const subject = document.getElementById("subject").value.trim();
+    const message = document.getElementById("message").value.trim();
 
-        contactForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-
-
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const phone = document.getElementById('phone').value;
-    const subject = document.getElementById('subject').value;
-    const message = document.getElementById('message').value;
-
-    // Simple validation
     if (!name || !email || !phone || !subject || !message) {
-        alert('Please fill in all fields');
-    return;
-            }
+        alert("Please fill in all fields");
+        return;
+    }
 
-    // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        alert('Please enter a valid email address');
-    return;
-            }
+        alert("Please enter a valid email address");
+        return;
+    }
 
-    // Phone validation (simple version)
     const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(phone.replace(/\D/g, ''))) {
-        alert('Please enter a valid 10-digit phone number');
-    return;
-            }
+    if (!phoneRegex.test(phone.replace(/\D/g, ""))) {
+        alert("Please enter a valid 10-digit phone number");
+        return;
+    }
 
-    // Show success message
-    alert(`Thank you ${name}! Your message has been sent successfully.\n\nWe'll contact you at ${email} or ${phone} soon.`);
+    // Frontend-only demo (no backend submission)
+    alert(
+        `Thank you ${name}!\n\n` +
+        `Your message has been received.\n` +
+        `We’ll contact you at ${email} or ${phone}.`
+    );
 
-    // Reset form
     contactForm.reset();
-        });
+});
 
-        // Show chatbot bubble after delay
-        setTimeout(() => {
-        document.getElementById('chat-bubble').classList.add('active');
-        }, 3000);
+/* =========================
+   CHATBOT BUBBLE
+========================= */
+setTimeout(() => {
+    document.getElementById("chat-bubble").classList.add("active");
+}, 3000);
