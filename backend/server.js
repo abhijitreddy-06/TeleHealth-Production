@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-console.log("ENV CHECK:", process.env.SUPABASE_URL);
+
 
 /* =========================
    NORMAL IMPORTS (UNCHANGED)
@@ -82,15 +82,10 @@ const io = new Server(server);
 videoSocket(io);
 
 app.use((req, res) => {
-  res.status(404).sendFile(
-    path.join(PROJECT_ROOT, "public/pages/404.html")
-  );
+  res.status(404).json({ error: "Route not found" });
 });
 
-console.log(
-  "SUPABASE_URL:",
-  process.env.SUPABASE_URL ? "LOADED" : "MISSING"
-);
+
 
 server.listen(port, () =>
   console.log(`Server running on http://localhost:${port}`)
