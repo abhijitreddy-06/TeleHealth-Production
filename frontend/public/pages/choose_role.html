@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleHealth - Login Selection</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/choose_role.css">
+</head>
+
+<body>
+    <header>
+        <nav class="navbar">
+            <a href="/" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/"><i class="fas fa-home"></i> Home</a>
+                <a href="/services"><i class="fas fa-concierge-bell"></i> Services</a>
+                <a href="/contact"><i class="fas fa-address-book"></i> Contact</a>
+                <a href="/role" class="btn btn-outline"><i class="fas fa-user-plus"></i>Login</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="/"><i class="fas fa-home"></i> Home</a>
+        <a href="/services"><i class="fas fa-concierge-bell"></i> Services</a>
+        <a href="/contact"><i class="fas fa-address-book"></i> Contact</a>
+        <a href="/role" class="btn btn-outline"><i class="fas fa-user-plus"></i>Login</a>
+    </div>
+
+    <section class="login-selection">
+        <div class="login-header">
+            <h1>Select Your <span>Login</span> Type</h1>
+            <p>Choose your role to access the TeleHealth platform. Doctors can manage appointments and patient records,
+                while users can book consultations and view medical history.</p>
+        </div>
+
+        <div class="login-cards">
+            <div class="login-card">
+                <div class="card-image">
+                    <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=600&h=400"
+                        alt="Doctor Consultation">
+                </div>
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <h2>Doctor Login</h2>
+                    <p>Access the doctor dashboard to manage patient appointments, view medical records, provide
+                        e-prescriptions, and conduct virtual consultations with your patients.</p>
+                    <div class="card-button">
+                        <a href="/doc_login" class="btn btn-primary btn-block"><i class="fas fa-sign-in-alt"></i>
+                            Login as Doctor</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="login-card">
+                <div class="card-image">
+                    <img src="https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=600&h=400"
+                        alt="Patient Consultation">
+                </div>
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <h2>Patient Login</h2>
+                    <p>Access your personal health dashboard to book appointments, view medical records, consult with
+                        doctors virtually, and manage your prescriptions.</p>
+                    <div class="card-button">
+                        <a href="/user_login" class="btn btn-primary btn-block"><i class="fas fa-sign-in-alt"></i>
+                            Login as User</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/choose_role.js"></script>
+</body>
+
+</html>

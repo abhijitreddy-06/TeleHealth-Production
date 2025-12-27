@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doctor Video Dashboard | TeleHealth</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+
+<link href="/css/doc_video_dashboard.css" rel="stylesheet" />
+</head>
+
+<body>
+    <!-- ================= HEADER & NAVIGATION ================= -->
+    <header>
+        <nav class="navbar">
+            <a href="/doc_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/doc_home"><i class="fas fa-home"></i> Home</a>
+                <a href="/doc_video_dashboard" class="active"><i class="fas fa-video"></i> Video</a>
+                <a href="/doc_profile"><i class="fas fa-user-md"></i> Profile</a>
+
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ================= MOBILE MENU ================= -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="/doc_home"><i class="fas fa-home"></i> Home</a>
+        <a href="/doc_video_dashboard" class="active"><i class="fas fa-video"></i> Video</a>
+        <a href="/doc_profile"><i class="fas fa-user-md"></i> Profile</a>
+    </div>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main>
+        <div class="dashboard-header">
+            <h1>Video Consultation Dashboard</h1>
+            <p>Start and manage your virtual consultations with patients</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Appointment Details Card -->
+            <div class="appointment-card">
+                <div class="appointment-header">
+                    <div class="appointment-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <h2>Upcoming Appointment</h2>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-item">
+                        <span class="info-label">Patient:</span>
+                        <span class="info-value" id="patientName">Loading...</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Date:</span>
+                        <span class="info-value" id="apptDate">—</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Time:</span>
+                        <span class="info-value" id="apptTime">—</span>
+                    </div>
+                </div>
+
+                <div class="status-container">
+                    <p id="statusText" class="status">
+                        <i class="fas fa-sync-alt fa-spin"></i>
+                        Checking appointment status...
+                    </p>
+                    <button id="startBtn" class="btn btn-primary" disabled onclick="startCall()">
+                        <i class="fas fa-video"></i>
+                        Start Call
+                    </button>
+                </div>
+            </div>
+
+            <!-- Instructions Card -->
+            <div class="instructions-card">
+                <h3><i class="fas fa-info-circle"></i> Consultation Guidelines</h3>
+                <div class="instructions-list">
+                    <div class="instruction-item">
+                        <div class="instruction-number">1</div>
+                        <div class="instruction-content">
+                            <h4>Prepare Consultation Room</h4>
+                            <p>Ensure your environment is professional, quiet, and well-lit</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">2</div>
+                        <div class="instruction-content">
+                            <h4>Check Equipment</h4>
+                            <p>Test your camera, microphone, and internet connection before starting</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">3</div>
+                        <div class="instruction-content">
+                            <h4>Review Patient Information</h4>
+                            <p>Have the patient's medical history and notes ready</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">4</div>
+                        <div class="instruction-content">
+                            <h4>End Consultation Properly</h4>
+                            <p>Summarize the consultation and provide follow-up instructions</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+    
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= CHATBOT ================= -->
+
+
+    <!-- ================= SCRIPTS ================= -->
+<script src="/js/doc_video_dashboard.js"></script>
+</body>
+
+</html>

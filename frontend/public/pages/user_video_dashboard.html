@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Dashboard | TeleHealth</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+
+<link href="/css/user_video_dashboard.css" rel="stylesheet" />
+</head>
+
+<body>
+    <!-- ================= HEADER & NAVIGATION ================= -->
+    <header>
+        <nav class="navbar">
+            <a href="/user_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user_home" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/predict"><i class="fas fa-robot"></i>AI Pre Advice</a>
+                <a href="/user_video_dashboard"><i class="fas fa-video"></i>video</a>
+                <a href="/appointments"><i class="fas fa-user-md"></i>Appointments</a>
+                <a href="/records"><i class="fas fa-folder"></i> My Records</a>
+                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ================= MOBILE MENU ================= -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+                <a href="/user_home" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/predict"><i class="fas fa-robot"></i>AI Pre Advice</a>
+                <a href="/user_video_dashboard"><i class="fas fa-video"></i>video</a>
+                <a href="/appointments"><i class="fas fa-user-md"></i>Appointments</a>
+                <a href="/records"><i class="fas fa-folder"></i> My Records</a>
+                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+    </div>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main>
+        <div class="dashboard-header">
+            <h1>Video Consultation Dashboard</h1>
+            <p>Join your scheduled virtual appointments with healthcare professionals</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Appointment Details Card -->
+            <div class="appointment-card">
+                <div class="appointment-header">
+                    <div class="appointment-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <h2>Your Appointment</h2>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-item">
+                        <span class="info-label">Doctor:</span>
+                        <span class="info-value" id="doctorName">Loading...</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Date:</span>
+                        <span class="info-value" id="apptDate">—</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Time:</span>
+                        <span class="info-value" id="apptTime">—</span>
+                    </div>
+                </div>
+
+                <div class="status-container">
+                    <p id="statusText" class="status">
+                        <i class="fas fa-sync-alt fa-spin"></i>
+                        Checking appointment status...
+                    </p>
+                </div>
+
+                <button id="joinBtn" class="btn btn-primary btn-full" disabled onclick="joinCall()">
+                    <i class="fas fa-video"></i>
+                    Join Video Call
+                </button>
+            </div>
+
+            <!-- Instructions Card -->
+            <div class="instructions-card">
+                <h3><i class="fas fa-info-circle"></i> Video Call Instructions</h3>
+                <div class="instructions-list">
+                    <div class="instruction-item">
+                        <div class="instruction-number">1</div>
+                        <div class="instruction-content">
+                            <h4>Prepare Your Environment</h4>
+                            <p>Find a quiet, well-lit room with a stable internet connection</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">2</div>
+                        <div class="instruction-content">
+                            <h4>Test Your Equipment</h4>
+                            <p>Check your camera, microphone, and speakers before joining</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">3</div>
+                        <div class="instruction-content">
+                            <h4>Join on Time</h4>
+                            <p>Join the call a few minutes before your scheduled time</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">4</div>
+                        <div class="instruction-content">
+                            <h4>Have Information Ready</h4>
+                            <p>Keep your ID and any medical information accessible</p>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+     <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= CHATBOT ================= -->
+    <div class="chatbot-container">
+        <div class="chat-bubble" id="chat-bubble">
+            Need help? Chat with our AI assistant!
+        </div>
+        <div class="chatbot" id="chatbot">
+            <i class="fas fa-robot"></i>
+        </div>
+    </div>
+
+    <!-- ================= SCRIPTS ================= -->
+<script src="/js/user_video_dashboard.js"></script>
+</body>
+
+</html>

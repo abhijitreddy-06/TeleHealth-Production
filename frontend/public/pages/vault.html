@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleHealth - Medical Records</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+<link href="/css/vault.css" rel="stylesheet">
+</head>
+
+<body>
+    
+    <header>
+        <nav class="navbar">
+            <a href="/user_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user_home"><i class="fas fa-home"></i> Home</a>
+                <a href="/predict"><i class="fas fa-robot"></i> AI Pre Advice</a>
+                <a href="/user_video_dashboard"><i class="fas fa-video"></i> Video</a>
+                <a href="/appointments"><i class="fas fa-user-md"></i> Appointments</a>
+                <a href="/records" class="active"><i class="fas fa-folder"></i> My Records</a>
+                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="/user_home"><i class="fas fa-home"></i> Home</a>
+        <a href="/predict"><i class="fas fa-robot"></i> AI Pre Advice</a>
+        <a href="/user_video_dashboard"><i class="fas fa-video"></i> Video</a>
+        <a href="/appointments"><i class="fas fa-user-md"></i> Appointments</a>
+        <a href="/records" class="active"><i class="fas fa-folder"></i> My Records</a>
+        <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+    </div>
+
+    
+    <div class="container">
+        <div class="page-header">
+            <h1>My Medical Records</h1>
+            <p>Securely store and access your medical documents in one place</p>
+        </div>
+
+        <div class="section-header">
+            <h2>Your Documents</h2>
+            <button class="btn btn-primary" onclick="openUploadModal()">
+                <i class="fas fa-cloud-upload-alt"></i> Upload Record
+            </button>
+        </div>
+
+        <div class="records-section">
+            <div class="records-grid" id="recordsGrid">
+                <!-- Records will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal - Large for Web View -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fas fa-cloud-upload-alt"></i> Upload Medical Record</h3>
+                <button class="close-modal" onclick="closeUploadModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="upload-content">
+                <form id="uploadForm" action="/vault/upload" method="POST" enctype="multipart/form-data">
+                    <div class="upload-options">
+                        <!-- Choose File Option -->
+                        <div class="upload-option" onclick="document.getElementById('fileInput').click()"
+                            id="chooseFileOption">
+                            <div class="upload-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <h4>Browse Files</h4>
+                            <p>Select a file from your computer or device storage</p>
+                            <input type="file" name="file" id="fileInput" required style="display: none;" />
+                        </div>
+
+                        <!-- Drag & Drop Option -->
+                        <div class="upload-option drop-area" id="dropArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <h4>Drag & Drop</h4>
+                            <p>Drag your file here or click to browse</p>
+                        </div>
+                    </div>
+
+                    <!-- File Preview Section -->
+                    <div class="file-preview-section">
+                        <div class="file-preview" id="filePreview">
+                            <div class="file-icon" id="fileIcon">
+                                <i class="fas fa-file"></i>
+                            </div>
+                            <div class="file-info">
+                                <div class="file-name" id="fileName">No file selected</div>
+                                <div class="file-details">
+                                    <div class="file-size" id="fileSize">
+                                        <i class="fas fa-weight-hanging"></i> 0 KB
+                                    </div>
+                                    <div class="file-type" id="fileType">
+                                        <i class="fas fa-file-alt"></i> No file type
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="remove-file" onclick="removeSelectedFile()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="recordType"><i class="fas fa-tag"></i> Record Type</label>
+                            <select name="recordType" id="recordType" required>
+                                <option value="general">General Document</option>
+                                <option value="prescription">Prescription</option>
+                                <option value="report">Medical Report</option>
+                                <option value="lab">Lab Results</option>
+                                <option value="imaging">Imaging (X-Ray, MRI, etc.)</option>
+                                <option value="insurance">Insurance Document</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeUploadModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload File
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View/Preview Modal -->
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-content">
+            <div class="preview-header">
+                <h3><i class="fas fa-eye"></i> Document Preview</h3>
+                <button class="close-modal" onclick="closePreviewModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="preview-body" id="previewBody">
+                <!-- Preview content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Footer -->
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+<script src="/js/vault.js"></script>
+</body>
+
+</html>

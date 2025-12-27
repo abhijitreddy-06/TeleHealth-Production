@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleHealth Signup</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="/css/user_signup.css" rel="stylesheet">
+
+</head>
+
+<body>
+    
+    <header>
+        <nav class="navbar">
+            <a href="/" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/"><i class="fas fa-home"></i> Home</a>
+                <a href="/services"><i class="fas fa-concierge-bell"></i> Services</a>
+                <a href="/contact"><i class="fas fa-address-book"></i> Contact</a>
+                <a href="/doc_login" class="btn btn-outline"><i class="fas fa-user-plus"></i>Login</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="/"><i class="fas fa-home"></i> Home</a>
+        <a href="/services"><i class="fas fa-concierge-bell"></i> Services</a>
+        <a href="/contact"><i class="fas fa-address-book"></i> Contact</a>
+        <a href="/doc_login" class="btn btn-outline"><i class="fas fa-user-plus"></i>Login</a>
+    </div>
+
+    
+    <div class="container">
+        <div class="login-container">
+            <div class="login-form">
+                <div class="form-header">
+                    <h1>Create Account</h1>
+                    <p>Create Account to access your TeleHealth Services</p>
+                </div>
+
+                <form id="loginForm" action="/doc_signup" method="post">
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <div class="input-group">
+                            <span class="prefix">+91</span>
+                            <input type="tel" id="phone" class="form-control" placeholder="Enter your phone number"
+                                pattern="[0-9]{10}" title="Enter a 10-digit phone number" name="phone" required>
+                        </div>
+                        <small id="phoneError" style="color: var(--error); display: none; margin-top: 0.5rem;">Please
+                            enter a valid 10-digit phone number</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" class="form-control" placeholder="Enter your password"
+                            name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Confirm Password</label>
+                        <input type="password" id="password" class="form-control"
+                            placeholder="Enter your password again" name="confirmpassword" required>
+                    </div>
+                    <div class="form-footer">
+                        <a href="">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary"
+                        style="width: 100%; padding: 1rem; font-size: 1.1rem; margin-top: 1rem;">
+                        <i class="fas fa-sign-in-alt"></i> Sign Up
+                    </button>
+
+                    <p style="text-align: center; margin-top: 1.5rem; color: var(--text-medium);">
+                        Already have an account? <a href="/doc_login" class="signup-link">Login</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                    </a>
+                    <div class="copyright">
+                        © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+<script src="/js/doc_signup.js"></script>
+</body>
+
+</html>

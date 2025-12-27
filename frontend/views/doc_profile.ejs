@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleHealth - Doctor Profile</title>
+
+    <!-- SAME CSS & FONTS (UNCHANGED) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            /* Color Variables */
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --secondary: #10b981;
+            --background: #f9fafb;
+            --dark-bg: #1e293b;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-light: #f1f5f9;
+            --text-medium: #475569;
+            --border: #e2e8f0;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #60a5fa;
+            --disabled: #9ca3af;
+            --footer-bg: #1e293b;
+    
+            /* Other Variables */
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+    
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --background: #1e293b;
+            --card-bg: #334155;
+            --text-dark: #f1f5f9;
+            --text-light: #0f172a;
+            --text-medium: #cbd5e1;
+            --border: #475569;
+            --footer-bg: #0f172a;
+        }
+    
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", "Inter", "Roboto", sans-serif;
+        }
+    
+        body {
+            background-color: var(--background);
+            color: var(--text-dark);
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+    
+        /* Header & Navigation */
+        header {
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+    
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+    
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-family: "Poppins", sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+    
+        .logo i {
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+    
+        .logo-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+    
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+    
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .nav-links a.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+    
+        .nav-links a:hover:not(.active) {
+            color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        .btn {
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+    
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+    
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(56, 189, 248, 0.3);
+        }
+    
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+    
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+    
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+    
+        .theme-toggle:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        /* Mobile Menu */
+        .mobile-controls {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+        }
+    
+        .mobile-menu-btn:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 280px;
+            height: 100vh;
+            background-color: var(--card-bg);
+            z-index: 1000;
+            padding: 2rem;
+            transition: var(--transition);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+    
+        .mobile-menu.active {
+            right: 0;
+        }
+    
+        .close-menu {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    
+        .close-menu:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        .mobile-menu a {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+    
+        .mobile-menu a:hover,
+        .mobile-menu a.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+    
+        .mobile-menu .btn-outline {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+    
+        /* Profile Section */
+        .profile-section {
+            flex: 1;
+            padding: 3rem 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+    
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+    
+        .profile-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    
+        .profile-header p {
+            color: var(--text-medium);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    
+        .profile-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 2.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+    
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+    
+        .profile-item {
+            margin-bottom: 1.5rem;
+        }
+    
+        .profile-item label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-medium);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    
+        .profile-item .value {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            padding: 0.8rem 1rem;
+            background-color: rgba(56, 189, 248, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+    
+        .profile-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2.5rem;
+            flex-wrap: wrap;
+        }
+    
+        /* Footer */
+        footer {
+            background-color: var(--footer-bg);
+            color: var(--text-light);
+            padding: 3rem 5% 1.5rem;
+            margin-top: auto;
+        }
+    
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2.5rem;
+        }
+    
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+    
+        .footer-about p {
+            margin: 1rem 0;
+            line-height: 1.6;
+            color: var(--text-light);
+            opacity: 0.9;
+        }
+    
+        .footer-links h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            display: inline-block;
+            color: var(--text-light);
+        }
+    
+        .footer-links h3::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+    
+        .footer-links ul {
+            list-style: none;
+        }
+    
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+    
+        .footer-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            transition: var(--transition);
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .footer-links a:hover {
+            color: var(--primary);
+            opacity: 1;
+            padding-left: 5px;
+        }
+    
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 2.5rem auto 0;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+    
+        .copyright {
+            opacity: 0.8;
+            color: var(--text-light);
+        }
+    
+        .footer-bottom-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+    
+        .footer-bottom-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            opacity: 0.8;
+            transition: var(--transition);
+        }
+    
+        .footer-bottom-links a:hover {
+            opacity: 1;
+            color: var(--primary);
+        }
+    
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+    
+            .mobile-controls {
+                display: flex;
+            }
+    
+            .mobile-menu-btn {
+                display: flex;
+            }
+    
+            .mobile-menu {
+                display: flex;
+            }
+    
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+    
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+    
+            .profile-actions {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+    
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    
+        @media (max-width: 576px) {
+            .profile-header h1 {
+                font-size: 2rem;
+            }
+    
+            .profile-card {
+                padding: 1.5rem;
+            }
+    
+            .btn {
+                padding: 0.6rem 1.2rem;
+            }
+    
+            .navbar {
+                padding: 1rem 5%;
+            }
+        }
+    
+        [data-theme="dark"] footer {
+            color: var(--text-dark);
+        }
+    
+        [data-theme="dark"] .footer-links a,
+        [data-theme="dark"] .footer-bottom-links a {
+            color: var(--text-dark);
+            opacity: 0.9;
+        }
+    </style>
+<style>
+    /* Simple Footer */
+    .simple-footer {
+        background-color: var(--card-bg);
+        border-top: 1px solid var(--border);
+        padding: 1.5rem 5%;
+        text-align: center;
+        margin-top: auto;
+    }
+
+    .footer-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .footer-left {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .footer-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .footer-logo i {
+        color: var(--secondary);
+        font-size: 1.2rem;
+    }
+
+    .copyright {
+        color: var(--text-medium);
+        font-size: 0.9rem;
+    }
+
+    .footer-links {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .footer-links a {
+        color: var(--text-medium);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: var(--transition);
+    }
+
+    .footer-links a:hover {
+        color: var(--primary);
+    }
+
+    .footer-links .separator {
+        color: var(--border);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .simple-footer {
+            padding: 1rem 5%;
+        }
+
+        .footer-content {
+            flex-direction: column;
+            gap: 0.8rem;
+            text-align: center;
+        }
+
+        .footer-links {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .separator {
+            display: none;
+        }
+
+        .footer-links a {
+            font-size: 0.85rem;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+    <!-- ================= HEADER (UNCHANGED) ================= -->
+    <header>
+        <nav class="navbar">
+            <a href="/doc_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/doc_home"><i class="fas fa-home"></i> Home</a>
+                <a href="/doc_video_dashboard"><i class="fas fa-video"></i>Video</a>
+                <a href="/doc_profile" class="active"><i class="fas fa-user-circle"></i>Profile</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ================= MOBILE MENU (UNCHANGED) ================= -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="/doc_home"><i class="fas fa-home"></i> Home</a>
+        <a href="/appointments"><i class="fas fa-calendar-check"></i> Appointments</a>
+        <a href="/doc_profile" class="active"><i class="fas fa-user-circle"></i> Profile</a>
+    </div>
+
+    <!-- ================= PROFILE SECTION ================= -->
+    <section class="profile-section">
+
+        <div class="profile-header">
+            <h1>Doctor Profile</h1>
+            <p>View and manage your professional details</p>
+        </div>
+
+        <div class="profile-card">
+
+            <div class="profile-grid">
+
+                <div class="profile-item">
+                    <label>Full Name</label>
+                    <div class="value">
+                        <%= profile.fullName %>
+                    </div>
+                </div>
+
+                <div class="profile-item">
+                    <label>Specialization</label>
+                    <div class="value">
+                        <%= profile.specialization %>
+                    </div>
+                </div>
+
+                <div class="profile-item">
+                    <label>Experience</label>
+                    <div class="value">
+                        <%= profile.experience %> years
+                    </div>
+                </div>
+
+                <div class="profile-item">
+                    <label>Qualification</label>
+                    <div class="value">
+                        <%= profile.qualification || "Not specified" %>
+                    </div>
+                </div>
+
+                <div class="profile-item">
+                    <label>Hospital / Clinic</label>
+                    <div class="value">
+                        <%= profile.hospital || "Not specified" %>
+                    </div>
+                </div>
+
+                <div class="profile-item">
+                    <label>Bio</label>
+                    <div class="value">
+                        <%= profile.bio || "No bio added" %>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ================= ACTIONS ================= -->
+            <div class="profile-actions">
+<a href="/logout" class="btn btn-primary">
+    <i class="fas fa-sign-out-alt"></i> Logout
+</a>
+
+
+
+                
+            </div>
+
+        </div>
+    </section>
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+    
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+    <script>
+
+        const themeToggle = document.getElementById('themeToggle');
+        const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+        const html = document.documentElement;
+
+
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+        mobileThemeToggle.addEventListener('click', toggleTheme);
+
+
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenu');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mobileMenu.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+
+
+        document.addEventListener('click', (e) => {
+            if (mobileMenu.classList.contains('active') &&
+                !mobileMenu.contains(e.target) &&
+                e.target !== mobileMenuBtn) {
+                mobileMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
+
+</body>
+
+</html>

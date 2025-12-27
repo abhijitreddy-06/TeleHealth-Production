@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Doctor Profile | TeleHealth</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="/css/doc_profile_create.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <header>
+        <nav class="navbar">
+            <a href="/doc_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/doc_home" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/doc_video_dashboard"><i class="fas fa-video"></i>Video</a>
+                <a href="/doc_profile"><i class="fas fa-user-circle"></i> Profile</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="/doc_home" class="active"><i class="fas fa-home"></i> Home</a>
+        <a href="/doc_video_dashboard"><i class="fas fa-video"></i>Video</a>
+        <a href="/doc_profile"><i class="fas fa-user-circle"></i> Profile</a>
+    </div>
+
+    <!-- Profile Creation Section -->
+    <main class="profile-section">
+        <div class="profile-header">
+            <h1>Create Doctor Profile</h1>
+            <p>Complete your professional profile to start consulting patients</p>
+        </div>
+
+        <div class="profile-card">
+            <div class="profile-progress">
+                <div class="progress-step">
+                    <div class="step-icon active">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="step-text active">Personal</span>
+                </div>
+                <div class="progress-step">
+                    <div class="step-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <span class="step-text">Professional</span>
+                </div>
+                <div class="progress-step">
+                    <div class="step-icon">
+                        <i class="fas fa-hospital"></i>
+                    </div>
+                    <span class="step-text">Practice</span>
+                </div>
+                <div class="progress-step">
+                    <div class="step-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <span class="step-text">Complete</span>
+                </div>
+            </div>
+
+            <form class="profile-form" id="profileForm" action="/doc_profile" method="post">
+                <!-- Personal Info Step -->
+                <div class="form-step" id="step1">
+                    <div class="form-group">
+                        <label for="fullName"><i class="fas fa-signature"></i> Full Name</label>
+                        <input type="text" id="fullName" name="fullName" class="form-control"
+                            placeholder="Enter your full name" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <div></div>
+                        <button type="button" class="btn btn-primary btn-large" id="nextBtn1">Next <i
+                                class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Professional Info Step -->
+                <div class="form-step" id="step2" style="display: none;">
+                    <div class="form-group">
+                        <label for="specialization"><i class="fas fa-user-md"></i> Specialization</label>
+                        <input type="text" id="specialization" name="specialization" class="form-control"
+                            placeholder="e.g., Cardiologist, Pediatrician" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="experience"><i class="fas fa-briefcase"></i> Experience (Years)</label>
+                        <input type="number" id="experience" name="experience" class="form-control"
+                            placeholder="Years of experience" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qualification"><i class="fas fa-graduation-cap"></i> Qualification</label>
+                        <input type="text" id="qualification" name="qualification" class="form-control"
+                            placeholder="e.g., MBBS, MD, MS">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-prev btn-large" id="prevBtn1"><i
+                                class="fas fa-arrow-left"></i> Back</button>
+                        <button type="button" class="btn btn-primary btn-large" id="nextBtn2">Next <i
+                                class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Practice Info Step -->
+                <div class="form-step" id="step3" style="display: none;">
+                    <div class="form-group">
+                        <label for="hospital"><i class="fas fa-hospital"></i> Hospital / Clinic Name</label>
+                        <input type="text" id="hospital" name="hospital" class="form-control"
+                            placeholder="Where you practice">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bio"><i class="fas fa-notes-medical"></i> Bio</label>
+                        <textarea id="bio" name="bio" rows="4" class="form-control"
+                            placeholder="Tell patients about your expertise and approach"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-prev btn-large" id="prevBtn2"><i
+                                class="fas fa-arrow-left"></i> Back</button>
+                        <button type="submit" class="btn btn-primary btn-large">Complete Profile <i
+                                class="fas fa-check"></i></button>
+                    </div>
+                </div>
+
+                <!-- Success Step -->
+                <div class="success-container" id="successStep" style="display: none;">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2>Profile Complete!</h2>
+                    <p>Your professional profile has been successfully saved.</p>
+                    <a href="/doc_home" class="btn btn-primary btn-large">Go to Dashboard</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/doc_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/doc_profile_create.js"></script>
+</body>
+
+</html>

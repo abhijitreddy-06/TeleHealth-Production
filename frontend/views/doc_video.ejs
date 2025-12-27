@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Doctor Consultation | TeleHealth</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Color Variables */
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --secondary: #10b981;
+            --background: #0f172a;
+            --dark-bg: #1e293b;
+            --card-bg: #1e293b;
+            --text-dark: #f1f5f9;
+            --text-light: #0f172a;
+            --text-medium: #cbd5e1;
+            --border: #475569;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #60a5fa;
+            --disabled: #9ca3af;
+            --footer-bg: #0f172a;
+
+            /* Other Variables */
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+
+        /* Light Theme Variables */
+        [data-theme="light"] {
+            --background: #f9fafb;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-light: #f1f5f9;
+            --text-medium: #475569;
+            --border: #e2e8f0;
+            --footer-bg: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", "Inter", "Roboto", sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-dark);
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 70px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .call-info {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .patient-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-medium);
+        }
+
+        .patient-info i {
+            color: var(--primary);
+        }
+
+        .timer-container {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 0.5rem 1.25rem;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .timer-container i {
+            margin-right: 0.5rem;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        /* Main Video Container */
+        .video-container {
+            position: relative;
+            height: calc(100vh - 70px);
+            background: #020617;
+            display: flex;
+            overflow: hidden;
+        }
+
+        [data-theme="light"] .video-container {
+            background: #1e293b;
+        }
+
+        /* Remote Video (Main Screen) */
+        #remoteVideo {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #020617;
+        }
+
+        [data-theme="light"] #remoteVideo {
+            background: #1e293b;
+        }
+
+        /* Local Video (PiP) - Bottom Left */
+        #localVideo {
+            position: absolute;
+            bottom: 140px;
+            left: 20px;
+            width: 280px;
+            height: 210px;
+            border: 3px solid var(--primary);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            background: #000;
+            z-index: 10;
+            transition: var(--transition);
+        }
+
+        #localVideo:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+        }
+
+        .local-video-label {
+            position: absolute;
+            bottom: 125px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 11;
+            backdrop-filter: blur(10px);
+        }
+
+        .local-video-label i {
+            color: var(--primary);
+        }
+
+        /* Controls Bar - Professional Zoom Style */
+        .controls-bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            z-index: 50;
+        }
+
+        [data-theme="light"] .controls-bar {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(30, 41, 59, 1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .control-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .control-btn.end-call {
+            width: 70px;
+            height: 70px;
+            background: var(--error);
+            font-size: 1.6rem;
+        }
+
+        .control-btn.end-call:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .control-btn.end-call i {
+            transform: rotate(135deg);
+        }
+
+        .control-label {
+            position: absolute;
+            bottom: -25px;
+            color: white;
+            font-size: 0.8rem;
+            opacity: 0.9;
+            white-space: nowrap;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        [data-theme="light"] .control-label {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .control-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Notes Box - Professional Side Panel */
+        .notes-box {
+            position: absolute;
+            top: 90px;
+            right: 20px;
+            width: 350px;
+            height: calc(100vh - 200px);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            transition: var(--transition);
+        }
+
+        .notes-box:hover {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .notes-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notes-header h4 {
+            color: var(--text-dark);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notes-header h4 i {
+            color: var(--primary);
+        }
+
+        .notes-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .notes-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-medium);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .notes-action-btn:hover {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+
+        .notes-textarea {
+            flex: 1;
+            width: 100%;
+            background: var(--background);
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            resize: none;
+            transition: var(--transition);
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+        }
+
+        .notes-textarea::placeholder {
+            color: var(--text-medium);
+        }
+
+        .notes-footer {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-medium);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .auto-save {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .auto-save i {
+            color: var(--secondary);
+        }
+
+        .char-count {
+            color: var(--text-medium);
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            z-index: 20;
+        }
+
+        [data-theme="light"] .connection-status {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-dark);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--secondary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Participant Info Overlay */
+        .participant-info {
+            position: absolute;
+            top: 20px;
+            right: 380px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            z-index: 20;
+        }
+
+        [data-theme="light"] .participant-info {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-dark);
+        }
+
+        .participant-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Video Loading State */
+        .video-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 5;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(56, 189, 248, 0.3);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .video-loading p {
+            color: var(--text-medium);
+            font-size: 1rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .notes-box {
+                width: 300px;
+            }
+
+            .participant-info {
+                right: 330px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .notes-box {
+                width: 280px;
+                height: calc(100vh - 180px);
+            }
+
+            .participant-info {
+                right: 310px;
+            }
+
+            #localVideo {
+                width: 240px;
+                height: 180px;
+                left: 15px;
+                bottom: 130px;
+            }
+
+            .local-video-label {
+                left: 15px;
+                bottom: 115px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .video-container {
+                flex-direction: column;
+            }
+
+            .notes-box {
+                position: relative;
+                width: 100%;
+                height: 300px;
+                top: 0;
+                right: 0;
+                margin: 0;
+                border-radius: 0;
+                border: none;
+                border-top: 1px solid var(--border);
+            }
+
+            #localVideo {
+                bottom: 160px;
+                left: 10px;
+                width: 180px;
+                height: 135px;
+            }
+
+            .local-video-label {
+                left: 10px;
+                bottom: 145px;
+            }
+
+            .participant-info {
+                right: 10px;
+                top: 10px;
+            }
+
+            .controls-bar {
+                height: 120px;
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+
+            .control-btn.end-call {
+                width: 60px;
+                height: 60px;
+            }
+
+            .control-label {
+                font-size: 0.7rem;
+                bottom: -20px;
+            }
+
+            .call-info {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+
+            .timer-container {
+                font-size: 0.9rem;
+                padding: 0.4rem 1rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar {
+                padding: 0 1rem;
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .logo i {
+                font-size: 1.2rem;
+            }
+
+            .participant-info {
+                display: none;
+            }
+
+            #localVideo {
+                width: 150px;
+                height: 113px;
+                bottom: 140px;
+                left: 10px;
+            }
+
+            .local-video-label {
+                left: 10px;
+                bottom: 125px;
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .controls-bar {
+                gap: 0.75rem;
+            }
+
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+
+            .control-btn.end-call {
+                width: 55px;
+                height: 55px;
+            }
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .visible {
+            display: block;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-muted {
+            color: var(--text-medium);
+        }
+
+        /* Scrollbar Styling */
+        .notes-textarea::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notes-textarea::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        .notes-textarea::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .notes-textarea::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Video Controls Text Visibility Fix */
+        [data-theme="light"] .patient-info,
+        [data-theme="light"] .notes-header h4,
+        [data-theme="light"] .notes-footer,
+        [data-theme="light"] .connection-status span,
+        [data-theme="light"] .participant-info div,
+        [data-theme="light"] .video-loading p {
+            color: var(--text-dark);
+        }
+
+        [data-theme="light"] .notes-action-btn {
+            color: var(--text-medium);
+        }
+
+        [data-theme="light"] .notes-action-btn:hover {
+            color: var(--primary);
+        }
+
+        /* Ensure all text in light mode is visible */
+        [data-theme="light"] .text-dark {
+            color: var(--text-dark) !important;
+        }
+
+        [data-theme="light"] .text-medium {
+            color: var(--text-medium) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="navbar">
+            <a href="/doc_video_dashboard" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="call-info">
+                <div class="patient-info">
+                    <i class="fas fa-user-injured"></i>
+                    <span class="text-dark">Patient Consultation</span>
+                </div>
+                <div class="timer-container" id="callTimer">
+                    <i class="fas fa-clock"></i>
+                    <span>00:00:00</span>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Video Container -->
+    <main class="video-container">
+        <!-- Connection Status -->
+        <div class="connection-status">
+            <div class="status-indicator"></div>
+            <span class="text-dark">Connected</span>
+        </div>
+
+        <!-- Participant Info -->
+        <div class="participant-info">
+            <div class="participant-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>
+                <div class="text-dark">Patient</div>
+                <div class="text-muted" style="font-size: 0.8rem;">Video call in progress</div>
+            </div>
+        </div>
+
+        <!-- Local Video Label -->
+        <div class="local-video-label">
+            <i class="fas fa-user-md"></i>
+            <span>You (Doctor)</span>
+        </div>
+
+        <!-- Video Loading State (Hidden by default) -->
+        <div class="video-loading hidden" id="videoLoading">
+            <div class="loading-spinner"></div>
+            <p class="text-medium">Connecting to patient...</p>
+        </div>
+
+        <!-- Remote Video (Patient) -->
+        <video id="remoteVideo" autoplay playsinline></video>
+
+        <!-- Local Video (Doctor) - Bottom Left -->
+        <video id="localVideo" autoplay muted playsinline></video>
+
+        <!-- Notes Box -->
+        <div class="notes-box">
+            <div class="notes-header">
+                <h4><i class="fas fa-notes-medical"></i> <span class="text-dark">Consultation Notes</span></h4>
+                <div class="notes-actions">
+                    <button class="notes-action-btn" id="clearNotes" title="Clear notes">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                    <button class="notes-action-btn" id="saveNotes" title="Save notes">
+                        <i class="fas fa-save"></i>
+                    </button>
+                </div>
+            </div>
+            <textarea id="notesText" class="notes-textarea" placeholder="Write consultation notes here... 
+• Symptoms observed
+• Diagnosis
+• Prescription
+• Follow-up recommendations"></textarea>
+            <div class="notes-footer">
+                <div class="auto-save">
+                    <i class="fas fa-check-circle"></i>
+                    <span class="text-medium">Auto-save enabled</span>
+                </div>
+                <div class="char-count">
+                    <span id="charCount" class="text-medium">0</span> characters
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="controls-bar">
+            <div class="control-group">
+                <button class="control-btn" id="toggleMic">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <span class="control-label">Microphone</span>
+            </div>
+
+            <div class="control-group">
+                <button class="control-btn" id="toggleCam">
+                    <i class="fas fa-video"></i>
+                </button>
+                <span class="control-label">Camera</span>
+            </div>
+
+            <div class="control-group">
+                <button class="control-btn end-call" id="endCall">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <span class="control-label">End Call</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Original Scripts (Unchanged) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Character counter for notes
+        const notesText = document.getElementById('notesText');
+        const charCount = document.getElementById('charCount');
+
+        notesText.addEventListener('input', function () {
+            charCount.textContent = this.value.length;
+        });
+
+        // Clear notes button
+        document.getElementById('clearNotes').addEventListener('click', function () {
+            if (confirm('Are you sure you want to clear all notes?')) {
+                notesText.value = '';
+                charCount.textContent = '0';
+            }
+        });
+
+        // Save notes button (local save)
+        document.getElementById('saveNotes').addEventListener('click', function () {
+            const notes = notesText.value;
+            if (notes.trim()) {
+                localStorage.setItem('consultation_notes_backup', notes);
+                alert('Notes saved locally!');
+            } else {
+                alert('No notes to save.');
+            }
+        });
+
+        // Load saved notes if any
+        const savedNotes = localStorage.getItem('consultation_notes_backup');
+        if (savedNotes) {
+            notesText.value = savedNotes;
+            charCount.textContent = savedNotes.length;
+        }
+
+        // Video loading state
+        const videoLoading = document.getElementById('videoLoading');
+
+        // Show loading when connecting
+        videoLoading.classList.remove('hidden');
+
+        // Hide loading after 2 seconds (in real app, this would be when video connects)
+        setTimeout(() => {
+            videoLoading.classList.add('hidden');
+        }, 2000);
+
+        // Original JavaScript Logic (Unchanged)
+        const socket = io();
+        const ROOM_ID = "<%= roomId %>";
+        const APPOINTMENT_ID = "<%= appointment.id %>";
+
+        let pc, localStream, mic = true, cam = true;
+        const start = Date.now();
+
+        setInterval(() => {
+            const t = Date.now() - start;
+            callTimer.innerText =
+                `${String(t / 3600000 | 0).padStart(2, '0')}:${String(t / 60000 % 60 | 0).padStart(2, '0')}:${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
+        }, 1000);
+
+        async function init() {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = localStream;
+            socket.emit("join-room", { roomId: ROOM_ID, role: "doctor" });
+            videoLoading.classList.add('hidden');
+        }
+        init();
+
+        function createPeer() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+            localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+            pc.ontrack = e => remoteVideo.srcObject = e.streams[0];
+            pc.onicecandidate = e => e.candidate && socket.emit("signal", { roomId: ROOM_ID, payload: { candidate: e.candidate } });
+        }
+
+        socket.on("user-ready", async () => {
+            createPeer();
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit("signal", { roomId: ROOM_ID, payload: { offer } });
+        });
+
+        socket.on("signal", async p => {
+            if (!pc) createPeer();
+            if (p.answer) await pc.setRemoteDescription(p.answer);
+            if (p.candidate) await pc.addIceCandidate(p.candidate);
+        });
+
+        toggleMic.onclick = () => {
+            mic = !mic;
+            localStream.getAudioTracks()[0].enabled = mic;
+            toggleMic.innerHTML = mic ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
+            toggleMic.classList.toggle('active', mic);
+        };
+
+        toggleCam.onclick = () => {
+            cam = !cam;
+            localStream.getVideoTracks()[0].enabled = cam;
+            toggleCam.innerHTML = cam ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
+            toggleCam.classList.toggle('active', cam);
+        };
+
+        endCall.onclick = async () => {
+            // Auto-save notes before ending call
+            await fetch("/api/notes/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    roomId: ROOM_ID,
+                    notes: notesText.value
+                })
+            });
+
+            await fetch(`/appointments/${APPOINTMENT_ID}/complete`, {
+                method: "POST"
+            });
+
+            socket.emit("call-ended", { roomId: ROOM_ID });
+            location.href = "/doc_video_dashboard";
+        };
+    </script>
+</body>
+
+</html>

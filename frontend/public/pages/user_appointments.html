@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment | TeleHealth</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+<link href="/css/user_appointments.css" rel="stylesheet">
+</head>
+
+<body>
+    
+    <header>
+        <nav class="navbar">
+            <a href="/user_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user_home" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/predict"><i class="fas fa-robot"></i>AI Pre Advice</a>
+                <a href="/user_video_dashboard"><i class="fas fa-video"></i>video</a>
+                <a href="/appointments"><i class="fas fa-user-md"></i>Appointments</a>
+                <a href="/records"><i class="fas fa-folder"></i> My Records</a>
+                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+                <a href="/user_home" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/predict"><i class="fas fa-robot"></i>AI Pre Advice</a>
+                <a href="/user_video_dashboard"><i class="fas fa-video"></i>video</a>
+                <a href="/appointments"><i class="fas fa-user-md"></i>Appointments</a>
+                <a href="/records"><i class="fas fa-folder"></i> My Records</a>
+                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+    </div>
+
+    
+    <main>
+        <div class="page-header">
+            <h1>Book Appointment</h1>
+            <p>Select your preferred doctor, date, and time for your virtual consultation</p>
+        </div>
+
+        <div class="booking-container">
+            <!-- Calendar Card -->
+            <div class="calendar-card">
+                <div class="calendar-header">
+                    <h2><i class="fas fa-calendar-alt"></i> Select Date</h2>
+                    <div class="month-nav">
+                        <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                        <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar headers -->
+                    <div class="day-header">Sun</div>
+                    <div class="day-header">Mon</div>
+                    <div class="day-header">Tue</div>
+                    <div class="day-header">Wed</div>
+                    <div class="day-header">Thu</div>
+                    <div class="day-header">Fri</div>
+                    <div class="day-header">Sat</div>
+                    <!-- Days will be populated by JavaScript -->
+                </div>
+
+                <div class="time-slots-container">
+                    <h3><i class="fas fa-clock"></i> Available Times</h3>
+                    <div class="time-slots-grid" id="timeSlots">
+                        <!-- Time slots will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Form Card -->
+            <div class="form-card">
+                <div class="form-header">
+                    <div class="form-icon">
+                        <i class="fas fa-calendar-plus"></i>
+                    </div>
+                    <h2>Appointment Details</h2>
+                </div>
+
+                <form action="/appointments/book" method="POST" class="appointment-form" id="appointmentForm">
+<input type="hidden" name="appointment_date" id="selectedDate">
+<input type="hidden" name="appointment_time" id="selectedTime">
+
+
+                    <div class="form-group">
+                        <label for="doctorSelect">
+                            <i class="fas fa-user-md"></i>
+                            Select Doctor
+                        </label>
+                        <select name="doctorId" id="doctorSelect" class="form-control" required>
+                            <option value="">Loading doctors...</option>
+                        </select>
+                    </div>
+
+                    <div class="selected-info">
+                        <h4><i class="fas fa-calendar-check"></i> Selected Appointment</h4>
+                        <p>Your appointment details will appear here after selection</p>
+
+                        <div class="selected-details" id="selectedDetails">
+                            <div class="detail-item">
+                                <span class="detail-label">Date:</span>
+                                <span class="detail-value" id="displayDate">Not selected</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Time:</span>
+                                <span class="detail-value" id="displayTime">Not selected</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Doctor:</span>
+                                <span class="detail-value" id="displayDoctor">Not selected</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                        <i class="fas fa-calendar-check"></i>
+                        Book Appointment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+    
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+<script src="/js/user_appointments.js"></script>
+</body>
+
+</html>
