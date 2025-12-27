@@ -2,6 +2,13 @@ import path from "path";
 import blockAfterLogin from "../middleware/blockAfterLogin.js";
 
 export default function publicRoutes(app, PROJECT_ROOT) {
+    // 🚫 DO NOT serve HTML in production (Render)
+    if (process.env.NODE_ENV === "production") {
+        app.get("/", (req, res) => {
+            res.json({ status: "Backend API running" });
+        });
+        return;
+    }
 
     /* =========================
        LANDING / ROLE
@@ -12,9 +19,6 @@ export default function publicRoutes(app, PROJECT_ROOT) {
         );
     });
 
-    /* =========================
-       USER AUTH PAGES
-    ========================= */
     app.get("/user_login", blockAfterLogin, (req, res) => {
         res.sendFile(
             path.join(PROJECT_ROOT, "public/pages/user_login.html")
@@ -27,9 +31,6 @@ export default function publicRoutes(app, PROJECT_ROOT) {
         );
     });
 
-    /* =========================
-       DOCTOR AUTH PAGES
-    ========================= */
     app.get("/doc_login", blockAfterLogin, (req, res) => {
         res.sendFile(
             path.join(PROJECT_ROOT, "public/pages/doc_login.html")
@@ -42,13 +43,9 @@ export default function publicRoutes(app, PROJECT_ROOT) {
         );
     });
 
-    /* =========================
-       PUBLIC MARKETING PAGES
-       (accessible only BEFORE login)
-    ========================= */
     app.get("/", blockAfterLogin, (req, res) => {
         res.sendFile(
-            path.join(PROJECT_ROOT, "frontend/public/pages/landing.html")
+            path.join(PROJECT_ROOT, "public/pages/landing.html")
         );
     });
 
@@ -63,5 +60,4 @@ export default function publicRoutes(app, PROJECT_ROOT) {
             path.join(PROJECT_ROOT, "public/pages/contact.html")
         );
     });
-
 }
