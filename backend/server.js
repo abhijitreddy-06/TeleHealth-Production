@@ -49,7 +49,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/api", uploadRoutes);
-app.use(express.static(path.join(PROJECT_ROOT, "public")));
+
 
 
 app.use((req, res, next) => {
