@@ -1,6 +1,5 @@
 import authenticate from "../middleware/authenticate.js";
 import db from "../config/db.js";
-import fetch from "node-fetch";
 
 export default function aiRoutes(app) {
 
@@ -26,7 +25,7 @@ export default function aiRoutes(app) {
 
             const data = await response.json();
 
-            // 🔐 Optional DB logging (safe)
+            // ✅ OPTIONAL: save AI log (won’t break API if DB fails)
             try {
                 await db.query(
                     `
@@ -41,7 +40,7 @@ export default function aiRoutes(app) {
                     ]
                 );
             } catch (dbErr) {
-                console.warn("AI precheck log skipped:", dbErr.message);
+                console.warn("AI log skipped:", dbErr.message);
             }
 
             res.json(data);
