@@ -36,7 +36,7 @@ export default function authenticate(req, res, next) {
         res.clearCookie("token", {
             httpOnly: true,
             secure: true,
-            sameSite: "None"
+            sameSite: "Lax"
         });
 
         return res.status(401).json({
