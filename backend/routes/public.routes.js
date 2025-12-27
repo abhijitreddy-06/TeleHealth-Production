@@ -15,7 +15,7 @@ export default function publicRoutes(app, PROJECT_ROOT) {
     ========================= */
     app.get("/role", blockAfterLogin, (req, res) => {
         res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/choose_role.html")
+            path.join(PROJECT_ROOT, "public/pages/role.html")
         );
     });
 

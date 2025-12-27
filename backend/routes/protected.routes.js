@@ -15,7 +15,7 @@ export default function protectedRoutes(app, PROJECT_ROOT) {
 
     app.get("/appointments", authenticate, authorize("user"), (req, res) => {
         res.sendFile(
-            path.join(PROJECT_ROOT, "public/pages/user_appointments.html")
+            path.join(PROJECT_ROOT, "public/pages/appointments.html")
         );
     });
 
@@ -65,7 +65,7 @@ export default function protectedRoutes(app, PROJECT_ROOT) {
         authorize("user"),
         (req, res) => {
             res.sendFile(
-                path.join(PROJECT_ROOT, "public/pages/vault.html")
+                path.join(PROJECT_ROOT, "public/pages/records.html")
             );
         }
     );
@@ -96,7 +96,7 @@ export default function protectedRoutes(app, PROJECT_ROOT) {
         authorize("user"),
         (req, res) => {
             res.sendFile(
-                path.join(PROJECT_ROOT, "public/pages/user_profile.html")
+                path.join(PROJECT_ROOT, "public/pages/user_profile_create.html")
             );
         }
     );
