@@ -86,8 +86,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ Serve Static Files (CSS, JS, Images) from frontend/public
-app.use(express.static(PUBLIC_PATH));
+
 
 /* ==================================================================
    3. CUSTOM MIDDLEWARE
@@ -478,7 +477,7 @@ app.get("/api/prescription/download/:roomId", authenticate, authorize("user", "d
   } catch (err) { res.status(500).json({ error: "Failed to generate prescription" }); }
 });
 
-
+app.use(express.static(PUBLIC_PATH));
 /* ==================================================================
    5. VIEW ROUTES (HTML ONLY - NO EJS)
 ================================================================== */
