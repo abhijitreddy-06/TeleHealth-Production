@@ -175,70 +175,95 @@
                 }
             });
 
-            /* =========================================
-               2. LOGIN API CONNECTION (Added)
-            ========================================= */
-            const loginForm = document.getElementById('loginForm');
-            const phoneInput = document.getElementById('phone');
-            const passwordInput = document.getElementById('password');
 
-            if (loginForm) {
-                loginForm.addEventListener('submit', async (e) => {
-                    e.preventDefault(); // 🛑 Prevents the 404 error
+    /* =========================================
+       2. LOGIN API CONNECTION (Fixed)
+    ========================================= */
+    const loginForm = document.getElementById('loginForm');
+    const phoneInput = document.getElementById('phone');
+    const passwordInput = document.getElementById('password');
 
-                    const phone = phoneInput.value.trim();
-                    const password = passwordInput.value.trim();
-                    const btn = loginForm.querySelector('button[type="submit"]');
-                    const originalBtnText = btn.innerHTML;
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-                    if (!phone || !password) {
-                        alert('Please fill in all fields');
-                        return;
-                    }
+            const phone = phoneInput.value.trim();
+            const password = passwordInput.value.trim();
+            const btn = loginForm.querySelector('button[type="submit"]');
+            const originalBtnText = btn.innerHTML;
 
-                    // Disable button to prevent double clicks
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+            if (!phone || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
 
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+
+            try {
+                // ✅ Use the CORRECT backend URL
+                const backendUrl = 'https://telehealth-backend-9c46.onrender.com';
+
+                console.log('Attempting login to:', backendUrl);
+                console.log('Phone:', phone);
+
+                const res = await fetch(`${backendUrl}/api/user_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ phone, password })
+                });
+
+                console.log('Response status:', res.status);
+
+                const text = await res.text();
+                console.log('Raw response:', text);
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                    console.log('Parsed data:', data);
+                } catch {
+                    throw new Error("Server returned invalid response: " + text.substring(0, 100));
+                }
+
+                if (!res.ok) {
+                    throw new Error(data.error || `Login failed with status ${res.status}`);
+                }
+
+                console.log('Login successful! Redirecting...');
+
+                // Verify authentication before redirect
+                setTimeout(async () => {
                     try {
-                        // In your frontend login scripts, use absolute URL:
-                        const backendUrl = window.location.hostname.includes('localhost')
-                            ? 'http://localhost:3000'
-                            : 'https://your-backend-service.onrender.com';
-
-                        const res = await fetch(`${CONFIG.API_BASE_URL}/api/user_login`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            credentials: 'include',
-                            body: JSON.stringify({ phone, password })
+                        const authCheck = await fetch(`${backendUrl}/api/auth/user`, {
+                            credentials: 'include'
                         });
 
+                        console.log('Auth check status:', authCheck.status);
 
-                      const text = await res.text();
-                        let data;
-                        try {
-                            data = JSON.parse(text);
-                        } catch {
-                            throw new Error("Server returned invalid response");
+                        if (authCheck.ok) {
+                            window.location.href = '/user_home';
+                        } else {
+                            console.log('Auth check failed, trying local auth...');
+                            // Try to load user_home anyway (might work if cookie is set)
+                            window.location.href = '/user_home';
                         }
-
-
-                        if (!res.ok) {
-                            throw new Error(data.error || 'Login failed');
-                        }
-
-                        // Success Redirect
+                    } catch (authError) {
+                        console.error('Auth check error:', authError);
+                        // Still try to redirect
                         window.location.href = '/user_home';
-
-                    } catch (err) {
-                        alert(err.message);
-                        btn.disabled = false;
-                        btn.innerHTML = originalBtnText;
                     }
-                });
+                }, 1000);
+
+            } catch (err) {
+                console.error('Login error:', err);
+                alert(`Login failed: ${err.message}. Check console for details.`);
+                btn.disabled = false;
+                btn.innerHTML = originalBtnText;
             }
+        });
+    }
     </script>
 </body>
 
