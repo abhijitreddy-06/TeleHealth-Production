@@ -192,73 +192,56 @@
             const btn = loginForm.querySelector('button[type="submit"]');
             const originalBtnText = btn.innerHTML;
 
-            if (!phone || !password) {
-                alert('Please fill in all fields');
-                return;
-            }
-
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
 
             try {
-                // ✅ Use the CORRECT backend URL
-                const backendUrl = 'https://telehealth-backend-9c46.onrender.com';
-
-                console.log('Attempting login to:', backendUrl);
-                console.log('Phone:', phone);
-
-                const res = await fetch(`${backendUrl}/api/user_login`, {
+                const response = await fetch('https://telehealth-backend-9c46.onrender.com/api/user_login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     credentials: 'include',
-                    body: JSON.stringify({ phone, password })
+                    body: JSON.stringify({
+                        phone: phone,
+                        password: password
+                    })
                 });
 
-                console.log('Response status:', res.status);
+                const data = await response.json();
 
-                const text = await res.text();
-                console.log('Raw response:', text);
+                if (response.ok) {
+                    // Login successful
+                    console.log('Login success:', data);
 
-                let data;
-                try {
-                    data = JSON.parse(text);
-                    console.log('Parsed data:', data);
-                } catch {
-                    throw new Error("Server returned invalid response: " + text.substring(0, 100));
-                }
-
-                if (!res.ok) {
-                    throw new Error(data.error || `Login failed with status ${res.status}`);
-                }
-
-                console.log('Login successful! Redirecting...');
-
-                // Verify authentication before redirect
-                setTimeout(async () => {
-                    try {
-                        const authCheck = await fetch(`${backendUrl}/api/auth/user`, {
+                    // Check if we're actually authenticated
+                    setTimeout(() => {
+                        fetch('https://telehealth-backend-9c46.onrender.com/api/auth/user', {
                             credentials: 'include'
-                        });
+                        })
+                            .then(authRes => {
+                                if (authRes.ok) {
+                                    window.location.href = '/user_home';
+                                } else {
+                                    alert('Authentication verification failed. Please try again.');
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalBtnText;
+                                }
+                            })
+                            .catch(() => {
+                                // Still try to redirect
+                                window.location.href = '/user_home';
+                            });
+                    }, 500);
 
-                        console.log('Auth check status:', authCheck.status);
+                } else {
+                    // Login failed
+                    throw new Error(data.error || 'Login failed');
+                }
 
-                        if (authCheck.ok) {
-                            window.location.href = '/user_home';
-                        } else {
-                            console.log('Auth check failed, trying local auth...');
-                            // Try to load user_home anyway (might work if cookie is set)
-                            window.location.href = '/user_home';
-                        }
-                    } catch (authError) {
-                        console.error('Auth check error:', authError);
-                        // Still try to redirect
-                        window.location.href = '/user_home';
-                    }
-                }, 1000);
-
-            } catch (err) {
-                console.error('Login error:', err);
-                alert(`Login failed: ${err.message}. Check console for details.`);
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed: ' + error.message);
                 btn.disabled = false;
                 btn.innerHTML = originalBtnText;
             }
