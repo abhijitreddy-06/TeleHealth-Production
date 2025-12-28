@@ -78,7 +78,7 @@ app.use(prescriptionRoutes);
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
-
+app.use(express.static(path.join(__dirname, "public")));
 /* =========================
    SERVER + SOCKET.IO
 ========================= */
