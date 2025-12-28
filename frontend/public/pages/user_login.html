@@ -207,6 +207,9 @@
                             credentials: 'include', // 🔥 REQUIRED
                             body: JSON.stringify({ phone, password })
                         });
+                        fetch('/api/auth/user', { credentials: 'include' })
+                            .then(r => r.json())
+                            .then(console.log);
 
 
                         const data = await res.json();

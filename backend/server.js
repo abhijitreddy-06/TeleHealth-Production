@@ -64,6 +64,9 @@ const upload = multer({
 const app = express();
 const server = http.createServer(app);
 
+app.set('trust proxy', 1);
+
+
 app.use(cors({
   origin: ["https://telehealth-production.onrender.com", "http://localhost:3000"],
   credentials: true,
