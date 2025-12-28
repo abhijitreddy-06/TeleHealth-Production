@@ -116,114 +116,113 @@
         </div>
     </footer>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-                /* =========================
-                   THEME & MENU LOGIC (Preserved)
-                ========================= */
-                const themeToggle = document.getElementById('themeToggle');
-                const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-                const html = document.documentElement;
+        /* =========================================
+       1. THEME & MENU LOGIC (From your code)
+    ========================================= */
+            const themeToggle = document.getElementById('themeToggle');
+            const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+            const html = document.documentElement;
 
-                const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                if (savedTheme) {
-                    html.setAttribute('data-theme', savedTheme);
-                    updateThemeIcon(savedTheme);
-                }
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            if (savedTheme) {
+                html.setAttribute('data-theme', savedTheme);
+                updateThemeIcon(savedTheme);
+            }
 
-                function toggleTheme() {
-                    const currentTheme = html.getAttribute('data-theme');
-                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                    html.setAttribute('data-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-                    updateThemeIcon(newTheme);
-                }
+            function toggleTheme() {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+            }
 
-                function updateThemeIcon(theme) {
-                    const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-                    if (themeToggle) themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-                    if (mobileThemeToggle) mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-                }
+            function updateThemeIcon(theme) {
+                const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+                if (themeToggle) themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+                if (mobileThemeToggle) mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            }
 
-                if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
-                if (mobileThemeToggle) mobileThemeToggle.addEventListener('click', toggleTheme);
+            if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+            if (mobileThemeToggle) mobileThemeToggle.addEventListener('click', toggleTheme);
 
-                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-                const closeMenuBtn = document.getElementById('closeMenu');
-                const mobileMenu = document.getElementById('mobileMenu');
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const closeMenuBtn = document.getElementById('closeMenu');
+            const mobileMenu = document.getElementById('mobileMenu');
 
-                if (mobileMenuBtn) {
-                    mobileMenuBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        mobileMenu.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    });
-                }
-
-                if (closeMenuBtn) {
-                    closeMenuBtn.addEventListener('click', () => {
-                        mobileMenu.classList.remove('active');
-                        document.body.style.overflow = '';
-                    });
-                }
-
-                document.addEventListener('click', (e) => {
-                    if (mobileMenu && mobileMenu.classList.contains('active') &&
-                        !mobileMenu.contains(e.target) &&
-                        e.target !== mobileMenuBtn) {
-                        mobileMenu.classList.remove('active');
-                        document.body.style.overflow = '';
-                    }
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    mobileMenu.classList.add('active');
+                    document.body.style.overflow = 'hidden';
                 });
+            }
 
-                /* =========================
-                   LOGIN LOGIC (Added)
-                ========================= */
-                const loginForm = document.getElementById('loginForm');
-                const phoneInput = document.getElementById('phone');
-                const passwordInput = document.getElementById('password');
+            if (closeMenuBtn) {
+                closeMenuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
 
-                if (loginForm) {
-                    loginForm.addEventListener('submit', async (e) => {
-                        e.preventDefault(); // Stop page reload
-
-                        const phone = phoneInput.value.trim();
-                        const password = passwordInput.value.trim();
-                        const btn = loginForm.querySelector('button[type="submit"]');
-                        const originalBtnText = btn.innerHTML;
-
-                        if (!phone || !password) {
-                            alert('Please fill in all fields');
-                            return;
-                        }
-
-                        // Disable button
-                        btn.disabled = true;
-                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-
-                        try {
-                            const res = await fetch('/api/user_login', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ phone, password })
-                            });
-
-                            const data = await res.json();
-
-                            if (!res.ok) {
-                                throw new Error(data.error || 'Login failed');
-                            }
-
-                            // Success
-                            window.location.href = '/user_home';
-
-                        } catch (err) {
-                            alert(err.message);
-                            btn.disabled = false;
-                            btn.innerHTML = originalBtnText;
-                        }
-                    });
+            document.addEventListener('click', (e) => {
+                if (mobileMenu && mobileMenu.classList.contains('active') &&
+                    !mobileMenu.contains(e.target) &&
+                    e.target !== mobileMenuBtn) {
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = '';
                 }
             });
+
+            /* =========================================
+               2. LOGIN API CONNECTION (Added)
+            ========================================= */
+            const loginForm = document.getElementById('loginForm');
+            const phoneInput = document.getElementById('phone');
+            const passwordInput = document.getElementById('password');
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault(); // 🛑 Prevents the 404 error
+
+                    const phone = phoneInput.value.trim();
+                    const password = passwordInput.value.trim();
+                    const btn = loginForm.querySelector('button[type="submit"]');
+                    const originalBtnText = btn.innerHTML;
+
+                    if (!phone || !password) {
+                        alert('Please fill in all fields');
+                        return;
+                    }
+
+                    // Disable button to prevent double clicks
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+
+                    try {
+                        // ✅ Connects to your Server API
+                        const res = await fetch('/api/user_login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone, password })
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) {
+                            throw new Error(data.error || 'Login failed');
+                        }
+
+                        // Success Redirect
+                        window.location.href = '/user_home';
+
+                    } catch (err) {
+                        alert(err.message);
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnText;
+                    }
+                });
+            }
     </script>
 </body>
 
