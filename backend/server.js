@@ -14,16 +14,6 @@ import crypto from "crypto";
 import PDFDocument from "pdfkit";
 import { createClient } from "@supabase/supabase-js";
 
-
-
-
-
-
-
-
-
-
-
 /* ==================================================================
    1. CONFIGURATION & ENVIRONMENT
 ================================================================== */
@@ -43,17 +33,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_ChangeThisInEnv";
 const JWT_EXPIRES_IN = "2h";
 const saltRounds = 10;
 
-
-
-
-
-
-
-
-
-
-
-
+// Helper function to determine if we're in production
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
 
 // -- Database Connection --
 const { Pool } = pg;
@@ -94,29 +75,10 @@ app.use(cors({
   credentials: true
 }));
 
-
-
-
-
-
-
-
-
-
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(PUBLIC_PATH));
-
-
-
-
-
-
-
-
-
 
 /* ==================================================================
    3. CUSTOM MIDDLEWARE (UPDATED)
@@ -138,8 +100,8 @@ const authenticate = (req, res, next) => {
     console.error("Auth Error:", err.message);
     res.clearCookie("token", {
       httpOnly: true,
-      secure: true,
-      sameSite: "None",
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
       path: "/"
     });
 
@@ -189,8 +151,8 @@ const blockAfterLogin = (req, res, next) => {
       // Invalid token - clear it and continue
       res.clearCookie("token", {
         httpOnly: true,
-        secure: true,
-        sameSite: "None",
+        secure: isProduction,
+        sameSite: isProduction ? "None" : "Lax",
         path: "/"
       });
     }
@@ -271,21 +233,6 @@ const noCacheForDynamicPages = (req, res, next) => {
 app.use(blockAfterLogin);
 app.use(checkProfileComplete);
 app.use(noCacheForDynamicPages);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* ==================================================================
    4. API ROUTES (UPDATED PROFILE SECTION)
@@ -474,19 +421,49 @@ app.post("/api/doc_login", async (req, res) => {
     }
 
   } catch (err) {
-    console.error("Doctor login error:", err);
+    console.error("Doctor login error:", err.message || err);
+    console.error("Stack trace:", err.stack);
     res.redirect('/doc_login?error=Server error. Please try again.');
   }
 });
 
+app.post("/api/logout", (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
+    path: "/"
+  });
 
+  // For AJAX requests, return JSON. For form submissions, redirect to home
+  const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
+  if (isAjax) {
+    res.json({ success: true });
+  } else {
+    res.redirect('/');
+  }
+});
 
-
-
-
-
-
-
+// --- B. AI API ---
+app.post("/api/ai/precheck", authenticate, async (req, res) => {
+  try {
+    const AI_URL = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
+    const response = await fetch(`${AI_URL}/ai/precheck`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    try {
+      await db.query(`INSERT INTO ai_prechecks (user_id, symptoms, ai_response, severity) VALUES ($1, $2, $3, $4)`,
+        [req.user.id, req.body.text, JSON.stringify(data), data.severity || "unknown"]);
+    } catch (e) {
+      console.error("Error saving AI precheck:", e);
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("AI service error:", err);
+    res.status(500).json({ error: "AI service unavailable" });
+  }
+});
 
 // --- C. PROFILE API (COMPLETELY UPDATED) ---
 app.get("/api/user/profile", authenticate, authorize("user"), async (req, res) => {
@@ -562,7 +539,9 @@ app.post("/api/user/profile", authenticate, authorize("user"), async (req, res) 
 
     // Update token with profileComplete flag
     const newToken = jwt.sign({
-      ...req.user,
+      id: req.user.id,
+      phone: req.user.phone,
+      role: req.user.role,
       profileComplete: true
     }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
@@ -658,7 +637,9 @@ app.post("/api/doctor/profile", authenticate, authorize("doctor"), async (req, r
 
     // Update token with profileComplete flag
     const newToken = jwt.sign({
-      ...req.user,
+      id: req.user.id,
+      phone: req.user.phone,
+      role: req.user.role,
       profileComplete: true
     }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
@@ -686,68 +667,6 @@ app.post("/api/doctor/profile", authenticate, authorize("doctor"), async (req, r
     res.status(500).json({ error: "Failed to save profile" });
   }
 });
-
-app.post("/api/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    path: "/"
-  });
-
-  // For AJAX requests, return JSON. For form submissions, redirect to home
-  const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
-  if (isAjax) {
-    res.json({ success: true });
-  } else {
-    res.redirect('/');
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// --- B. AI API ---
-app.post("/api/ai/precheck", authenticate, async (req, res) => {
-  try {
-    const AI_URL = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
-    const response = await fetch(`${AI_URL}/ai/precheck`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    try {
-      await db.query(`INSERT INTO ai_prechecks (user_id, symptoms, ai_response, severity) VALUES ($1, $2, $3, $4)`,
-        [req.user.id, req.body.text, JSON.stringify(data), data.severity || "unknown"]);
-    } catch (e) {
-      console.error("Error saving AI precheck:", e);
-    }
-    res.json(data);
-  } catch (err) {
-    console.error("AI service error:", err);
-    res.status(500).json({ error: "AI service unavailable" });
-  }
-});
-
-
-
-
-
-
-
-
-
 
 // --- D. APPOINTMENTS API ---
 app.post("/api/appointments/book", authenticate, authorize("user"), async (req, res) => {
@@ -824,15 +743,6 @@ app.get("/api/doctors", authenticate, authorize("user"), async (req, res) => {
     res.status(500).json({ error: "Load failed" });
   }
 });
-
-
-
-
-
-
-
-
-
 
 // --- E. VIDEO API ---
 app.get("/api/video/doctor/dashboard", authenticate, authorize("doctor"), async (req, res) => {
@@ -921,22 +831,6 @@ app.get("/api/user/join-call/:appointmentId", authenticate, authorize("user"), a
     res.status(500).json({ error: "Join call failed" });
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // --- F. UPLOAD & VAULT API ---
 app.post("/api/upload", authenticate, upload.single("file"), async (req, res) => {
@@ -1063,26 +957,6 @@ app.get("/api/vault/file/:id", authenticate, async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // --- G. PRESCRIPTION API ---
 app.post("/api/notes/save", authenticate, authorize("doctor"), async (req, res) => {
   try {
@@ -1147,22 +1021,31 @@ app.get("/api/prescription/download/:roomId", authenticate, authorize("user", "d
   }
 });
 
+// --- H. DEBUG & HEALTH CHECK ENDPOINTS ---
+app.get('/api/debug/headers', (req, res) => {
+  res.json({
+    origin: req.headers.origin,
+    host: req.headers.host,
+    referer: req.headers.referer,
+    headers: req.headers
+  });
+});
 
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    service: 'TeleHealth Backend'
+  });
+});
 
-
-
-
-
-
-
-
-
-
+app.get("/api/auth/guest", (req, res) => res.json({ guest: true }));
+app.get("/api/auth/user", authenticate, authorize("user"), (req, res) => res.json({ authenticated: true, role: "user", user: req.user }));
+app.get("/api/auth/doctor", authenticate, authorize("doctor"), (req, res) => res.json({ authenticated: true, role: "doctor", user: req.user }));
 
 /* ==================================================================
    5. VIEW ROUTES (HTML ONLY - NO EJS)
 ================================================================== */
-
 // --- Public Pages ---
 app.get("/", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "index.html")));
 app.get("/role", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "role.html")));
@@ -1189,6 +1072,7 @@ app.get("/user_home", authenticate, authorize("user"), async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
+
 app.get("/user_profile", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_profile.html")));
 app.get("/userprofile", authenticate, authorize("user"), (req, res) => res.redirect("/user_profile"));
 app.get("/user_profile_create", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_profile_create.html")));
@@ -1212,11 +1096,12 @@ app.get("/doc_home", authenticate, authorize("doctor"), async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
-app.get("/doc_profile", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_profile.html")));
-app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_video_dashboard.html")));
-app.get("/docprofile", authenticate, authorize("doctor"), (req, res) => res.redirect("/doc_profile"));
 
+app.get("/doc_profile", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_profile.html")));
+app.get("/docprofile", authenticate, authorize("doctor"), (req, res) => res.redirect("/doc_profile"));
 app.get("/doc_profile_create", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_profile_create.html")));
+
+app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_video_dashboard.html")));
 
 // --- Video Call Rooms (HTML) ---
 app.get("/video/user/:roomId", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_video.html")));
