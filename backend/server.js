@@ -103,7 +103,12 @@ const authenticate = (req, res, next) => {
     next();
   } catch (err) {
     console.error("Auth Error:", err.message);
-    res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "None" });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax"
+    });
+
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 };
@@ -146,7 +151,12 @@ app.post("/api/user_signup", async (req, res) => {
     const result = await db.query("INSERT INTO login (phone,password) VALUES ($1,$2) RETURNING id", [phone, hash]);
 
     const token = jwt.sign({ id: result.rows[0].id, phone, role: "user" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "None" });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax"
+    });
+
     res.json({ success: true, role: "user" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -159,7 +169,12 @@ app.post("/api/user_login", async (req, res) => {
     if (!bcrypt.compareSync(password, result.rows[0].password)) return res.status(400).json({ error: "Incorrect password" });
 
     const token = jwt.sign({ id: result.rows[0].id, phone, role: "user" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "None" });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax"
+    });
+
     res.json({ success: true, role: "user" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -177,7 +192,12 @@ app.post("/api/doc_signup", async (req, res) => {
     const result = await db.query("INSERT INTO doc_login (phone,password) VALUES ($1,$2) RETURNING docid", [phone, hash]);
 
     const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "None" });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax"
+    });
+
     res.json({ success: true, role: "doctor" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -190,13 +210,21 @@ app.post("/api/doc_login", async (req, res) => {
     if (!bcrypt.compareSync(password, result.rows[0].password)) return res.status(400).json({ error: "Incorrect password" });
 
     const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "None" });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax"
+    });
     res.json({ success: true, role: "doctor" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
 
 app.post("/api/logout", (req, res) => {
-  res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "None" });
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax"
+  });
   res.json({ success: true });
 });
 
