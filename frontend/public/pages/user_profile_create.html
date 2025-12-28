@@ -8,222 +8,111 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-<link href="/css/user_profile.css" rel="stylesheet">
-<script src="/js/config.js"></script>
+    <link href="/css/user_profile.css" rel="stylesheet">
 </head>
 
 <body>
-    
     <header>
         <nav class="navbar">
             <a href="/user_home" class="logo">
                 <i class="fas fa-heartbeat"></i>
                 <span class="logo-text">TeleHealth</span>
             </a>
-
             <div class="nav-links">
                 <a href="/user_home"><i class="fas fa-home"></i> Home</a>
-                <a href="/vault"><i class="fas fa-lock"></i> Vault</a>
-                <a href="/appointments"><i class="fas fa-calendar-check"></i> Appointments</a>
-                <a href="/user_doctors"><i class="fas fa-user-md"></i> Doctors</a>
-                <a href="/profile" class="active"><i class="fas fa-user-circle"></i> Profile</a>
-                <button class="theme-toggle" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
-
-            <!-- Mobile controls added from home page -->
-            <div class="mobile-controls">
-                <button class="theme-toggle" id="mobileThemeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
             </div>
         </nav>
     </header>
 
-    <!-- Mobile Menu added from home page -->
-    <div class="mobile-menu" id="mobileMenu">
-        <button class="close-menu" id="closeMenu">
-            <i class="fas fa-times"></i>
-        </button>
-        <a href="/user_home"><i class="fas fa-home"></i> Home</a>
-        <a href="/vault"><i class="fas fa-lock"></i> Vault</a>
-        <a href="/appointments"><i class="fas fa-calendar-check"></i> Appointments</a>
-        <a href="/user_doctors"><i class="fas fa-user-md"></i> Doctors</a>
-        <a href="/profile" class="active"><i class="fas fa-user-circle"></i> Profile</a>
-    </div>
-
-    <!-- Profile Creation Section -->
     <main class="profile-section">
         <div class="profile-header">
             <h1>Create Your Health Profile</h1>
             <p>Complete your profile to help us provide personalized healthcare services</p>
         </div>
 
+        <!-- Error Message Display -->
+        <div id="errorMessage"
+            style="display: none; background-color: #fee; color: #c33; padding: 1rem; border-radius: 5px; margin: 1rem auto; max-width: 600px;">
+        </div>
+
         <div class="profile-card">
-            <div class="profile-progress">
-                <div class="progress-step">
-                    <div class="step-icon active">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <span class="step-text active">Personal</span>
+            <form class="profile-form" id="profileForm"
+                action="https://telehealth-backend-9c46.onrender.com/user_profile" method="POST">
+                <!-- Personal Info -->
+                <div class="form-group">
+                    <label for="fullName"><i class="fas fa-signature"></i> Full Name</label>
+                    <input type="text" id="fullName" name="fullName" class="form-control"
+                        placeholder="Enter your full name" required>
                 </div>
-                <div class="progress-step">
-                    <div class="step-icon">
-                        <i class="fas fa-weight"></i>
-                    </div>
-                    <span class="step-text">Measurements</span>
-                </div>
-                <div class="progress-step">
-                    <div class="step-icon">
-                        <i class="fas fa-heartbeat"></i>
-                    </div>
-                    <span class="step-text">Health</span>
-                </div>
-                <div class="progress-step">
-                    <div class="step-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <span class="step-text">Complete</span>
-                </div>
-            </div>
 
-            <form class="profile-form" id="profileForm" action="/user_profile" method="post">
-                <!-- Hidden Gender Field -->
-                <input type="hidden" name="gender" id="genderInput">
-
-                <!-- Personal Info Step -->
-                <div class="form-step" id="step1">
-                    <div class="form-group">
-                        <label for="fullName"><i class="fas fa-signature"></i> Full Name</label>
-                        <input type="text" id="fullName" name="fullName" class="form-control"
-                            placeholder="Enter your full name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label><i class="fas fa-venus-mars"></i> Gender</label>
-                        <div class="gender-container">
-                            <div class="gender-option selected" data-gender="male">
-                                <i class="fas fa-mars"></i>
-                                <span>Male</span>
-                            </div>
-                            <div class="gender-option" data-gender="female">
-                                <i class="fas fa-venus"></i>
-                                <span>Female</span>
-                            </div>
-                            <div class="gender-option" data-gender="other" id="otherGender">
-                                <i class="fas fa-genderless"></i>
-                                <span>Other</span>
-                            </div>
+                <div class="form-group">
+                    <label><i class="fas fa-venus-mars"></i> Gender</label>
+                    <div class="gender-container">
+                        <div class="gender-option selected" data-gender="male">
+                            <i class="fas fa-mars"></i>
+                            <span>Male</span>
                         </div>
-                        <div class="other-gender" id="otherGenderField" style="display: none;">
-                            <input type="text" class="form-control" name="customGender" id="customGenderInput"
-                                placeholder="Please specify your gender">
+                        <div class="gender-option" data-gender="female">
+                            <i class="fas fa-venus"></i>
+                            <span>Female</span>
+                        </div>
+                        <div class="gender-option" data-gender="other">
+                            <i class="fas fa-genderless"></i>
+                            <span>Other</span>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="dob"><i class="fas fa-birthday-cake"></i> Date of Birth</label>
-                        <input type="date" id="dob" name="dob" class="form-control" required>
+                    <div class="other-gender" id="otherGenderField" style="display: none; margin-top: 10px;">
+                        <input type="text" class="form-control" name="customGender" id="customGenderInput"
+                            placeholder="Please specify your gender">
                     </div>
-
-                    <div class="form-actions">
-                        <div></div>
-                        <button type="button" class="btn btn-primary btn-large" id="nextBtn1">Next <i
-                                class="fas fa-arrow-right"></i></button>
-                    </div>
+                    <input type="hidden" name="gender" id="genderInput" value="male">
                 </div>
 
-                <!-- Measurements Step -->
-                <div class="form-step" id="step2" style="display: none;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="weight"><i class="fas fa-weight"></i> Weight (kg)</label>
-                            <input type="number" id="weight" name="weight" class="form-control"
-                                placeholder="Enter weight in kilograms" min="0" step="0.1" required>
-                            <div class="range-container" style="margin-top: 10px;">
-                                <input type="range" id="weightRange" min="0" max="200" step="1" value="70"
-                                    style="width: 100%;">
-                                <div
-                                    style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-medium);">
-                                    <span>0 kg</span>
-                                    <span>200 kg</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="height"><i class="fas fa-ruler-vertical"></i> Height (cm)</label>
-                            <input type="number" id="height" name="height" class="form-control"
-                                placeholder="Enter height in centimeters" min="0" step="1" required>
-                            <div class="range-container" style="margin-top: 10px;">
-                                <input type="range" id="heightRange" min="0" max="250" step="1" value="170"
-                                    style="width: 100%;">
-                                <div
-                                    style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-medium);">
-                                    <span>0 cm</span>
-                                    <span>250 cm</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-prev btn-large" id="prevBtn1"><i
-                                class="fas fa-arrow-left"></i>
-                            Back</button>
-                        <button type="button" class="btn btn-primary btn-large" id="nextBtn2">Next <i
-                                class="fas fa-arrow-right"></i></button>
-                    </div>
+                <div class="form-group">
+                    <label for="dob"><i class="fas fa-birthday-cake"></i> Date of Birth</label>
+                    <input type="date" id="dob" name="dob" class="form-control" required>
                 </div>
 
-                <!-- Health Info Step -->
-                <div class="form-step" id="step3" style="display: none;">
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="bloodGroup"><i class="fas fa-tint"></i> Blood Group</label>
-                        <select id="bloodGroup" name="bloodGroup" class="form-control" required>
-                            <option value="" disabled selected>Select your blood group</option>
-                            <option value="A+">A+</option>
-                            <option value="A-">A-</option>
-                            <option value="B+">B+</option>
-                            <option value="B-">B-</option>
-                            <option value="AB+">AB+</option>
-                            <option value="AB-">AB-</option>
-                            <option value="O+">O+</option>
-                            <option value="O-">O-</option>
-                            <option value="unknown">I don't know</option>
-                        </select>
+                        <label for="weight"><i class="fas fa-weight"></i> Weight (kg)</label>
+                        <input type="number" id="weight" name="weight" class="form-control"
+                            placeholder="Enter weight in kilograms" min="0" step="0.1" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="allergies"><i class="fas fa-allergies"></i> Allergies</label>
-                        <input type="text" id="allergies" name="allergies" class="form-control"
-                            placeholder="List any allergies you have (separated by commas)">
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-prev btn-large" id="prevBtn2"><i
-                                class="fas fa-arrow-left"></i>
-                            Back</button>
-                        <button type="submit" class="btn btn-primary btn-large">Complete Profile <i
-                                class="fas fa-check"></i></button>
+                        <label for="height"><i class="fas fa-ruler-vertical"></i> Height (cm)</label>
+                        <input type="number" id="height" name="height" class="form-control"
+                            placeholder="Enter height in centimeters" min="0" step="1" required>
                     </div>
                 </div>
 
-                <!-- Success Step (optional - but form will submit before reaching this) -->
-                <div class="success-container" id="successStep" style="display: none;">
-                    <div class="success-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <h2>Profile Complete!</h2>
-                    <p>Your health profile has been successfully saved.</p>
-                    <a href="/dashboard" class="btn btn-primary btn-large">Go to Dashboard</a>
+                <div class="form-group">
+                    <label for="bloodGroup"><i class="fas fa-tint"></i> Blood Group</label>
+                    <select id="bloodGroup" name="bloodGroup" class="form-control" required>
+                        <option value="" disabled selected>Select your blood group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="unknown">I don't know</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="allergies"><i class="fas fa-allergies"></i> Allergies</label>
+                    <input type="text" id="allergies" name="allergies" class="form-control"
+                        placeholder="List any allergies you have (separated by commas)">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">Save Profile</button>
                 </div>
             </form>
-
         </div>
     </main>
 
@@ -233,230 +122,95 @@
                 <a href="/user_home" class="footer-logo">
                     <i class="fas fa-heartbeat"></i>
                     <span>TeleHealth</span>
-                    </a>
-                    <div class="copyright">
-                        © 2025 TeleHealth. All rights reserved.
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
                 </div>
-            </div>
-
-            <div class="footer-links">
-                <a href="/privacy">Privacy Policy</a>
-                <span class="separator">|</span>
-                <a href="/terms">Terms of Service</a>
-                <span class="separator">|</span>
-                <a href="/contact">Contact</a>
             </div>
         </div>
     </footer>
-<script src="/js/authGuard.js"></script>
-<script>
-    /* =========================
-       THEME TOGGLE (SAFE)
-    ========================= */
-        const themeToggle = document.getElementById("themeToggle");
-        const mobileThemeToggle = document.getElementById("mobileThemeToggle");
-        const html = document.documentElement;
 
-        const savedTheme =
-            localStorage.getItem("theme") ||
-            (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-
-        html.setAttribute("data-theme", savedTheme);
-        updateThemeIcon(savedTheme);
-
-        function toggleTheme() {
-            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
-            html.setAttribute("data-theme", next);
-            localStorage.setItem("theme", next);
-            updateThemeIcon(next);
-        }
-
-        function updateThemeIcon(theme) {
-            const icon = theme === "dark" ? "fa-sun" : "fa-moon";
-            if (themeToggle) themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-            if (mobileThemeToggle) mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-        }
-
-        themeToggle?.addEventListener("click", toggleTheme);
-        mobileThemeToggle?.addEventListener("click", toggleTheme);
-
-        /* =========================
-           MOBILE MENU (SAFE)
-        ========================= */
-        const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-        const closeMenuBtn = document.getElementById("closeMenu");
-        const mobileMenu = document.getElementById("mobileMenu");
-
-        mobileMenuBtn?.addEventListener("click", (e) => {
-            e.stopPropagation();
-            mobileMenu.classList.add("active");
-            document.body.style.overflow = "hidden";
-        });
-
-        closeMenuBtn?.addEventListener("click", () => {
-            mobileMenu.classList.remove("active");
-            document.body.style.overflow = "auto";
-        });
-
-        document.addEventListener("click", (e) => {
-            if (
-                mobileMenu?.classList.contains("active") &&
-                !mobileMenu.contains(e.target) &&
-                e.target !== mobileMenuBtn
-            ) {
-                mobileMenu.classList.remove("active");
-                document.body.style.overflow = "auto";
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Show error from URL query parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            if (error) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = decodeURIComponent(error);
+                errorDiv.style.display = 'block';
             }
-        });
 
-        /* =========================
-           PROFILE FORM (MULTI-STEP)
-        ========================= */
-        const step1 = document.getElementById("step1");
-        const step2 = document.getElementById("step2");
-        const step3 = document.getElementById("step3");
+            // Set default date (30 years ago)
+            const today = new Date();
+            const defaultDob = new Date(today.getFullYear() - 30, today.getMonth(), today.getDate());
+            document.getElementById('dob').value = defaultDob.toISOString().split('T')[0];
 
-        const nextBtn1 = document.getElementById("nextBtn1");
-        const nextBtn2 = document.getElementById("nextBtn2");
-        const prevBtn1 = document.getElementById("prevBtn1");
-        const prevBtn2 = document.getElementById("prevBtn2");
+            // Gender selection
+            const genderOptions = document.querySelectorAll('.gender-option');
+            const genderInput = document.getElementById('genderInput');
+            const otherGenderField = document.getElementById('otherGenderField');
+            const customGenderInput = document.getElementById('customGenderInput');
 
-        const profileForm = document.getElementById("profileForm");
+            genderOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    genderOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
 
-        const dobInput = document.getElementById("dob");
-        const weightInput = document.getElementById("weight");
-        const weightRange = document.getElementById("weightRange");
-        const heightInput = document.getElementById("height");
-        const heightRange = document.getElementById("heightRange");
+                    const selectedGender = option.dataset.gender;
+                    genderInput.value = selectedGender;
 
-        const genderOptions = document.querySelectorAll(".gender-option");
-        const otherGenderField = document.getElementById("otherGenderField");
-        const genderInput = document.getElementById("genderInput");
-        const customGenderInput = document.getElementById("customGenderInput");
-
-        /* =========================
-           GENDER SELECTION
-        ========================= */
-        const initiallySelected = document.querySelector(".gender-option.selected");
-        if (initiallySelected) {
-            genderInput.value = initiallySelected.dataset.gender;
-        }
-
-        genderOptions.forEach((option) => {
-            option.addEventListener("click", () => {
-                genderOptions.forEach((o) => o.classList.remove("selected"));
-                option.classList.add("selected");
-
-                const selected = option.dataset.gender;
-                genderInput.value = selected;
-
-                if (selected === "other") {
-                    otherGenderField.style.display = "block";
-                } else {
-                    otherGenderField.style.display = "none";
-                    customGenderInput.value = "";
-                }
+                    if (selectedGender === 'other') {
+                        otherGenderField.style.display = 'block';
+                        customGenderInput.required = true;
+                    } else {
+                        otherGenderField.style.display = 'none';
+                        customGenderInput.required = false;
+                    }
+                });
             });
-        });
 
-        /* =========================
-           STEP NAVIGATION
-        ========================= */
-        nextBtn1?.addEventListener("click", () => {
-            if (!document.getElementById("fullName").value.trim()) {
-                alert("Please enter your name");
-                return;
+            // Form submission loading indicator
+            const profileForm = document.getElementById('profileForm');
+            if (profileForm) {
+                profileForm.addEventListener('submit', function (e) {
+                    // Validate required fields
+                    const requiredFields = ['fullName', 'dob', 'weight', 'height', 'bloodGroup'];
+                    let isValid = true;
+
+                    requiredFields.forEach(fieldName => {
+                        const field = document.getElementById(fieldName);
+                        if (!field.value.trim()) {
+                            isValid = false;
+                            field.style.borderColor = 'red';
+                        } else {
+                            field.style.borderColor = '';
+                        }
+                    });
+
+                    if (!isValid) {
+                        e.preventDefault();
+                        alert('Please fill in all required fields marked in red');
+                        return false;
+                    }
+
+                    // Handle gender
+                    if (genderInput.value === 'other' && !customGenderInput.value.trim()) {
+                        e.preventDefault();
+                        alert('Please specify your gender');
+                        return false;
+                    }
+
+                    // Show loading
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    }
+                });
             }
-            if (!dobInput.value) {
-                alert("Please select your date of birth");
-                return;
-            }
-
-            step1.style.display = "none";
-            step2.style.display = "block";
-            updateProgress(2);
         });
-
-        nextBtn2?.addEventListener("click", () => {
-            if (!weightInput.value || !heightInput.value) {
-                alert("Please enter weight and height");
-                return;
-            }
-
-            step2.style.display = "none";
-            step3.style.display = "block";
-            updateProgress(3);
-        });
-
-        prevBtn1?.addEventListener("click", () => {
-            step2.style.display = "none";
-            step1.style.display = "block";
-            updateProgress(1);
-        });
-
-        prevBtn2?.addEventListener("click", () => {
-            step3.style.display = "none";
-            step2.style.display = "block";
-            updateProgress(2);
-        });
-
-        /* =========================
-           FORM SUBMIT (FINAL)
-        ========================= */
-        profileForm?.addEventListener("submit", (e) => {
-            const bloodGroup = document.getElementById("bloodGroup").value;
-            if (!bloodGroup) {
-                e.preventDefault();
-                alert("Please select your blood group");
-                return;
-            }
-
-            let gender = genderInput.value;
-            if (gender === "other") {
-                const cg = customGenderInput.value.trim();
-                if (!cg) {
-                    e.preventDefault();
-                    alert("Please specify your gender");
-                    return;
-                }
-                gender = cg;
-            }
-
-            genderInput.value = gender; // ✅ FINAL VALUE SENT TO BACKEND
-        });
-
-        /* =========================
-           PROGRESS UI
-        ========================= */
-        function updateProgress(step) {
-            document.querySelectorAll(".step-icon").forEach((icon, i) =>
-                icon.classList.toggle("active", i < step)
-            );
-            document.querySelectorAll(".step-text").forEach((text, i) =>
-                text.classList.toggle("active", i < step)
-            );
-        }
-
-        /* =========================
-           RANGE SYNC
-        ========================= */
-        weightRange?.addEventListener("input", () => (weightInput.value = weightRange.value));
-        weightInput?.addEventListener("input", () => (weightRange.value = weightInput.value));
-
-        heightRange?.addEventListener("input", () => (heightInput.value = heightRange.value));
-        heightInput?.addEventListener("input", () => (heightRange.value = heightInput.value));
-
-        /* =========================
-           DEFAULT VALUES
-        ========================= */
-        weightInput.value = weightRange.value = 70;
-        heightInput.value = heightRange.value = 170;
-
-        const today = new Date();
-        const defaultDob = new Date(today.getFullYear() - 30, today.getMonth(), today.getDate());
-        dobInput.value = defaultDob.toISOString().split("T")[0];
-
-</script>
+    </script>
 </body>
 
 </html>

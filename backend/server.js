@@ -14,6 +14,16 @@ import crypto from "crypto";
 import PDFDocument from "pdfkit";
 import { createClient } from "@supabase/supabase-js";
 
+
+
+
+
+
+
+
+
+
+
 /* ==================================================================
    1. CONFIGURATION & ENVIRONMENT
 ================================================================== */
@@ -32,6 +42,18 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_ChangeThisInEnv";
 const JWT_EXPIRES_IN = "2h";
 const saltRounds = 10;
+
+
+
+
+
+
+
+
+
+
+
+
 
 // -- Database Connection --
 const { Pool } = pg;
@@ -72,11 +94,21 @@ app.use(cors({
   credentials: true
 }));
 
+
+
+
+
+
+
+
+
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(PUBLIC_PATH));
-
+app.use(checkProfileComplete);
 // Cache Control
 app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
@@ -85,8 +117,17 @@ app.use((req, res, next) => {
   next();
 });
 
+
+
+
+
+
+
+
+
+
 /* ==================================================================
-   3. CUSTOM MIDDLEWARE
+   3. CUSTOM MIDDLEWARE (UPDATED)
 ================================================================== */
 const authenticate = (req, res, next) => {
   try {
@@ -94,7 +135,12 @@ const authenticate = (req, res, next) => {
     if (!token) return res.status(401).json({ error: "Authentication required" });
 
     const payload = jwt.verify(token, JWT_SECRET);
-    req.user = { id: payload.id, role: payload.role, phone: payload.phone };
+    req.user = {
+      id: payload.id,
+      role: payload.role,
+      phone: payload.phone,
+      profileComplete: payload.profileComplete || false
+    };
     next();
   } catch (err) {
     console.error("Auth Error:", err.message);
@@ -105,6 +151,15 @@ const authenticate = (req, res, next) => {
       path: "/"
     });
 
+    // For HTML pages, redirect to login instead of JSON error
+    if (req.accepts('html')) {
+      if (req.path.includes('/doc_')) {
+        return res.redirect('/doc_login');
+      } else {
+        return res.redirect('/user_login');
+      }
+    }
+
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 };
@@ -112,7 +167,14 @@ const authenticate = (req, res, next) => {
 const authorize = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ error: "Authentication required" });
-    if (!allowedRoles.includes(req.user.role)) return res.status(403).json({ error: "Access denied" });
+    if (!allowedRoles.includes(req.user.role)) {
+      // For HTML pages, redirect to appropriate home
+      if (req.accepts('html')) {
+        if (req.user.role === "doctor") return res.redirect("/doc_home");
+        if (req.user.role === "user") return res.redirect("/user_home");
+      }
+      return res.status(403).json({ error: "Access denied" });
+    }
     next();
   };
 };
@@ -121,22 +183,123 @@ const blockAfterLogin = (req, res, next) => {
   const token = req.cookies?.token;
   if (token) {
     try {
-      const payload = jwt.verify(token, JWT_SECRET);
-      if (payload.role === "doctor") return res.redirect("/doc_home");
-      return res.redirect("/user_home");
-    } catch (e) { /* Invalid token */ }
+      jwt.verify(token, JWT_SECRET);
+      // Only block authentication pages when logged in
+      const authPages = ['/role', '/user_login', '/user_signup', '/doc_login', '/doc_signup'];
+
+      if (authPages.includes(req.path)) {
+        // Get role from token without verification (it was already verified)
+        const payload = jwt.decode(token);
+        if (payload.role === "doctor") return res.redirect("/doc_home");
+        if (payload.role === "user") return res.redirect("/user_home");
+      }
+    } catch (e) {
+      // Invalid token - clear it and continue
+      res.clearCookie("token", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        path: "/"
+      });
+    }
   }
   next();
 };
 
-// Helper function to determine if we're in production
-const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+// Helper to check if profile exists
+const checkProfileExists = async (userId, role) => {
+  try {
+    if (role === "user") {
+      const result = await db.query("SELECT 1 FROM user_profile WHERE user_id = $1", [userId]);
+      return result.rows.length > 0;
+    } else {
+      const result = await db.query("SELECT 1 FROM doc_profile WHERE doc_id = $1", [userId]);
+      return result.rows.length > 0;
+    }
+  } catch (err) {
+    console.error("Error checking profile:", err);
+    return false;
+  }
+};
+
+// Middleware to check and handle profile completion
+const checkProfileComplete = async (req, res, next) => {
+  try {
+    if (!req.user) return next();
+
+    const { id, role } = req.user;
+
+    // Routes that don't require profile completion
+    const exemptRoutes = [
+      '/user_profile', '/doc_profile',
+      '/user_profile_create', '/doc_profile_create',
+      '/api/logout', '/api/user/profile', '/api/doctor/profile'
+    ];
+
+    // If accessing a profile creation page, allow it
+    if (exemptRoutes.includes(req.path)) return next();
+
+    // Check if profile exists
+    const profileExists = await checkProfileExists(id, role);
+
+    // If profile doesn't exist and trying to access home, redirect to profile creation
+    if (!profileExists) {
+      if (req.path === '/user_home' || req.path === '/doc_home') {
+        if (role === "user") return res.redirect('/user_profile_create');
+        if (role === "doctor") return res.redirect('/doc_profile_create');
+      }
+    }
+
+    // Update profileComplete status in req.user
+    req.user.profileComplete = profileExists;
+
+    next();
+  } catch (err) {
+    console.error("Profile check error:", err);
+    next();
+  }
+};
+
+const noCacheForDynamicPages = (req, res, next) => {
+  const dynamicPages = [
+    '/user_home', '/doc_home', '/user_profile', '/doc_profile',
+    '/user_video_dashboard', '/doc_video_dashboard', '/appointments',
+    '/records', '/predict', '/user_profile_create', '/doc_profile_create'
+  ];
+
+  if (dynamicPages.includes(req.path)) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
+  next();
+};
+
+// Apply middlewares
+app.use(blockAfterLogin);
+app.use(checkProfileComplete);
+app.use(noCacheForDynamicPages);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ==================================================================
-   4. API ROUTES
+   4. API ROUTES (UPDATED PROFILE SECTION)
 ================================================================== */
 
-// --- A. AUTHENTICATION API (Updated for Traditional Form Submission) ---
+// --- A. AUTHENTICATION API (UPDATED) ---
 app.post("/api/user_signup", async (req, res) => {
   try {
     const { phone, password, confirmpassword } = req.body;
@@ -157,7 +320,13 @@ app.post("/api/user_signup", async (req, res) => {
     const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(saltRounds));
     const result = await db.query("INSERT INTO login (phone,password) VALUES ($1,$2) RETURNING id", [phone, hash]);
 
-    const token = jwt.sign({ id: result.rows[0].id, phone, role: "user" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const userId = result.rows[0].id;
+    const token = jwt.sign({
+      id: userId,
+      phone,
+      role: "user",
+      profileComplete: false
+    }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
     // Set cookie
     res.cookie("token", token, {
@@ -168,8 +337,8 @@ app.post("/api/user_signup", async (req, res) => {
       maxAge: 2 * 60 * 60 * 1000
     });
 
-    // Redirect to user home
-    res.redirect('/user_home');
+    // Always redirect to profile creation after signup
+    return res.redirect('/user_profile_create');
 
   } catch (err) {
     console.error("Signup error:", err);
@@ -180,8 +349,6 @@ app.post("/api/user_signup", async (req, res) => {
 app.post("/api/user_login", async (req, res) => {
   try {
     const { phone, password } = req.body;
-
-    console.log("Login attempt for phone:", phone);
 
     const result = await db.query("SELECT * FROM login WHERE phone=$1", [phone]);
 
@@ -194,7 +361,17 @@ app.post("/api/user_login", async (req, res) => {
       return res.redirect('/user_login?error=Incorrect password');
     }
 
-    const token = jwt.sign({ id: result.rows[0].id, phone, role: "user" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const userId = result.rows[0].id;
+
+    // Check if profile exists
+    const profileExists = await checkProfileExists(userId, "user");
+
+    const token = jwt.sign({
+      id: userId,
+      phone,
+      role: "user",
+      profileComplete: profileExists
+    }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
     // Set cookie
     res.cookie("token", token, {
@@ -205,8 +382,11 @@ app.post("/api/user_login", async (req, res) => {
       maxAge: 2 * 60 * 60 * 1000
     });
 
-    console.log("Login successful, redirecting to user_home");
-    res.redirect('/user_home');
+    if (!profileExists) {
+      return res.redirect('/user_profile_create');
+    } else {
+      return res.redirect('/user_home');
+    }
 
   } catch (err) {
     console.error("Login error:", err);
@@ -234,7 +414,13 @@ app.post("/api/doc_signup", async (req, res) => {
     const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(saltRounds));
     const result = await db.query("INSERT INTO doc_login (phone,password) VALUES ($1,$2) RETURNING docid", [phone, hash]);
 
-    const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const doctorId = result.rows[0].docid;
+    const token = jwt.sign({
+      id: doctorId,
+      phone,
+      role: "doctor",
+      profileComplete: false
+    }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
     // Set cookie
     res.cookie("token", token, {
@@ -245,8 +431,7 @@ app.post("/api/doc_signup", async (req, res) => {
       maxAge: 2 * 60 * 60 * 1000
     });
 
-    // Redirect to doctor home
-    res.redirect('/doc_home');
+    return res.redirect('/doc_profile_create');
 
   } catch (err) {
     console.error("Doctor signup error:", err);
@@ -257,8 +442,6 @@ app.post("/api/doc_signup", async (req, res) => {
 app.post("/api/doc_login", async (req, res) => {
   try {
     const { phone, password } = req.body;
-
-    console.log("Doctor login attempt for phone:", phone);
 
     const result = await db.query("SELECT * FROM doc_login WHERE phone=$1", [phone]);
 
@@ -271,7 +454,17 @@ app.post("/api/doc_login", async (req, res) => {
       return res.redirect('/doc_login?error=Incorrect password');
     }
 
-    const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const doctorId = result.rows[0].docid;
+
+    // Check if profile exists
+    const profileExists = await checkProfileExists(doctorId, "doctor");
+
+    const token = jwt.sign({
+      id: doctorId,
+      phone,
+      role: "doctor",
+      profileComplete: profileExists
+    }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
     // Set cookie
     res.cookie("token", token, {
@@ -282,12 +475,223 @@ app.post("/api/doc_login", async (req, res) => {
       maxAge: 2 * 60 * 60 * 1000
     });
 
-    console.log("Doctor login successful, redirecting to doc_home");
-    res.redirect('/doc_home');
+    if (!profileExists) {
+      return res.redirect('/doc_profile_create');
+    } else {
+      return res.redirect('/doc_home');
+    }
 
   } catch (err) {
     console.error("Doctor login error:", err);
     res.redirect('/doc_login?error=Server error. Please try again.');
+  }
+});
+
+
+
+
+
+
+
+
+
+
+// --- C. PROFILE API (COMPLETELY UPDATED) ---
+app.get("/api/user/profile", authenticate, authorize("user"), async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT full_name, gender, custom_gender, date_of_birth, weight_kg, height_cm, blood_group, allergies FROM user_profile WHERE user_id = $1",
+      [req.user.id]
+    );
+
+    if (!result.rows.length) {
+      return res.json({
+        exists: false,
+        message: "Profile not found"
+      });
+    }
+
+    const r = result.rows[0];
+    res.json({
+      exists: true,
+      profile: {
+        fullName: r.full_name,
+        gender: r.gender,
+        customGender: r.custom_gender,
+        dob: r.date_of_birth ? new Date(r.date_of_birth).toISOString().split('T')[0] : null,
+        weight: r.weight_kg,
+        height: r.height_cm,
+        bloodGroup: r.blood_group,
+        allergies: r.allergies
+      }
+    });
+  } catch (err) {
+    console.error("Error loading user profile:", err);
+    res.status(500).json({ error: "Failed to load profile" });
+  }
+});
+
+app.post("/api/user/profile", authenticate, authorize("user"), async (req, res) => {
+  try {
+    const { fullName, gender, customGender, dob, weight, height, bloodGroup, allergies } = req.body;
+
+    // Validate required fields
+    if (!fullName || !gender || !dob || !weight || !height || !bloodGroup) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        details: { fullName, gender, dob, weight, height, bloodGroup }
+      });
+    }
+
+    // Insert or update profile
+    await db.query(`
+      INSERT INTO user_profile (user_id, full_name, gender, custom_gender, date_of_birth, weight_kg, height_cm, blood_group, allergies)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ON CONFLICT (user_id) DO UPDATE SET 
+        full_name = EXCLUDED.full_name, 
+        gender = EXCLUDED.gender, 
+        custom_gender = EXCLUDED.custom_gender, 
+        date_of_birth = EXCLUDED.date_of_birth, 
+        weight_kg = EXCLUDED.weight_kg, 
+        height_cm = EXCLUDED.height_cm, 
+        blood_group = EXCLUDED.blood_group, 
+        allergies = EXCLUDED.allergies
+    `, [
+      req.user.id,
+      fullName,
+      gender,
+      customGender || null,
+      dob,
+      parseFloat(weight),
+      parseFloat(height),
+      bloodGroup,
+      allergies || null
+    ]);
+
+    // Update token with profileComplete flag
+    const newToken = jwt.sign({
+      ...req.user,
+      profileComplete: true
+    }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+    // Update cookie
+    res.cookie("token", newToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+      path: "/",
+      maxAge: 2 * 60 * 60 * 1000
+    });
+
+    res.json({
+      success: true,
+      message: "Profile saved successfully",
+      redirect: "/user_home"
+    });
+  } catch (err) {
+    console.error("Error saving user profile:", err);
+
+    if (err.code === '23505') { // Unique violation
+      return res.status(400).json({ error: "Profile already exists for this user" });
+    }
+
+    res.status(500).json({ error: "Failed to save profile" });
+  }
+});
+
+app.get("/api/doctor/profile", authenticate, authorize("doctor"), async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT full_name, specialization, experience_years, qualification, hospital_name, bio FROM doc_profile WHERE doc_id = $1",
+      [req.user.id]
+    );
+
+    if (!result.rows.length) {
+      return res.json({
+        exists: false,
+        message: "Profile not found"
+      });
+    }
+
+    const r = result.rows[0];
+    res.json({
+      exists: true,
+      profile: {
+        fullName: r.full_name,
+        specialization: r.specialization,
+        experience: r.experience_years,
+        qualification: r.qualification,
+        hospital: r.hospital_name,
+        bio: r.bio
+      }
+    });
+  } catch (err) {
+    console.error("Error loading doctor profile:", err);
+    res.status(500).json({ error: "Failed to load profile" });
+  }
+});
+
+app.post("/api/doctor/profile", authenticate, authorize("doctor"), async (req, res) => {
+  try {
+    const { fullName, specialization, experience, qualification, hospital, bio } = req.body;
+
+    // Validate required fields
+    if (!fullName || !specialization || !experience) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        details: { fullName, specialization, experience }
+      });
+    }
+
+    // Insert or update profile
+    await db.query(`
+      INSERT INTO doc_profile (doc_id, full_name, specialization, experience_years, qualification, hospital_name, bio)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (doc_id) DO UPDATE SET 
+        full_name = EXCLUDED.full_name, 
+        specialization = EXCLUDED.specialization, 
+        experience_years = EXCLUDED.experience_years,
+        qualification = EXCLUDED.qualification, 
+        hospital_name = EXCLUDED.hospital_name, 
+        bio = EXCLUDED.bio
+    `, [
+      req.user.id,
+      fullName,
+      specialization,
+      parseInt(experience),
+      qualification || null,
+      hospital || null,
+      bio || null
+    ]);
+
+    // Update token with profileComplete flag
+    const newToken = jwt.sign({
+      ...req.user,
+      profileComplete: true
+    }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+    // Update cookie
+    res.cookie("token", newToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+      path: "/",
+      maxAge: 2 * 60 * 60 * 1000
+    });
+
+    res.json({
+      success: true,
+      message: "Profile saved successfully",
+      redirect: "/doc_home"
+    });
+  } catch (err) {
+    console.error("Error saving doctor profile:", err);
+
+    if (err.code === '23505') { // Unique violation
+      return res.status(400).json({ error: "Profile already exists for this doctor" });
+    }
+
+    res.status(500).json({ error: "Failed to save profile" });
   }
 });
 
@@ -308,9 +712,20 @@ app.post("/api/logout", (req, res) => {
   }
 });
 
-app.get("/api/auth/guest", (req, res) => res.json({ guest: true }));
-app.get("/api/auth/user", authenticate, authorize("user"), (req, res) => res.json({ authenticated: true, role: "user", user: req.user }));
-app.get("/api/auth/doctor", authenticate, authorize("doctor"), (req, res) => res.json({ authenticated: true, role: "doctor", user: req.user }));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // --- B. AI API ---
 app.post("/api/ai/precheck", authenticate, async (req, res) => {
@@ -333,97 +748,14 @@ app.post("/api/ai/precheck", authenticate, async (req, res) => {
   }
 });
 
-// --- C. PROFILE API ---
-app.get("/api/user/profile", authenticate, authorize("user"), async (req, res) => {
-  try {
-    const result = await db.query("SELECT full_name, gender, custom_gender, date_of_birth, weight_kg, height_cm, blood_group, allergies FROM user_profile WHERE user_id = $1", [req.user.id]);
-    if (!result.rows.length) return res.json({ exists: false });
-    const r = result.rows[0];
-    res.json({
-      exists: true,
-      profile: {
-        fullName: r.full_name,
-        gender: r.gender,
-        customGender: r.custom_gender,
-        dob: r.date_of_birth,
-        weight: r.weight_kg,
-        height: r.height_cm,
-        bloodGroup: r.blood_group,
-        allergies: r.allergies
-      }
-    });
-  } catch (err) {
-    console.error("Error loading user profile:", err);
-    res.status(500).json({ error: "Failed to load profile" });
-  }
-});
 
-app.post("/api/user/profile", authenticate, authorize("user"), async (req, res) => {
-  try {
-    const { fullName, gender, customGender, dob, weight, height, bloodGroup, allergies } = req.body;
-    if (!fullName || !gender || !dob || !weight || !height || !bloodGroup) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
 
-    await db.query(`
-      INSERT INTO user_profile (user_id, full_name, gender, custom_gender, date_of_birth, weight_kg, height_cm, blood_group, allergies)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-      ON CONFLICT (user_id) DO UPDATE SET 
-      full_name=EXCLUDED.full_name, gender=EXCLUDED.gender, custom_gender=EXCLUDED.custom_gender, 
-      date_of_birth=EXCLUDED.date_of_birth, weight_kg=EXCLUDED.weight_kg, height_cm=EXCLUDED.height_cm, 
-      blood_group=EXCLUDED.blood_group, allergies=EXCLUDED.allergies`,
-      [req.user.id, fullName, gender, customGender || null, dob, weight, height, bloodGroup, allergies || null]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Error saving user profile:", err);
-    res.status(500).json({ error: "Failed to save profile" });
-  }
-});
 
-app.get("/api/doctor/profile", authenticate, authorize("doctor"), async (req, res) => {
-  try {
-    const result = await db.query("SELECT full_name, specialization, experience_years, qualification, hospital_name, bio FROM doc_profile WHERE doc_id = $1", [req.user.id]);
-    if (!result.rows.length) return res.json({ exists: false });
-    const r = result.rows[0];
-    res.json({
-      exists: true,
-      profile: {
-        fullName: r.full_name,
-        specialization: r.specialization,
-        experience: r.experience_years,
-        qualification: r.qualification,
-        hospital: r.hospital_name,
-        bio: r.bio
-      }
-    });
-  } catch (err) {
-    console.error("Error loading doctor profile:", err);
-    res.status(500).json({ error: "Failed to load profile" });
-  }
-});
 
-app.post("/api/doctor/profile", authenticate, authorize("doctor"), async (req, res) => {
-  try {
-    const { fullName, specialization, experience, qualification, hospital, bio } = req.body;
-    if (!fullName || !specialization || !experience) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
 
-    await db.query(`
-      INSERT INTO doc_profile (doc_id, full_name, specialization, experience_years, qualification, hospital_name, bio)
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
-      ON CONFLICT (doc_id) DO UPDATE SET 
-      full_name=EXCLUDED.full_name, specialization=EXCLUDED.specialization, experience_years=EXCLUDED.experience_years,
-      qualification=EXCLUDED.qualification, hospital_name=EXCLUDED.hospital_name, bio=EXCLUDED.bio`,
-      [req.user.id, fullName, specialization, experience, qualification || null, hospital || null, bio || null]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Error saving doctor profile:", err);
-    res.status(500).json({ error: "Failed to save profile" });
-  }
-});
+
+
+
 
 // --- D. APPOINTMENTS API ---
 app.post("/api/appointments/book", authenticate, authorize("user"), async (req, res) => {
@@ -500,6 +832,15 @@ app.get("/api/doctors", authenticate, authorize("user"), async (req, res) => {
     res.status(500).json({ error: "Load failed" });
   }
 });
+
+
+
+
+
+
+
+
+
 
 // --- E. VIDEO API ---
 app.get("/api/video/doctor/dashboard", authenticate, authorize("doctor"), async (req, res) => {
@@ -588,6 +929,22 @@ app.get("/api/user/join-call/:appointmentId", authenticate, authorize("user"), a
     res.status(500).json({ error: "Join call failed" });
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // --- F. UPLOAD & VAULT API ---
 app.post("/api/upload", authenticate, upload.single("file"), async (req, res) => {
@@ -714,6 +1071,26 @@ app.get("/api/vault/file/:id", authenticate, async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // --- G. PRESCRIPTION API ---
 app.post("/api/notes/save", authenticate, authorize("doctor"), async (req, res) => {
   try {
@@ -778,33 +1155,27 @@ app.get("/api/prescription/download/:roomId", authenticate, authorize("user", "d
   }
 });
 
-// --- H. DEBUG & HEALTH CHECK ENDPOINTS ---
-app.get('/api/debug/headers', (req, res) => {
-  res.json({
-    origin: req.headers.origin,
-    host: req.headers.host,
-    referer: req.headers.referer,
-    headers: req.headers
-  });
-});
 
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    service: 'TeleHealth Backend'
-  });
-});
+
+
+
+
+
+
+
+
+
+
 
 /* ==================================================================
    5. VIEW ROUTES (HTML ONLY - NO EJS)
 ================================================================== */
 
 // --- Public Pages ---
-app.get("/", (req, res) => res.sendFile(path.join(PAGES_PATH, "index.html")));
-app.get("/role", (req, res) => res.sendFile(path.join(PAGES_PATH, "role.html")));
-app.get("/services", (req, res) => res.sendFile(path.join(PAGES_PATH, "services.html")));
-app.get("/contact", (req, res) => res.sendFile(path.join(PAGES_PATH, "contact.html")));
+app.get("/", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "index.html")));
+app.get("/role", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "role.html")));
+app.get("/services", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "services.html")));
+app.get("/contact", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "contact.html")));
 
 // --- Auth Pages ---
 app.get("/user_login", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "user_login.html")));
@@ -813,17 +1184,47 @@ app.get("/doc_login", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGE
 app.get("/doc_signup", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_signup.html")));
 
 // --- User Protected Pages ---
-app.get("/user_home", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_home.html")));
+app.get("/user_home", authenticate, authorize("user"), async (req, res) => {
+  try {
+    // Double-check profile exists (extra safety)
+    const profileExists = await checkProfileExists(req.user.id, "user");
+    if (!profileExists) {
+      return res.redirect('/user_profile_create');
+    }
+    res.sendFile(path.join(PAGES_PATH, "user_home.html"));
+  } catch (err) {
+    console.error("Error loading user home:", err);
+    res.status(500).send("Internal server error");
+  }
+});
 app.get("/user_profile", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_profile.html")));
+app.get("/userprofile", authenticate, authorize("user"), (req, res) => res.redirect("/user_profile"));
+app.get("/user_profile_create", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_profile_create.html")));
+
 app.get("/user_video_dashboard", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_video_dashboard.html")));
 app.get("/appointments", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "appointments.html")));
 app.get("/records", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "records.html")));
 app.get("/predict", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "predict.html")));
 
 // --- Doctor Protected Pages ---
-app.get("/doc_home", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_home.html")));
+app.get("/doc_home", authenticate, authorize("doctor"), async (req, res) => {
+  try {
+    // Double-check profile exists (extra safety)
+    const profileExists = await checkProfileExists(req.user.id, "doctor");
+    if (!profileExists) {
+      return res.redirect('/doc_profile_create');
+    }
+    res.sendFile(path.join(PAGES_PATH, "doc_home.html"));
+  } catch (err) {
+    console.error("Error loading doctor home:", err);
+    res.status(500).send("Internal server error");
+  }
+});
 app.get("/doc_profile", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_profile.html")));
 app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_video_dashboard.html")));
+app.get("/docprofile", authenticate, authorize("doctor"), (req, res) => res.redirect("/doc_profile"));
+
+app.get("/doc_profile_create", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_profile_create.html")));
 
 // --- Video Call Rooms (HTML) ---
 app.get("/video/user/:roomId", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_video.html")));
