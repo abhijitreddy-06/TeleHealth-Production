@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="/css/user_login.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
 </head>
 
 <body>
@@ -205,7 +206,7 @@
                             const backendUrl = window.location.hostname.includes('localhost')
                                 ? 'http://localhost:3000'
                                 : 'https://your-backend-service.onrender.com';
-                            const res = await fetch('https://telehealth-backend-9c46.onrender.com/api/doc_login', {
+                            const res = await fetch(`${CONFIG.API_BASE_URL}/api/doc_login`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',

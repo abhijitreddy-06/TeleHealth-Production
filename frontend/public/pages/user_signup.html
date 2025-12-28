@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="/css/user_signup.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
     <style>
         .simple-footer {
             background-color: var(--card-bg);
@@ -308,7 +309,7 @@
                                 ? 'http://localhost:3000'
                                 : 'https://your-backend-service.onrender.com';
 
-                            const res = await fetch('https://telehealth-backend-9c46.onrender.com/api/user_signup', {
+                            const res = await fetch(`${CONFIG.API_BASE_URL}/api/user_signup`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',

@@ -176,6 +176,10 @@ app.post("/api/user_signup", async (req, res) => {
 });
 
 app.post("/api/user_login", async (req, res) => {
+  console.log("=== LOGIN REQUEST ===");
+  console.log("Body:", req.body);
+  console.log("Origin:", req.headers.origin);
+  console.log("Cookies:", req.cookies);
   try {
     const { phone, password } = req.body;
     const result = await db.query("SELECT * FROM login WHERE phone=$1", [phone]);
