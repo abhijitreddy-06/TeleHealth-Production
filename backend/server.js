@@ -78,9 +78,9 @@ app.use((req, res, next) => {
 });
 
 // Serve Static Frontend
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "frontend", "public")));
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
+app.set("views", path.join(__dirname, "frontend", "views"));
 
 /* ==================================================================
    3. CUSTOM MIDDLEWARE
@@ -156,7 +156,32 @@ app.post("/api/user_login", async (req, res) => {
     res.json({ success: true, role: "user" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
+// Add this to Section 4 A (Auth Routes) in server.js
 
+app.post("/api/doc_signup", async (req, res) => {
+  try {
+    const { phone, password, confirmpassword } = req.body;
+    if (!password || password.length < 6) return res.status(400).json({ error: "Password too short" });
+    if (password !== confirmpassword) return res.status(400).json({ error: "Passwords mismatch" });
+
+    const exists = await db.query("SELECT docid FROM doc_login WHERE phone=$1", [phone]);
+    if (exists.rows.length) return res.status(400).json({ error: "Doctor account exists" });
+
+    const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(saltRounds));
+    // Note: Using 'doc_login' table
+    const result = await db.query("INSERT INTO doc_login (phone,password) VALUES ($1,$2) RETURNING docid", [phone, hash]);
+
+    // Auto-login after signup (Optional, or redirect to login)
+    const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+    res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "None" });
+    res.json({ success: true, role: "doctor" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 app.post("/api/doc_login", async (req, res) => {
   try {
     const { phone, password } = req.body;

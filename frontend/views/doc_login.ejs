@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleHealth Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="/css/doc_login.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <header>
+        <nav class="navbar">
+            <a href="/" class="logo"><i class="fas fa-heartbeat"></i> TeleHealth</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/doc_signup" class="btn btn-outline">Sign Up</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="login-container">
+            <div class="login-form">
+                <div class="form-header">
+                    <h1>Welcome Back</h1>
+                </div>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" class="form-control" placeholder="10-digit number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" class="form-control" placeholder="Password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        Sign In
+                    </button>
+
+                    <p style="text-align: center; margin-top: 1rem;">
+                        No account? <a href="/doc_signup">Sign Up</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const loginForm = document.getElementById("loginForm");
+            const phoneInput = document.getElementById("phone");
+            const passwordInput = document.getElementById("password");
+
+            if (loginForm) {
+                loginForm.addEventListener("submit", async (e) => {
+                    e.preventDefault(); // 🛑 STOPS URL RELOAD
+
+                    const phone = phoneInput.value.trim();
+                    const password = passwordInput.value.trim();
+                    const submitBtn = loginForm.querySelector("button");
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = "Signing in...";
+
+                    try {
+                        // ✅ Use relative path (works on localhost AND Render)
+                        const res = await fetch("/api/doc_login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ phone, password })
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) throw new Error(data.error || "Login failed");
+
+                        // Success
+                        window.location.href = "/doc_home";
+
+                    } catch (err) {
+                        alert(err.message);
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Sign In";
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
