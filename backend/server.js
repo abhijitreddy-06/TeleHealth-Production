@@ -990,7 +990,7 @@ app.get("/api/auth/doctor", authenticate, authorize("doctor"), (req, res) => res
 ================================================================== */
 
 // Create the HTML files if they don't exist
-const fs = require('fs').promises;
+import fs from 'fs/promises';
 import { existsSync } from 'fs';
 
 // Create basic HTML files for missing pages
