@@ -105,8 +105,9 @@ const authenticate = (req, res, next) => {
     console.error("Auth Error:", err.message);
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax"
+      secure: true,
+      sameSite: "None",
+      path: "/"
     });
 
     return res.status(401).json({ error: "Invalid or expired token" });
@@ -153,9 +154,11 @@ app.post("/api/user_signup", async (req, res) => {
     const token = jwt.sign({ id: result.rows[0].id, phone, role: "user" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax"
+      secure: true,          // REQUIRED on Render (HTTPS)
+      sameSite: "None",      // REQUIRED for fetch()
+      path: "/"
     });
+
 
     res.json({ success: true, role: "user" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
@@ -171,9 +174,11 @@ app.post("/api/user_login", async (req, res) => {
     const token = jwt.sign({ id: result.rows[0].id, phone, role: "user" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax"
+      secure: true,          // REQUIRED on Render (HTTPS)
+      sameSite: "None",      // REQUIRED for fetch()
+      path: "/"
     });
+
 
     res.json({ success: true, role: "user" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
@@ -194,9 +199,11 @@ app.post("/api/doc_signup", async (req, res) => {
     const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax"
+      secure: true,          // REQUIRED on Render (HTTPS)
+      sameSite: "None",      // REQUIRED for fetch()
+      path: "/"
     });
+
 
     res.json({ success: true, role: "doctor" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
@@ -212,9 +219,11 @@ app.post("/api/doc_login", async (req, res) => {
     const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax"
+      secure: true,          // REQUIRED on Render (HTTPS)
+      sameSite: "None",      // REQUIRED for fetch()
+      path: "/"
     });
+
     res.json({ success: true, role: "doctor" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -222,8 +231,9 @@ app.post("/api/doc_login", async (req, res) => {
 app.post("/api/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Lax"
+    secure:true,
+    sameSite: "None",
+    path: "/"
   });
   res.json({ success: true });
 });
