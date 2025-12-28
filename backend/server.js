@@ -19,8 +19,15 @@ import { createClient } from "@supabase/supabase-js";
 ================================================================== */
 dotenv.config();
 
+// Fix Directory Paths (CRITICAL FIX)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Go UP one level from 'backend' to reach 'frontend'
+const FRONTEND_PATH = path.join(__dirname, "../frontend");
+const VIEWS_PATH = path.join(FRONTEND_PATH, "views");
+const PUBLIC_PATH = path.join(FRONTEND_PATH, "public");
+const PAGES_PATH = path.join(PUBLIC_PATH, "pages");
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_ChangeThisInEnv";
@@ -77,10 +84,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve Static Frontend
-app.use(express.static(path.join(__dirname, "frontend", "public")));
+// ✅ Serve Static Files (CSS, JS, Images) from frontend/public
+app.use(express.static(PUBLIC_PATH));
+
+// ✅ Setup EJS View Engine pointing to frontend/views
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "frontend", "views"));
+app.set("views", VIEWS_PATH);
 
 /* ==================================================================
    3. CUSTOM MIDDLEWARE
@@ -109,14 +118,14 @@ const authorize = (...allowedRoles) => {
   };
 };
 
-// Middleware to block logged-in users from accessing login/signup pages
 const blockAfterLogin = (req, res, next) => {
   const token = req.cookies?.token;
   if (token) {
     try {
-      jwt.verify(token, JWT_SECRET);
-      return res.redirect("/"); // Redirect if already logged in
-    } catch (e) { /* Invalid token, let them proceed */ }
+      const payload = jwt.verify(token, JWT_SECRET);
+      if (payload.role === "doctor") return res.redirect("/doc_home");
+      return res.redirect("/user_home");
+    } catch (e) { /* Invalid token */ }
   }
   next();
 };
@@ -156,7 +165,6 @@ app.post("/api/user_login", async (req, res) => {
     res.json({ success: true, role: "user" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
-// Add this to Section 4 A (Auth Routes) in server.js
 
 app.post("/api/doc_signup", async (req, res) => {
   try {
@@ -168,20 +176,14 @@ app.post("/api/doc_signup", async (req, res) => {
     if (exists.rows.length) return res.status(400).json({ error: "Doctor account exists" });
 
     const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(saltRounds));
-    // Note: Using 'doc_login' table
     const result = await db.query("INSERT INTO doc_login (phone,password) VALUES ($1,$2) RETURNING docid", [phone, hash]);
 
-    // Auto-login after signup (Optional, or redirect to login)
     const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-
     res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "None" });
     res.json({ success: true, role: "doctor" });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
-  }
+  } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
+
 app.post("/api/doc_login", async (req, res) => {
   try {
     const { phone, password } = req.body;
@@ -442,32 +444,41 @@ app.get("/api/prescription/download/:roomId", authenticate, authorize("user", "d
 
 
 /* ==================================================================
-   5. VIEW ROUTES (PAGES)
+   5. VIEW ROUTES (FIXED: MAP EJS & HTML CORRECTLY)
 ================================================================== */
 
-// Public Pages
-app.get("/", (req, res) => res.render("index")); // Assumes views/index.ejs exists
+// --- Public Pages (HTML) ---
+app.get("/", (req, res) => res.sendFile(path.join(PAGES_PATH, "index.html")));
+app.get("/role", (req, res) => res.sendFile(path.join(PAGES_PATH, "role.html")));
+app.get("/services", (req, res) => res.sendFile(path.join(PAGES_PATH, "services.html")));
+app.get("/contact", (req, res) => res.sendFile(path.join(PAGES_PATH, "contact.html")));
+
+// --- Auth Pages (EJS as requested) ---
 app.get("/user_login", blockAfterLogin, (req, res) => res.render("user_login"));
 app.get("/user_signup", blockAfterLogin, (req, res) => res.render("user_signup"));
 app.get("/doc_login", blockAfterLogin, (req, res) => res.render("doc_login"));
 app.get("/doc_signup", blockAfterLogin, (req, res) => res.render("doc_signup"));
-app.get("/services", (req, res) => res.render("services")); // Or services.html via static
-app.get("/contact", (req, res) => res.render("contact"));
 
-// User Protected Pages
-app.get("/user_home", authenticate, authorize("user"), (req, res) => res.render("user_home"));
-app.get("/user_profile", authenticate, authorize("user"), (req, res) => res.render("profile")); // Matches views/profile.ejs
-app.get("/user_video_dashboard", authenticate, authorize("user"), (req, res) => res.render("user_video_dashboard")); // Ensure ejs exists or use .sendFile
-app.get("/appointments", authenticate, authorize("user"), (req, res) => res.render("appointments"));
-app.get("/predict", authenticate, (req, res) => res.render("predict"));
+// --- User Protected Pages ---
+app.get("/user_home", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_home.html")));
+app.get("/user_profile", authenticate, authorize("user"), (req, res) => res.render("profile", { user: req.user })); // EJS
+app.get("/user_video_dashboard", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_video_dashboard.html")));
+app.get("/appointments", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "appointments.html")));
+app.get("/records", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "records.html")));
+app.get("/predict", authenticate, (req, res) => res.render("predict", { user: req.user })); // EJS
 
-// Doctor Protected Pages
-app.get("/doc_home", authenticate, authorize("doctor"), (req, res) => res.render("doc_home"));
-app.get("/doc_profile", authenticate, authorize("doctor"), (req, res) => res.render("doc_profile"));
-app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => res.render("doc_video_dashboard"));
+// --- Doctor Protected Pages ---
+app.get("/doc_home", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_home.html")));
+app.get("/doc_profile", authenticate, authorize("doctor"), (req, res) => res.render("doc_profile", { user: req.user })); // EJS
+app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_video_dashboard.html")));
+
+// --- Video Call Rooms (EJS - Implicitly required for video) ---
+// I'm adding these so your video files are reachable.
+app.get("/video/user/:roomId", authenticate, authorize("user"), (req, res) => res.render("user_video", { roomId: req.params.roomId }));
+app.get("/video/doc/:roomId", authenticate, authorize("doctor"), (req, res) => res.render("doc_video", { roomId: req.params.roomId }));
 
 // Handle 404 (Must be last)
-app.use((req, res) => res.status(404).render("404")); // Assumes views/404.ejs exists
+app.use((req, res) => res.status(404).sendFile(path.join(PAGES_PATH, "404.html")));
 
 
 /* ==================================================================
