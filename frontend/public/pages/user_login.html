@@ -200,11 +200,15 @@
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
 
                     try {
-                        // ✅ Connects to your Server API
-                        const res = await fetch('/api/user_login', {
+                        // In your frontend login scripts, use absolute URL:
+                        const backendUrl = window.location.hostname.includes('localhost')
+                            ? 'http://localhost:3000'
+                            : 'https://your-backend-service.onrender.com';
+
+                        const res = await fetch(`${backendUrl}/api/user_login`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include', // 🔥 REQUIRED
+                            credentials: 'include',
                             body: JSON.stringify({ phone, password })
                         });
 

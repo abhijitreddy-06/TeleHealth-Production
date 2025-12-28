@@ -67,8 +67,11 @@ const server = http.createServer(app);
 app.set('trust proxy', 1);
 
 
+// Get the frontend URL from environment or use your Render URL
+const frontendUrl = process.env.FRONTEND_URL || "https://telehealth-production.onrender.com";
+
 app.use(cors({
-  origin: ["https://telehealth-production.onrender.com", "http://localhost:3000"],
+  origin: [frontendUrl, "http://localhost:3000"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -77,7 +80,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
+app.use(express.static(PUBLIC_PATH));
 // Cache Control
 app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
@@ -151,11 +154,16 @@ app.post("/api/user_signup", async (req, res) => {
     const result = await db.query("INSERT INTO login (phone,password) VALUES ($1,$2) RETURNING id", [phone, hash]);
 
     const token = jwt.sign({ id: result.rows[0].id, phone, role: "user" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+
+    // In your authentication routes (user_login, user_signup, doc_login, doc_signup):
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,          // REQUIRED on Render (HTTPS)
-      sameSite: "None",      // REQUIRED for fetch()
-      path: "/"
+      secure: isProduction,          // Secure only in production
+      sameSite: isProduction ? "None" : "Lax", // None for cross-site in production
+      path: "/",
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours
+      domain: isProduction ? ".onrender.com" : undefined // Set domain for production
     });
 
 
@@ -171,11 +179,16 @@ app.post("/api/user_login", async (req, res) => {
     if (!bcrypt.compareSync(password, result.rows[0].password)) return res.status(400).json({ error: "Incorrect password" });
 
     const token = jwt.sign({ id: result.rows[0].id, phone, role: "user" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+
+    // In your authentication routes (user_login, user_signup, doc_login, doc_signup):
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,          // REQUIRED on Render (HTTPS)
-      sameSite: "None",      // REQUIRED for fetch()
-      path: "/"
+      secure: isProduction,          // Secure only in production
+      sameSite: isProduction ? "None" : "Lax", // None for cross-site in production
+      path: "/",
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours
+      domain: isProduction ? ".onrender.com" : undefined // Set domain for production
     });
 
 
@@ -196,11 +209,16 @@ app.post("/api/doc_signup", async (req, res) => {
     const result = await db.query("INSERT INTO doc_login (phone,password) VALUES ($1,$2) RETURNING docid", [phone, hash]);
 
     const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+
+    // In your authentication routes (user_login, user_signup, doc_login, doc_signup):
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,          // REQUIRED on Render (HTTPS)
-      sameSite: "None",      // REQUIRED for fetch()
-      path: "/"
+      secure: isProduction,          // Secure only in production
+      sameSite: isProduction ? "None" : "Lax", // None for cross-site in production
+      path: "/",
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours
+      domain: isProduction ? ".onrender.com" : undefined // Set domain for production
     });
 
 
@@ -216,11 +234,16 @@ app.post("/api/doc_login", async (req, res) => {
     if (!bcrypt.compareSync(password, result.rows[0].password)) return res.status(400).json({ error: "Incorrect password" });
 
     const token = jwt.sign({ id: result.rows[0].docid, phone, role: "doctor" }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+
+    // In your authentication routes (user_login, user_signup, doc_login, doc_signup):
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,          // REQUIRED on Render (HTTPS)
-      sameSite: "None",      // REQUIRED for fetch()
-      path: "/"
+      secure: isProduction,          // Secure only in production
+      sameSite: isProduction ? "None" : "Lax", // None for cross-site in production
+      path: "/",
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours
+      domain: isProduction ? ".onrender.com" : undefined // Set domain for production
     });
 
     res.json({ success: true, role: "doctor" });
@@ -476,8 +499,37 @@ app.get("/api/prescription/download/:roomId", authenticate, authorize("user", "d
     doc.end();
   } catch (err) { res.status(500).json({ error: "Failed to generate prescription" }); }
 });
+app.get('/api/debug/cookies', (req, res) => {
+  res.json({
+    cookies: req.cookies,
+    headers: req.headers,
+    secure: req.secure,
+    host: req.get('host'),
+    origin: req.get('origin'),
+    referer: req.get('referer')
+  });
+});
 
-app.use(express.static(PUBLIC_PATH));
+// Also add a test endpoint
+app.post('/api/test-login', async (req, res) => {
+  try {
+    const { phone, password } = req.body;
+    const token = jwt.sign({ id: 1, phone, role: "user" }, JWT_SECRET, { expiresIn: "2h" });
+
+    res.cookie("test_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? "None" : "Lax",
+      path: "/",
+      maxAge: 2 * 60 * 60 * 1000
+    });
+
+    res.json({ success: true, message: "Test cookie set" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /* ==================================================================
    5. VIEW ROUTES (HTML ONLY - NO EJS)
 ================================================================== */
