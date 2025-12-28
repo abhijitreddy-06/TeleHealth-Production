@@ -67,15 +67,40 @@ const server = http.createServer(app);
 app.set('trust proxy', 1);
 
 
-// Get the frontend URL from environment or use your Render URL
-const frontendUrl = process.env.FRONTEND_URL || "https://telehealth-production.onrender.com";
+// Determine environment
+const isProduction = process.env.NODE_ENV === 'production';
 
-app.use(cors({
-  origin: [frontendUrl, "http://localhost:3000"],
+// CORS Configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // In development, allow all origins
+    if (!isProduction) {
+      return callback(null, true);
+    }
+
+    // In production, allow specific origins
+    const allowedOrigins = [
+      'https://telehealth-production.onrender.com',
+      'https://telehealth-production.onrender.com' // If different
+    ];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.error(`CORS blocked: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie']
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -94,6 +119,7 @@ app.use((req, res, next) => {
 /* ==================================================================
    3. CUSTOM MIDDLEWARE
 ================================================================== */
+// Handle preflight requests
 
 const authenticate = (req, res, next) => {
   try {
@@ -509,7 +535,19 @@ app.get('/api/debug/cookies', (req, res) => {
     referer: req.get('referer')
   });
 });
+app.get('/api/cors-test', (req, res) => {
+  console.log('Origin:', req.headers.origin);
+  console.log('Host:', req.headers.host);
+  console.log('Referer:', req.headers.referer);
 
+  res.json({
+    message: 'CORS test successful',
+    origin: req.headers.origin,
+    host: req.headers.host,
+    allowedOrigins: allowedOrigins,
+    headers: req.headers
+  });
+});
 // Also add a test endpoint
 app.post('/api/test-login', async (req, res) => {
   try {

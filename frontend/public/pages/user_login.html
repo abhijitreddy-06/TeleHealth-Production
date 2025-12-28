@@ -205,9 +205,11 @@
                             ? 'http://localhost:3000'
                             : 'https://your-backend-service.onrender.com';
 
-                        const res = await fetch(`${backendUrl}/api/user_login`, {
+                        const res = await fetch('https://telehealth-backend-9c46.onrender.com/api/user_login', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
                             credentials: 'include',
                             body: JSON.stringify({ phone, password })
                         });
