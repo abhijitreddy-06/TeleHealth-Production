@@ -30,7 +30,7 @@ const PAGES_PATH = path.join(PUBLIC_PATH, "pages");
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_ChangeThisInEnv";
-const JWT_EXPIRES_IN = "2h";
+const JWT_EXPIRES_IN = "1d";
 const saltRounds = 10;
 
 // Helper function to determine if we're in production
@@ -58,7 +58,7 @@ const supabase = createClient(
 // -- Multer Upload Config --
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
 });
 
 /* ==================================================================
@@ -80,39 +80,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(PUBLIC_PATH));
 
-// Cache Control for dynamic pages
-app.use((req, res, next) => {
-  const dynamicPages = [
-    '/user_home', '/doc_home', '/user_profile', '/doc_profile',
-    '/user_video_dashboard', '/doc_video_dashboard', '/appointments',
-    '/records', '/predict', '/user_profile_create', '/doc_profile_create'
-  ];
-
-  if (dynamicPages.includes(req.path)) {
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-  }
-  next();
-});
-
 /* ==================================================================
    3. CUSTOM MIDDLEWARE
 ================================================================== */
 const authenticate = (req, res, next) => {
   try {
     const token = req.cookies?.token;
-    if (!token) {
-      // For HTML pages, redirect to login
-      if (req.accepts('html')) {
-        if (req.path.includes('/doc_')) {
-          return res.redirect('/doc_login');
-        } else {
-          return res.redirect('/user_login');
-        }
-      }
-      return res.status(401).json({ error: "Authentication required" });
-    }
+    if (!token) return res.status(401).json({ error: "Authentication required" });
 
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = {
@@ -148,7 +122,6 @@ const authorize = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ error: "Authentication required" });
     if (!allowedRoles.includes(req.user.role)) {
-      // For HTML pages, redirect to appropriate home
       if (req.accepts('html')) {
         if (req.user.role === "doctor") return res.redirect("/doc_home");
         if (req.user.role === "user") return res.redirect("/user_home");
@@ -1016,11 +989,512 @@ app.get("/api/auth/doctor", authenticate, authorize("doctor"), (req, res) => res
    5. VIEW ROUTES
 ================================================================== */
 
+// Create the HTML files if they don't exist
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
+
+// Create basic HTML files for missing pages
+const createMissingPages = async () => {
+  const pages = {
+    'user_profile.html': `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .profile-header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .profile-header h1 { color: #333; margin-bottom: 10px; }
+        .profile-content { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .profile-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .profile-item:last-child { border-bottom: none; }
+        .label { font-weight: bold; color: #555; margin-bottom: 5px; }
+        .value { color: #333; }
+        .loading { text-align: center; padding: 50px; }
+        .nav { margin-bottom: 20px; }
+        .nav a { color: #007bff; text-decoration: none; margin-right: 15px; }
+        .nav a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/user_home">Home</a>
+            <a href="/user_profile">Profile</a>
+            <a href="/appointments">Appointments</a>
+            <a href="/records">Records</a>
+            <a href="/predict">Predict</a>
+            <a href="#" id="logout">Logout</a>
+        </div>
+        <div class="profile-header">
+            <h1>My Profile</h1>
+            <p>View and manage your personal information</p>
+        </div>
+        <div class="profile-content" id="profileContent">
+            <div class="loading">Loading profile...</div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/user/profile')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('profileContent');
+                    if (data.exists) {
+                        const profile = data.profile;
+                        container.innerHTML = \`
+                            <div class="profile-item">
+                                <div class="label">Full Name</div>
+                                <div class="value">\${profile.fullName || 'Not set'}</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Gender</div>
+                                <div class="value">\${profile.gender} \${profile.customGender ? ' (' + profile.customGender + ')' : ''}</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Date of Birth</div>
+                                <div class="value">\${profile.dob || 'Not set'}</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Weight</div>
+                                <div class="value">\${profile.weight} kg</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Height</div>
+                                <div class="value">\${profile.height} cm</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Blood Group</div>
+                                <div class="value">\${profile.bloodGroup}</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Allergies</div>
+                                <div class="value">\${profile.allergies || 'None'}</div>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <a href="/user_profile_create" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Edit Profile</a>
+                            </div>
+                        \`;
+                    } else {
+                        container.innerHTML = \`
+                            <div style="text-align: center; padding: 40px;">
+                                <h3>No Profile Found</h3>
+                                <p>Please create your profile to continue</p>
+                                <a href="/user_profile_create" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-top: 20px; display: inline-block;">Create Profile</a>
+                            </div>
+                        \`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('profileContent').innerHTML = '<p>Error loading profile. Please try again.</p>';
+                });
+
+            // Logout handler
+            document.getElementById('logout').addEventListener('click', function(e) {
+                e.preventDefault();
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/');
+            });
+        });
+    </script>
+</body>
+</html>`,
+
+    'doc_profile.html': `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Profile</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .profile-header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .profile-header h1 { color: #333; margin-bottom: 10px; }
+        .profile-content { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .profile-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .profile-item:last-child { border-bottom: none; }
+        .label { font-weight: bold; color: #555; margin-bottom: 5px; }
+        .value { color: #333; }
+        .loading { text-align: center; padding: 50px; }
+        .nav { margin-bottom: 20px; }
+        .nav a { color: #007bff; text-decoration: none; margin-right: 15px; }
+        .nav a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/doc_home">Home</a>
+            <a href="/doc_profile">Profile</a>
+            <a href="/doc_video_dashboard">Appointments</a>
+            <a href="#" id="logout">Logout</a>
+        </div>
+        <div class="profile-header">
+            <h1>Doctor Profile</h1>
+            <p>View and manage your professional information</p>
+        </div>
+        <div class="profile-content" id="profileContent">
+            <div class="loading">Loading profile...</div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/doctor/profile')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('profileContent');
+                    if (data.exists) {
+                        const profile = data.profile;
+                        container.innerHTML = \`
+                            <div class="profile-item">
+                                <div class="label">Full Name</div>
+                                <div class="value">\${profile.fullName || 'Not set'}</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Specialization</div>
+                                <div class="value">\${profile.specialization}</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Experience</div>
+                                <div class="value">\${profile.experience} years</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Qualification</div>
+                                <div class="value">\${profile.qualification || 'Not specified'}</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Hospital</div>
+                                <div class="value">\${profile.hospital || 'Not specified'}</div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="label">Bio</div>
+                                <div class="value">\${profile.bio || 'Not provided'}</div>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <a href="/doc_profile_create" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Edit Profile</a>
+                            </div>
+                        \`;
+                    } else {
+                        container.innerHTML = \`
+                            <div style="text-align: center; padding: 40px;">
+                                <h3>No Profile Found</h3>
+                                <p>Please create your profile to continue</p>
+                                <a href="/doc_profile_create" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-top: 20px; display: inline-block;">Create Profile</a>
+                            </div>
+                        \`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('profileContent').innerHTML = '<p>Error loading profile. Please try again.</p>';
+                });
+
+            // Logout handler
+            document.getElementById('logout').addEventListener('click', function(e) {
+                e.preventDefault();
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/');
+            });
+        });
+    </script>
+</body>
+</html>`,
+
+    'user_profile_create.html': `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create User Profile</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; }
+        button:hover { background: #0056b3; }
+        .error { color: #dc3545; margin-top: 10px; text-align: center; }
+        .success { color: #28a745; margin-top: 10px; text-align: center; }
+        .custom-gender { display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1>Create Your Profile</h1>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="gender">Gender *</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer-not-to-say">Prefer not to say</option>
+                    </select>
+                </div>
+                
+                <div class="form-group custom-gender" id="customGenderGroup">
+                    <label for="customGender">Specify Gender</label>
+                    <input type="text" id="customGender" name="customGender" placeholder="Enter your gender identity">
+                </div>
+                
+                <div class="form-group">
+                    <label for="dob">Date of Birth *</label>
+                    <input type="date" id="dob" name="dob" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="weight">Weight (kg) *</label>
+                    <input type="number" id="weight" name="weight" min="1" max="300" step="0.1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="height">Height (cm) *</label>
+                    <input type="number" id="height" name="height" min="50" max="250" step="0.1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bloodGroup">Blood Group *</label>
+                    <select id="bloodGroup" name="bloodGroup" required>
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">Allergies (Optional)</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="List any allergies you have"></textarea>
+                </div>
+                
+                <div class="error" id="errorMessage"></div>
+                <div class="success" id="successMessage"></div>
+                
+                <button type="submit">Save Profile</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const genderSelect = document.getElementById('gender');
+            const customGenderGroup = document.getElementById('customGenderGroup');
+            
+            genderSelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    customGenderGroup.style.display = 'block';
+                } else {
+                    customGenderGroup.style.display = 'none';
+                    document.getElementById('customGender').value = '';
+                }
+            });
+            
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const errorEl = document.getElementById('errorMessage');
+                const successEl = document.getElementById('successMessage');
+                errorEl.textContent = '';
+                successEl.textContent = '';
+                
+                const formData = {
+                    fullName: document.getElementById('fullName').value,
+                    gender: document.getElementById('gender').value,
+                    customGender: document.getElementById('customGender').value,
+                    dob: document.getElementById('dob').value,
+                    weight: document.getElementById('weight').value,
+                    height: document.getElementById('height').value,
+                    bloodGroup: document.getElementById('bloodGroup').value,
+                    allergies: document.getElementById('allergies').value
+                };
+                
+                fetch('/api/user/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        successEl.textContent = data.message;
+                        if (data.redirect) {
+                            setTimeout(() => {
+                                window.location.href = data.redirect;
+                            }, 1000);
+                        }
+                    } else {
+                        errorEl.textContent = data.error || 'Failed to save profile';
+                    }
+                })
+                .catch(error => {
+                    errorEl.textContent = 'Network error. Please try again.';
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>`,
+
+    'doc_profile_create.html': `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Doctor Profile</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; }
+        button:hover { background: #0056b3; }
+        .error { color: #dc3545; margin-top: 10px; text-align: center; }
+        .success { color: #28a745; margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1>Create Doctor Profile</h1>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="specialization">Specialization *</label>
+                    <input type="text" id="specialization" name="specialization" required placeholder="e.g., Cardiologist, Dermatologist">
+                </div>
+                
+                <div class="form-group">
+                    <label for="experience">Experience (Years) *</label>
+                    <input type="number" id="experience" name="experience" min="0" max="60" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="qualification">Qualification (Optional)</label>
+                    <input type="text" id="qualification" name="qualification" placeholder="e.g., MD, MBBS">
+                </div>
+                
+                <div class="form-group">
+                    <label for="hospital">Hospital/Clinic Name (Optional)</label>
+                    <input type="text" id="hospital" name="hospital" placeholder="Name of your hospital or clinic">
+                </div>
+                
+                <div class="form-group">
+                    <label for="bio">Bio (Optional)</label>
+                    <textarea id="bio" name="bio" rows="4" placeholder="Tell patients about your expertise"></textarea>
+                </div>
+                
+                <div class="error" id="errorMessage"></div>
+                <div class="success" id="successMessage"></div>
+                
+                <button type="submit">Save Profile</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const errorEl = document.getElementById('errorMessage');
+                const successEl = document.getElementById('successMessage');
+                errorEl.textContent = '';
+                successEl.textContent = '';
+                
+                const formData = {
+                    fullName: document.getElementById('fullName').value,
+                    specialization: document.getElementById('specialization').value,
+                    experience: document.getElementById('experience').value,
+                    qualification: document.getElementById('qualification').value,
+                    hospital: document.getElementById('hospital').value,
+                    bio: document.getElementById('bio').value
+                };
+                
+                fetch('/api/doctor/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        successEl.textContent = data.message;
+                        if (data.redirect) {
+                            setTimeout(() => {
+                                window.location.href = data.redirect;
+                            }, 1000);
+                        }
+                    } else {
+                        errorEl.textContent = data.error || 'Failed to save profile';
+                    }
+                })
+                .catch(error => {
+                    errorEl.textContent = 'Network error. Please try again.';
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>`
+  };
+
+  for (const [filename, content] of Object.entries(pages)) {
+    const filePath = path.join(PAGES_PATH, filename);
+    try {
+      if (!existsSync(filePath)) {
+        await fs.writeFile(filePath, content);
+        console.log(`Created ${filename}`);
+      }
+    } catch (err) {
+      console.error(`Error creating ${filename}:`, err);
+    }
+  }
+};
+
+// Create missing pages on startup
+createMissingPages().catch(console.error);
+
 // --- Public Pages ---
 app.get("/", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "index.html")));
 app.get("/role", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "role.html")));
-app.get("/services", (req, res) => res.sendFile(path.join(PAGES_PATH, "services.html")));
-app.get("/contact", (req, res) => res.sendFile(path.join(PAGES_PATH, "contact.html")));
+app.get("/services", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "services.html")));
+app.get("/contact", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "contact.html")));
 
 // --- Auth Pages ---
 app.get("/user_login", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "user_login.html")));
@@ -1148,7 +1622,7 @@ io.on("connection", (socket) => {
    7. SERVER START
 ================================================================== */
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Final Server running on port ${PORT}`);
   console.log(`🌐 Frontend: https://telehealth-production.onrender.com`);
   console.log(`🔧 Backend: https://telehealth-backend-9c46.onrender.com`);
 });
