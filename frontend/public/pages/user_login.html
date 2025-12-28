@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="/css/user_login.css" rel="stylesheet">
-    <script src="/js/config.js"></script>
 </head>
 
 <body>
@@ -60,7 +59,12 @@
                     <p>Sign in to access your TeleHealth account</p>
                 </div>
 
-                <form id="loginForm">
+                <!-- Error Message Display -->
+                <div id="errorMessage"
+                    style="display: none; background-color: #fee; color: #c33; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+                </div>
+
+                <form id="loginForm" action="https://telehealth-backend-9c46.onrender.com/api/user_login" method="POST">
                     <div class="form-group">
                         <label for="phone">Phone Number</label>
                         <div class="input-group">
@@ -116,10 +120,12 @@
             </div>
         </div>
     </footer>
+
     <script>
-        /* =========================================
-       1. THEME & MENU LOGIC (From your code)
-    ========================================= */
+        document.addEventListener('DOMContentLoaded', () => {
+            /* =========================
+               THEME & MENU LOGIC
+            ========================= */
             const themeToggle = document.getElementById('themeToggle');
             const mobileThemeToggle = document.getElementById('mobileThemeToggle');
             const html = document.documentElement;
@@ -175,78 +181,36 @@
                 }
             });
 
+            /* =========================
+               ERROR DISPLAY LOGIC
+            ========================= */
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            if (error) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = decodeURIComponent(error);
+                errorDiv.style.display = 'block';
 
-    /* =========================================
-       2. LOGIN API CONNECTION (Fixed)
-    ========================================= */
-    const loginForm = document.getElementById('loginForm');
-    const phoneInput = document.getElementById('phone');
-    const passwordInput = document.getElementById('password');
+                // Auto-hide error after 5 seconds
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
 
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const phone = phoneInput.value.trim();
-            const password = passwordInput.value.trim();
-            const btn = loginForm.querySelector('button[type="submit"]');
-            const originalBtnText = btn.innerHTML;
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-
-            try {
-                const response = await fetch('https://telehealth-backend-9c46.onrender.com/api/user_login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        phone: phone,
-                        password: password
-                    })
+            /* =========================
+               FORM SUBMISSION LOADING INDICATOR
+            ========================= */
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function () {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+                    }
                 });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    // Login successful
-                    console.log('Login success:', data);
-
-                    // Check if we're actually authenticated
-                    setTimeout(() => {
-                        fetch('https://telehealth-backend-9c46.onrender.com/api/auth/user', {
-                            credentials: 'include'
-                        })
-                            .then(authRes => {
-                                if (authRes.ok) {
-                                    window.location.href = '/user_home';
-                                } else {
-                                    alert('Authentication verification failed. Please try again.');
-                                    btn.disabled = false;
-                                    btn.innerHTML = originalBtnText;
-                                }
-                            })
-                            .catch(() => {
-                                // Still try to redirect
-                                window.location.href = '/user_home';
-                            });
-                    }, 500);
-
-                } else {
-                    // Login failed
-                    throw new Error(data.error || 'Login failed');
-                }
-
-            } catch (error) {
-                console.error('Login error:', error);
-                alert('Login failed: ' + error.message);
-                btn.disabled = false;
-                btn.innerHTML = originalBtnText;
             }
         });
-    }
     </script>
 </body>
 

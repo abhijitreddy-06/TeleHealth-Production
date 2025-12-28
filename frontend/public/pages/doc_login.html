@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="/css/user_login.css" rel="stylesheet">
-    <script src="/js/config.js"></script>
 </head>
 
 <body>
@@ -60,7 +59,12 @@
                     <p>Sign in to access your TeleHealth account</p>
                 </div>
 
-                <form id="loginForm">
+                <!-- Error Message Display -->
+                <div id="errorMessage"
+                    style="display: none; background-color: #fee; color: #c33; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+                </div>
+
+                <form id="loginForm" action="https://telehealth-backend-9c46.onrender.com/api/doc_login" method="POST">
                     <div class="form-group">
                         <label for="phone">Phone Number</label>
                         <div class="input-group">
@@ -68,8 +72,6 @@
                             <input type="tel" id="phone" class="form-control" placeholder="Enter your phone number"
                                 pattern="[0-9]{10}" title="Enter a 10-digit phone number" name="phone" required>
                         </div>
-                        <small id="phoneError" style="color: var(--error); display: none; margin-top: 0.5rem;">Please
-                            enter a valid 10-digit phone number</small>
                     </div>
 
                     <div class="form-group">
@@ -119,125 +121,94 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-                /* =========================
-                   THEME & MENU LOGIC (Preserved)
-                ========================= */
-                const themeToggle = document.getElementById('themeToggle');
-                const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-                const html = document.documentElement;
+            /* =========================
+               THEME & MENU LOGIC
+            ========================= */
+            const themeToggle = document.getElementById('themeToggle');
+            const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+            const html = document.documentElement;
 
-                const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                if (savedTheme) {
-                    html.setAttribute('data-theme', savedTheme);
-                    updateThemeIcon(savedTheme);
-                }
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            if (savedTheme) {
+                html.setAttribute('data-theme', savedTheme);
+                updateThemeIcon(savedTheme);
+            }
 
-                function toggleTheme() {
-                    const currentTheme = html.getAttribute('data-theme');
-                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                    html.setAttribute('data-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-                    updateThemeIcon(newTheme);
-                }
+            function toggleTheme() {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+            }
 
-                function updateThemeIcon(theme) {
-                    const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-                    if (themeToggle) themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-                    if (mobileThemeToggle) mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-                }
+            function updateThemeIcon(theme) {
+                const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+                if (themeToggle) themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+                if (mobileThemeToggle) mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            }
 
-                if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
-                if (mobileThemeToggle) mobileThemeToggle.addEventListener('click', toggleTheme);
+            if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+            if (mobileThemeToggle) mobileThemeToggle.addEventListener('click', toggleTheme);
 
-                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-                const closeMenuBtn = document.getElementById('closeMenu');
-                const mobileMenu = document.getElementById('mobileMenu');
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const closeMenuBtn = document.getElementById('closeMenu');
+            const mobileMenu = document.getElementById('mobileMenu');
 
-                if (mobileMenuBtn) {
-                    mobileMenuBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        mobileMenu.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    });
-                }
-
-                if (closeMenuBtn) {
-                    closeMenuBtn.addEventListener('click', () => {
-                        mobileMenu.classList.remove('active');
-                        document.body.style.overflow = '';
-                    });
-                }
-
-                document.addEventListener('click', (e) => {
-                    if (mobileMenu && mobileMenu.classList.contains('active') &&
-                        !mobileMenu.contains(e.target) &&
-                        e.target !== mobileMenuBtn) {
-                        mobileMenu.classList.remove('active');
-                        document.body.style.overflow = '';
-                    }
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    mobileMenu.classList.add('active');
+                    document.body.style.overflow = 'hidden';
                 });
+            }
 
-                /* =========================
-                   LOGIN LOGIC (Added)
-                ========================= */
-                const loginForm = document.getElementById('loginForm');
-                const phoneInput = document.getElementById('phone');
-                const passwordInput = document.getElementById('password');
+            if (closeMenuBtn) {
+                closeMenuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
 
-                if (loginForm) {
-                    loginForm.addEventListener('submit', async (e) => {
-                        e.preventDefault();
-
-                        const phone = phoneInput.value.trim();
-                        const password = passwordInput.value.trim();
-                        const btn = loginForm.querySelector('button[type="submit"]');
-                        const originalBtnText = btn.innerHTML;
-
-                        if (!phone || !password) {
-                            alert('Please fill in all fields');
-                            return;
-                        }
-
-                        btn.disabled = true;
-                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-
-                        try {
-                            // In your frontend login scripts, use absolute URL:
-                            const backendUrl = window.location.hostname.includes('localhost')
-                                ? 'http://localhost:3000'
-                                : 'https://your-backend-service.onrender.com';
-                            const res = await fetch(`${CONFIG.API_BASE_URL}/api/doc_login`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                credentials: 'include',
-                                body: JSON.stringify({ phone, password })
-                            });
-
-                        const text = await res.text();
-                            let data;
-                            try {
-                                data = JSON.parse(text);
-                            } catch {
-                                throw new Error("Server returned invalid response");
-                            }
-
-
-                            if (!res.ok) {
-                                throw new Error(data.error || 'Login failed');
-                            }
-
-                            window.location.href = '/doc_home';
-
-                        } catch (err) {
-                            alert(err.message);
-                            btn.disabled = false;
-                            btn.innerHTML = originalBtnText;
-                        }
-                    });
+            document.addEventListener('click', (e) => {
+                if (mobileMenu && mobileMenu.classList.contains('active') &&
+                    !mobileMenu.contains(e.target) &&
+                    e.target !== mobileMenuBtn) {
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = '';
                 }
             });
+
+            /* =========================
+               ERROR DISPLAY LOGIC
+            ========================= */
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            if (error) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = decodeURIComponent(error);
+                errorDiv.style.display = 'block';
+
+                // Auto-hide error after 5 seconds
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            /* =========================
+               FORM SUBMISSION LOADING INDICATOR
+            ========================= */
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function () {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+                    }
+                });
+            }
+        });
     </script>
 </body>
 
