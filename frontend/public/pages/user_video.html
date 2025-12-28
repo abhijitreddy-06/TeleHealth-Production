@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+
     <style>
         :root {
             /* Color Variables */
@@ -25,14 +26,14 @@
             --info: #60a5fa;
             --disabled: #9ca3af;
             --footer-bg: #0f172a;
-
+    
             /* Other Variables */
             --transition: all 0.3s ease;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --radius: 12px;
         }
-
+    
         /* Light Theme Variables */
         [data-theme="light"] {
             --background: #f9fafb;
@@ -43,14 +44,14 @@
             --border: #e2e8f0;
             --footer-bg: #1e293b;
         }
-
+    
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: "Poppins", "Inter", "Roboto", sans-serif;
         }
-
+    
         body {
             background-color: var(--background);
             color: var(--text-dark);
@@ -61,7 +62,7 @@
             line-height: 1.6;
             overflow: hidden;
         }
-
+    
         /* Header */
         header {
             background-color: var(--card-bg);
@@ -72,7 +73,7 @@
             height: 70px;
             border-bottom: 1px solid var(--border);
         }
-
+    
         .navbar {
             display: flex;
             justify-content: space-between;
@@ -82,7 +83,7 @@
             max-width: 1400px;
             margin: 0 auto;
         }
-
+    
         .logo {
             font-size: 1.5rem;
             font-weight: 700;
@@ -92,12 +93,12 @@
             gap: 0.5rem;
             text-decoration: none;
         }
-
+    
         .logo i {
             color: var(--secondary);
             font-size: 1.5rem;
         }
-
+    
         .logo-text {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
@@ -106,24 +107,24 @@
             -webkit-text-fill-color: transparent;
             font-weight: 800;
         }
-
+    
         .call-info {
             display: flex;
             align-items: center;
             gap: 2rem;
         }
-
+    
         .doctor-info {
             display: flex;
             align-items: center;
             gap: 0.5rem;
             color: var(--text-medium);
         }
-
+    
         .doctor-info i {
             color: var(--primary);
         }
-
+    
         .timer-container {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             padding: 0.5rem 1.25rem;
@@ -133,17 +134,17 @@
             font-size: 1.1rem;
             box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
         }
-
+    
         .timer-container i {
             margin-right: 0.5rem;
         }
-
+    
         .header-controls {
             display: flex;
             align-items: center;
             gap: 1rem;
         }
-
+    
         .theme-toggle {
             background: none;
             border: none;
@@ -159,11 +160,11 @@
             justify-content: center;
             transition: var(--transition);
         }
-
+    
         .theme-toggle:hover {
             background-color: rgba(56, 189, 248, 0.1);
         }
-
+    
         /* Main Video Container */
         .video-container {
             position: relative;
@@ -172,11 +173,11 @@
             display: flex;
             overflow: hidden;
         }
-
+    
         [data-theme="light"] .video-container {
             background: #1e293b;
         }
-
+    
         /* Remote Video (Doctor) */
         #remoteVideo {
             flex: 1;
@@ -185,11 +186,11 @@
             object-fit: contain;
             background: #020617;
         }
-
+    
         [data-theme="light"] #remoteVideo {
             background: #1e293b;
         }
-
+    
         /* Local Video (User) - Bottom Left */
         #localVideo {
             position: absolute;
@@ -204,12 +205,12 @@
             z-index: 10;
             transition: var(--transition);
         }
-
+    
         #localVideo:hover {
             transform: scale(1.02);
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
         }
-
+    
         .local-video-label {
             position: absolute;
             bottom: 125px;
@@ -225,11 +226,11 @@
             z-index: 11;
             backdrop-filter: blur(10px);
         }
-
+    
         .local-video-label i {
             color: var(--primary);
         }
-
+    
         /* Controls Bar */
         .controls-bar {
             position: absolute;
@@ -243,11 +244,11 @@
             gap: 2rem;
             z-index: 50;
         }
-
+    
         [data-theme="light"] .controls-bar {
             background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
         }
-
+    
         .control-btn {
             width: 60px;
             height: 60px;
@@ -264,18 +265,18 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
         }
-
+    
         .control-btn:hover {
             transform: translateY(-2px);
             background: rgba(30, 41, 59, 1);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
         }
-
+    
         .control-btn.active {
             background: var(--primary);
             color: white;
         }
-
+    
         .control-label {
             position: absolute;
             bottom: -25px;
@@ -285,19 +286,19 @@
             white-space: nowrap;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         }
-
+    
         [data-theme="light"] .control-label {
             color: white;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
         }
-
+    
         .control-group {
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-
+    
         /* Connection Status */
         .connection-status {
             position: absolute;
@@ -315,12 +316,12 @@
             border: 1px solid var(--border);
             z-index: 20;
         }
-
+    
         [data-theme="light"] .connection-status {
             background: rgba(255, 255, 255, 0.9);
             color: var(--text-dark);
         }
-
+    
         .status-indicator {
             width: 10px;
             height: 10px;
@@ -328,21 +329,21 @@
             background: var(--secondary);
             animation: pulse 2s infinite;
         }
-
+    
         @keyframes pulse {
             0% {
                 opacity: 1;
             }
-
+    
             50% {
                 opacity: 0.5;
             }
-
+    
             100% {
                 opacity: 1;
             }
         }
-
+    
         /* Doctor Info Overlay */
         .doctor-info-overlay {
             position: absolute;
@@ -360,12 +361,12 @@
             border: 1px solid var(--border);
             z-index: 20;
         }
-
+    
         [data-theme="light"] .doctor-info-overlay {
             background: rgba(255, 255, 255, 0.9);
             color: var(--text-dark);
         }
-
+    
         .doctor-avatar {
             width: 36px;
             height: 36px;
@@ -377,7 +378,7 @@
             color: white;
             font-weight: 600;
         }
-
+    
         /* Loading Overlay */
         .loading-overlay {
             position: absolute;
@@ -390,17 +391,17 @@
             z-index: 100;
             transition: var(--transition);
         }
-
+    
         [data-theme="light"] .loading-overlay {
             background: rgba(15, 23, 42, 0.95);
         }
-
+    
         .loading-content {
             text-align: center;
             max-width: 500px;
             padding: 2rem;
         }
-
+    
         .loading-spinner {
             width: 80px;
             height: 80px;
@@ -410,13 +411,13 @@
             animation: spin 1.5s linear infinite;
             margin: 0 auto 2rem;
         }
-
+    
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
         }
-
+    
         .loading-overlay h2 {
             font-size: 2rem;
             color: var(--text-dark);
@@ -426,13 +427,13 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
+    
         .loading-overlay p {
             color: var(--text-medium);
             font-size: 1.1rem;
             margin-bottom: 1.5rem;
         }
-
+    
         .loading-details {
             background: rgba(56, 189, 248, 0.1);
             border-radius: var(--radius);
@@ -440,7 +441,7 @@
             margin-top: 1.5rem;
             border: 1px solid var(--border);
         }
-
+    
         .loading-details h4 {
             color: var(--text-dark);
             margin-bottom: 0.5rem;
@@ -448,18 +449,18 @@
             align-items: center;
             gap: 0.5rem;
         }
-
+    
         .loading-details ul {
             list-style: none;
             padding-left: 1.5rem;
         }
-
+    
         .loading-details li {
             color: var(--text-medium);
             margin-bottom: 0.5rem;
             position: relative;
         }
-
+    
         .loading-details li:before {
             content: "•";
             color: var(--primary);
@@ -467,7 +468,7 @@
             position: absolute;
             left: -1rem;
         }
-
+    
         /* Permission Prompt */
         .permission-prompt {
             background: var(--card-bg);
@@ -477,7 +478,7 @@
             border: 1px solid var(--border);
             text-align: left;
         }
-
+    
         .permission-prompt h3 {
             color: var(--text-dark);
             margin-bottom: 1rem;
@@ -485,7 +486,7 @@
             align-items: center;
             gap: 0.5rem;
         }
-
+    
         .permission-item {
             display: flex;
             align-items: center;
@@ -493,18 +494,18 @@
             margin-bottom: 0.75rem;
             color: var(--text-medium);
         }
-
+    
         .permission-item i {
             color: var(--secondary);
         }
-
+    
         /* Responsive Design */
         @media (max-width: 1200px) {
             .doctor-info-overlay {
                 right: 20px;
             }
         }
-
+    
         @media (max-width: 992px) {
             #localVideo {
                 width: 240px;
@@ -512,152 +513,152 @@
                 left: 15px;
                 bottom: 130px;
             }
-
+    
             .local-video-label {
                 left: 15px;
                 bottom: 115px;
             }
-
+    
             .loading-overlay h2 {
                 font-size: 1.75rem;
             }
         }
-
+    
         @media (max-width: 768px) {
             .video-container {
                 flex-direction: column;
             }
-
+    
             #localVideo {
                 bottom: 160px;
                 left: 10px;
                 width: 180px;
                 height: 135px;
             }
-
+    
             .local-video-label {
                 left: 10px;
                 bottom: 145px;
             }
-
+    
             .doctor-info-overlay {
                 right: 10px;
                 top: 10px;
             }
-
+    
             .controls-bar {
                 height: 120px;
                 gap: 1rem;
                 padding: 0 1rem;
             }
-
+    
             .control-btn {
                 width: 50px;
                 height: 50px;
                 font-size: 1.2rem;
             }
-
+    
             .control-label {
                 font-size: 0.7rem;
                 bottom: -20px;
             }
-
+    
             .call-info {
                 flex-direction: column;
                 gap: 0.5rem;
                 align-items: flex-start;
             }
-
+    
             .timer-container {
                 font-size: 0.9rem;
                 padding: 0.4rem 1rem;
             }
-
+    
             .loading-content {
                 padding: 1.5rem;
             }
-
+    
             .loading-overlay h2 {
                 font-size: 1.5rem;
             }
         }
-
+    
         @media (max-width: 576px) {
             .navbar {
                 padding: 0 1rem;
             }
-
+    
             .logo {
                 font-size: 1.2rem;
             }
-
+    
             .logo i {
                 font-size: 1.2rem;
             }
-
+    
             .doctor-info-overlay {
                 display: none;
             }
-
+    
             #localVideo {
                 width: 150px;
                 height: 113px;
                 bottom: 140px;
                 left: 10px;
             }
-
+    
             .local-video-label {
                 left: 10px;
                 bottom: 125px;
                 font-size: 0.8rem;
                 padding: 0.4rem 0.8rem;
             }
-
+    
             .controls-bar {
                 gap: 0.75rem;
             }
-
+    
             .control-btn {
                 width: 45px;
                 height: 45px;
                 font-size: 1.1rem;
             }
-
+    
             .loading-overlay {
                 padding: 1rem;
             }
-
+    
             .loading-overlay h2 {
                 font-size: 1.3rem;
             }
-
+    
             .loading-spinner {
                 width: 60px;
                 height: 60px;
             }
         }
-
+    
         /* Utility Classes */
         .hidden {
             display: none !important;
         }
-
+    
         .visible {
             display: flex;
         }
-
+    
         .text-center {
             text-align: center;
         }
-
+    
         .text-dark {
             color: var(--text-dark) !important;
         }
-
+    
         .text-medium {
             color: var(--text-medium) !important;
         }
-
+    
         /* Light Mode Text Fixes */
         [data-theme="light"] .doctor-info,
         [data-theme="light"] .connection-status span,
@@ -667,12 +668,12 @@
         [data-theme="light"] .permission-prompt h3 {
             color: var(--text-dark);
         }
-
+    
         [data-theme="light"] .loading-details li,
         [data-theme="light"] .permission-item {
             color: var(--text-medium);
         }
-
+    
         /* Call Ended Styles */
         .call-ended-overlay {
             position: absolute;
@@ -684,7 +685,7 @@
             justify-content: center;
             z-index: 200;
         }
-
+    
         .call-ended-content {
             text-align: center;
             background: var(--card-bg);
@@ -694,25 +695,25 @@
             max-width: 500px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
-
+    
         .call-ended-icon {
             font-size: 4rem;
             color: var(--secondary);
             margin-bottom: 1.5rem;
         }
-
+    
         .call-ended-content h2 {
             color: var(--text-dark);
             margin-bottom: 1rem;
             font-size: 2rem;
         }
-
+    
         .call-ended-content p {
             color: var(--text-medium);
             margin-bottom: 2rem;
             font-size: 1.1rem;
         }
-
+    
         .prescription-download-btn {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
@@ -728,7 +729,7 @@
             margin: 0 auto;
             transition: var(--transition);
         }
-
+    
         .prescription-download-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(56, 189, 248, 0.3);
@@ -737,348 +738,168 @@
 </head>
 
 <body>
-    <!-- Header -->
-    <header>
-        <nav class="navbar">
-            <a href="/user_video_dashboard" class="logo">
-                <i class="fas fa-heartbeat"></i>
-                <span class="logo-text">TeleHealth</span>
-            </a>
-
-            <div class="call-info">
-                <div class="doctor-info">
-                    <i class="fas fa-user-md"></i>
-                    <span class="text-dark">Doctor Consultation</span>
-                </div>
-                <div class="timer-container" id="timer">
-                    <i class="fas fa-clock"></i>
-                    <span>00:00:00</span>
-                </div>
-            </div>
-
-            <div class="header-controls">
-                <button class="theme-toggle" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
-        </nav>
+    <header
+        style="padding: 1rem; background: #1e293b; display: flex; justify-content: space-between; align-items: center;">
+        <div class="logo" style="color: #38bdf8; font-weight: bold; font-size: 1.2rem;">
+            <i class="fas fa-heartbeat"></i> TeleHealth
+        </div>
+        <div id="timer" style="background: #38bdf8; padding: 0.2rem 0.8rem; border-radius: 20px; color: white;">00:00:00
+        </div>
     </header>
 
-    <!-- Main Video Container -->
     <main class="video-container">
-        <!-- Connection Status -->
-        <div class="connection-status">
-            <div class="status-indicator"></div>
-            <span class="text-dark">Connecting to doctor...</span>
+        <div class="connection-status"
+            style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 0.5rem; border-radius: 8px; color: white;">
+            <span>Connecting to doctor...</span>
         </div>
 
-        <!-- Doctor Info Overlay -->
-        <div class="doctor-info-overlay">
-            <div class="doctor-avatar">
-                <i class="fas fa-user-md"></i>
-            </div>
-            <div>
-                <div class="text-dark">Doctor</div>
-                <div class="text-medium" style="font-size: 0.8rem;">Video consultation</div>
-            </div>
-        </div>
-
-        <!-- Local Video Label -->
-        <div class="local-video-label">
-            <i class="fas fa-user"></i>
-            <span>You (Patient)</span>
-        </div>
-
-        <!-- Loading Overlay -->
-        <div class="loading-overlay visible" id="loading">
-            <div class="loading-content">
-                <div class="loading-spinner"></div>
-                <h2>Connecting to Doctor…</h2>
-                <p class="text-medium">Please wait while we connect you with your healthcare provider.</p>
-
-                <div class="loading-details">
-                    <h4><i class="fas fa-info-circle"></i> Connection in progress:</h4>
-                    <ul>
-                        <li>Establishing secure connection</li>
-                        <li>Requesting camera and microphone access</li>
-                        <li>Connecting to doctor's device</li>
-                    </ul>
-                </div>
-
-                <div class="permission-prompt">
-                    <h3><i class="fas fa-shield-alt"></i> Permission Required</h3>
-                    <div class="permission-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Allow camera access for video consultation</span>
-                    </div>
-                    <div class="permission-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Allow microphone access for audio communication</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Remote Video (Doctor) -->
         <video id="remoteVideo" autoplay playsinline></video>
-
-        <!-- Local Video (User) - Bottom Left -->
         <video id="localVideo" autoplay muted playsinline></video>
 
-        <!-- Controls Bar -->
         <div class="controls-bar">
-            <div class="control-group">
-                <button class="control-btn" id="micBtn">
-                    <i class="fas fa-microphone"></i>
-                </button>
-                <span class="control-label">Microphone</span>
-            </div>
-
-            <div class="control-group">
-                <button class="control-btn" id="camBtn">
-                    <i class="fas fa-video"></i>
-                </button>
-                <span class="control-label">Camera</span>
-            </div>
+            <button class="control-btn" id="micBtn"><i class="fas fa-microphone"></i></button>
+            <button class="control-btn" id="camBtn"><i class="fas fa-video"></i></button>
         </div>
 
-        <!-- Call Ended Overlay -->
         <div class="call-ended-overlay" id="callEndedOverlay">
-            <div class="call-ended-content">
-                <div class="call-ended-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
+            <div style="text-align: center; color: white;">
+                <i class="fas fa-check-circle" style="font-size: 4rem; color: #10b981; margin-bottom: 1rem;"></i>
                 <h2>Consultation Completed</h2>
-                <p class="text-medium">Your video consultation has ended. Your prescription is being downloaded
-                    automatically.</p>
+                <p>Your prescription is ready for download.</p>
                 <button class="prescription-download-btn" id="manualDownloadBtn">
-                    <i class="fas fa-download"></i>
-                    Download Prescription
+                    <i class="fas fa-download"></i> Download Prescription
                 </button>
-                <p class="text-medium" style="margin-top: 1.5rem; font-size: 0.9rem;">
-                    You will be redirected to your dashboard shortly...
-                </p>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: #ccc;">Redirecting shortly...</p>
             </div>
         </div>
     </main>
 
-<script src="/js/authGuard.js"></script>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    /* =========================
-       THEME TOGGLE
-    ========================= */
-    const themeToggle = document.getElementById("themeToggle");
-    const html = document.documentElement;
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        /* =========================
+           EXTRACT PARAMS
+        ========================= */
+        // URL Format: /video/user/ROOM_ID
+        const pathParts = window.location.pathname.split('/');
+        const ROOM_ID = pathParts[pathParts.length - 1];
 
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    html.setAttribute("data-theme", savedTheme);
-    updateThemeIcon(savedTheme);
+        if (!ROOM_ID) {
+            alert("Invalid Call Link");
+            window.location.href = "/user_home";
+        }
 
-    function toggleTheme() {
-        const currentTheme = html.getAttribute("data-theme");
-        const newTheme = currentTheme === "dark" ? "light" : "dark";
-        html.setAttribute("data-theme", newTheme);
-        localStorage.setItem("theme", newTheme);
-        updateThemeIcon(newTheme);
-    }
+        /* =========================
+           SOCKET + WEBRTC
+        ========================= */
+        const socket = io();
+        const localVideo = document.getElementById("localVideo");
+        const remoteVideo = document.getElementById("remoteVideo");
+        const micBtn = document.getElementById("micBtn");
+        const camBtn = document.getElementById("camBtn");
+        const timer = document.getElementById("timer");
+        const overlay = document.getElementById("callEndedOverlay");
 
-    function updateThemeIcon(theme) {
-        if (!themeToggle) return;
-        const icon = theme === "dark" ? "fa-sun" : "fa-moon";
-        themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-    }
+        let pc;
+        let localStream;
+        let mic = true;
+        let cam = true;
+        const start = Date.now();
 
-    themeToggle?.addEventListener("click", toggleTheme);
-
-    /* =========================
-       SOCKET + WEBRTC
-    ========================= */
-    const socket = io();
-    const ROOM_ID = "<%= roomId %>";
-    console.log("ROOM_ID =", ROOM_ID);
-
-    let pc;
-    let localStream;
-    let mic = true;
-    let cam = true;
-    const start = Date.now();
-
-    /* =========================
-       CALL TIMER
-    ========================= */
-    const timer = document.getElementById("timer");
-
-    if (timer) {
+        // Timer
         setInterval(() => {
             const t = Date.now() - start;
-            timer.innerText =
-                `${String(t / 3600000 | 0).padStart(2, '0')}:` +
-                `${String(t / 60000 % 60 | 0).padStart(2, '0')}:` +
-                `${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
+            timer.innerText = new Date(t).toISOString().substr(11, 8);
         }, 1000);
-    }
 
-    /* =========================
-       INIT MEDIA
-    ========================= */
-    async function init() {
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-
-            const localVideo = document.getElementById("localVideo");
-            if (localVideo) {
+        // Init Media
+        async function init() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 localVideo.srcObject = localStream;
-            }
-
-            socket.emit("join-room", { roomId: ROOM_ID, role: "user" });
-
-            const statusText = document.querySelector(".connection-status span");
-            if (statusText) statusText.textContent = "Waiting for doctor...";
-        } catch (err) {
-            console.error("Media error:", err);
-            const overlay = document.querySelector(".loading-overlay");
-            if (overlay) {
-                overlay.querySelector("h2").textContent = "Permission Required";
-                overlay.querySelector("p").textContent =
-                    "Please allow camera and microphone access.";
+                socket.emit("join-room", { roomId: ROOM_ID, role: "user" });
+                document.querySelector(".connection-status span").textContent = "Waiting for doctor...";
+            } catch (err) {
+                alert("Please allow camera/microphone access");
             }
         }
-    }
-    init();
+        init();
 
-    /* =========================
-       PEER CONNECTION
-    ========================= */
-    function createPeer() {
-        pc = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        // WebRTC Logic
+        function createPeer() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            pc.ontrack = e => {
+                remoteVideo.srcObject = e.streams[0];
+                document.querySelector(".connection-status span").textContent = "Connected";
+            };
+
+            pc.onicecandidate = e => {
+                if (e.candidate) socket.emit("signal", { roomId: ROOM_ID, payload: { candidate: e.candidate } });
+            };
+        }
+
+        socket.on("signal", async payload => {
+            if (!pc) createPeer();
+
+            if (payload.answer) { // Should not happen for user (answerer), but safety
+                await pc.setRemoteDescription(payload.answer);
+            }
+
+            if (payload.offer) {
+                await pc.setRemoteDescription(payload.offer);
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                socket.emit("signal", { roomId: ROOM_ID, payload: { answer } });
+            }
+
+            if (payload.candidate) {
+                await pc.addIceCandidate(payload.candidate);
+            }
         });
 
-        localStream.getTracks().forEach(track =>
-            pc.addTrack(track, localStream)
-        );
-
-        pc.ontrack = e => {
-            const remoteVideo = document.getElementById("remoteVideo");
-            if (remoteVideo) remoteVideo.srcObject = e.streams[0];
-
-            const loading = document.getElementById("loading");
-            if (loading) loading.style.display = "none";
-
-            const status = document.querySelector(".connection-status span");
-            const indicator = document.querySelector(".connection-status .status-indicator");
-
-            if (status) status.textContent = "Connected";
-            if (indicator) indicator.style.background = "#10b981";
+        // Controls
+        micBtn.onclick = () => {
+            mic = !mic;
+            localStream.getAudioTracks()[0].enabled = mic;
+            micBtn.innerHTML = mic ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
         };
 
-        pc.onicecandidate = e => {
-            if (e.candidate) {
-                socket.emit("signal", {
-                    roomId: ROOM_ID,
-                    payload: { candidate: e.candidate }
-                });
-            }
+        camBtn.onclick = () => {
+            cam = !cam;
+            localStream.getVideoTracks()[0].enabled = cam;
+            camBtn.innerHTML = cam ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
         };
-    }
 
-    /* =========================
-       SIGNAL HANDLING
-    ========================= */
-    socket.on("signal", async payload => {
-        if (!pc) createPeer();
+        // Call End Handler
+        socket.on("call-ended", () => {
+            overlay.style.display = "flex";
 
-        if (payload.offer) {
-            await pc.setRemoteDescription(payload.offer);
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            socket.emit("signal", {
-                roomId: ROOM_ID,
-                payload: { answer }
-            });
-        }
+            // Auto-download prescription logic
+            const downloadLink = `/api/prescription/download/${ROOM_ID}`;
 
-        if (payload.candidate) {
-            await pc.addIceCandidate(payload.candidate);
-        }
-    });
+            // Try auto download
+            setTimeout(() => {
+                const a = document.createElement("a");
+                a.href = downloadLink;
+                a.download = "prescription.pdf";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }, 1000);
 
-    /* =========================
-       CONTROLS
-    ========================= */
-    const micBtn = document.getElementById("micBtn");
-    const camBtn = document.getElementById("camBtn");
+            // Manual download button
+            document.getElementById("manualDownloadBtn").onclick = () => {
+                window.open(downloadLink, '_blank');
+            };
 
-    micBtn?.addEventListener("click", () => {
-        mic = !mic;
-        localStream.getAudioTracks()[0].enabled = mic;
-        micBtn.innerHTML = mic
-            ? '<i class="fas fa-microphone"></i>'
-            : '<i class="fas fa-microphone-slash"></i>';
-        micBtn.classList.toggle("active", mic);
-    });
-
-    camBtn?.addEventListener("click", () => {
-        cam = !cam;
-        localStream.getVideoTracks()[0].enabled = cam;
-        camBtn.innerHTML = cam
-            ? '<i class="fas fa-video"></i>'
-            : '<i class="fas fa-video-slash"></i>';
-        camBtn.classList.toggle("active", cam);
-    });
-
-    /* =========================
-       CALL END HANDLER
-    ========================= */
-    socket.on("call-ended", () => {
-        const overlay = document.getElementById("callEndedOverlay");
-        if (overlay) overlay.style.display = "flex";
-
-        // Auto-download prescription
-        setTimeout(() => {
-            const a = document.createElement("a");
-            a.href = `/api/prescription/download/${ROOM_ID}`;
-            a.download = "prescription.pdf";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }, 1000);
-
-        // Redirect
-        setTimeout(() => {
-            window.location.href = "/user_video_dashboard";
-        }, 5000);
-    });
-
-    /* =========================
-       MANUAL DOWNLOAD
-    ========================= */
-    document.getElementById("manualDownloadBtn")?.addEventListener("click", () => {
-        const a = document.createElement("a");
-        a.href = `/api/prescription/download/${ROOM_ID}`;
-        a.download = "prescription.pdf";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    });
-
-    /* =========================
-       SOCKET STATUS
-    ========================= */
-    socket.on("connect", () => {
-        console.log("Connected to signaling server");
-    });
-
-    socket.on("disconnect", () => {
-        const status = document.querySelector(".connection-status span");
-        if (status) status.textContent = "Disconnected – reconnecting...";
-    });
-</script>
-
+            // Redirect
+            setTimeout(() => {
+                window.location.href = "/user_video_dashboard";
+            }, 5000);
+        });
+    </script>
 </body>
 
 </html>

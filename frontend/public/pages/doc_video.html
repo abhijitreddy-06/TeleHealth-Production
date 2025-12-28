@@ -25,14 +25,14 @@
             --info: #60a5fa;
             --disabled: #9ca3af;
             --footer-bg: #0f172a;
-
+    
             /* Other Variables */
             --transition: all 0.3s ease;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --radius: 12px;
         }
-
+    
         /* Light Theme Variables */
         [data-theme="light"] {
             --background: #f9fafb;
@@ -43,14 +43,14 @@
             --border: #e2e8f0;
             --footer-bg: #1e293b;
         }
-
+    
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: "Poppins", "Inter", "Roboto", sans-serif;
         }
-
+    
         body {
             background-color: var(--background);
             color: var(--text-dark);
@@ -61,7 +61,7 @@
             line-height: 1.6;
             overflow: hidden;
         }
-
+    
         /* Header & Navigation */
         header {
             background-color: var(--card-bg);
@@ -72,7 +72,7 @@
             height: 70px;
             border-bottom: 1px solid var(--border);
         }
-
+    
         .navbar {
             display: flex;
             justify-content: space-between;
@@ -82,7 +82,7 @@
             max-width: 1400px;
             margin: 0 auto;
         }
-
+    
         .logo {
             font-size: 1.5rem;
             font-weight: 700;
@@ -92,12 +92,12 @@
             gap: 0.5rem;
             text-decoration: none;
         }
-
+    
         .logo i {
             color: var(--secondary);
             font-size: 1.5rem;
         }
-
+    
         .logo-text {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
@@ -106,24 +106,24 @@
             -webkit-text-fill-color: transparent;
             font-weight: 800;
         }
-
+    
         .call-info {
             display: flex;
             align-items: center;
             gap: 2rem;
         }
-
+    
         .patient-info {
             display: flex;
             align-items: center;
             gap: 0.5rem;
             color: var(--text-medium);
         }
-
+    
         .patient-info i {
             color: var(--primary);
         }
-
+    
         .timer-container {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             padding: 0.5rem 1.25rem;
@@ -133,17 +133,17 @@
             font-size: 1.1rem;
             box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
         }
-
+    
         .timer-container i {
             margin-right: 0.5rem;
         }
-
+    
         .header-controls {
             display: flex;
             align-items: center;
             gap: 1rem;
         }
-
+    
         .theme-toggle {
             background: none;
             border: none;
@@ -159,11 +159,11 @@
             justify-content: center;
             transition: var(--transition);
         }
-
+    
         .theme-toggle:hover {
             background-color: rgba(56, 189, 248, 0.1);
         }
-
+    
         /* Main Video Container */
         .video-container {
             position: relative;
@@ -172,11 +172,11 @@
             display: flex;
             overflow: hidden;
         }
-
+    
         [data-theme="light"] .video-container {
             background: #1e293b;
         }
-
+    
         /* Remote Video (Main Screen) */
         #remoteVideo {
             flex: 1;
@@ -185,11 +185,11 @@
             object-fit: contain;
             background: #020617;
         }
-
+    
         [data-theme="light"] #remoteVideo {
             background: #1e293b;
         }
-
+    
         /* Local Video (PiP) - Bottom Left */
         #localVideo {
             position: absolute;
@@ -204,12 +204,12 @@
             z-index: 10;
             transition: var(--transition);
         }
-
+    
         #localVideo:hover {
             transform: scale(1.02);
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
         }
-
+    
         .local-video-label {
             position: absolute;
             bottom: 125px;
@@ -225,11 +225,11 @@
             z-index: 11;
             backdrop-filter: blur(10px);
         }
-
+    
         .local-video-label i {
             color: var(--primary);
         }
-
+    
         /* Controls Bar - Professional Zoom Style */
         .controls-bar {
             position: absolute;
@@ -243,11 +243,11 @@
             gap: 2rem;
             z-index: 50;
         }
-
+    
         [data-theme="light"] .controls-bar {
             background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
         }
-
+    
         .control-btn {
             width: 60px;
             height: 60px;
@@ -264,34 +264,34 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
         }
-
+    
         .control-btn:hover {
             transform: translateY(-2px);
             background: rgba(30, 41, 59, 1);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
         }
-
+    
         .control-btn.active {
             background: var(--primary);
             color: white;
         }
-
+    
         .control-btn.end-call {
             width: 70px;
             height: 70px;
             background: var(--error);
             font-size: 1.6rem;
         }
-
+    
         .control-btn.end-call:hover {
             background: #dc2626;
             transform: scale(1.05);
         }
-
+    
         .control-btn.end-call i {
             transform: rotate(135deg);
         }
-
+    
         .control-label {
             position: absolute;
             bottom: -25px;
@@ -301,19 +301,19 @@
             white-space: nowrap;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         }
-
+    
         [data-theme="light"] .control-label {
             color: white;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
         }
-
+    
         .control-group {
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-
+    
         /* Notes Box - Professional Side Panel */
         .notes-box {
             position: absolute;
@@ -332,11 +332,11 @@
             z-index: 20;
             transition: var(--transition);
         }
-
+    
         .notes-box:hover {
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
         }
-
+    
         .notes-header {
             display: flex;
             align-items: center;
@@ -345,7 +345,7 @@
             padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border);
         }
-
+    
         .notes-header h4 {
             color: var(--text-dark);
             font-size: 1.1rem;
@@ -353,16 +353,16 @@
             align-items: center;
             gap: 0.5rem;
         }
-
+    
         .notes-header h4 i {
             color: var(--primary);
         }
-
+    
         .notes-actions {
             display: flex;
             gap: 0.5rem;
         }
-
+    
         .notes-action-btn {
             background: none;
             border: none;
@@ -372,12 +372,12 @@
             border-radius: 6px;
             transition: var(--transition);
         }
-
+    
         .notes-action-btn:hover {
             background: rgba(56, 189, 248, 0.1);
             color: var(--primary);
         }
-
+    
         .notes-textarea {
             flex: 1;
             width: 100%;
@@ -392,17 +392,17 @@
             resize: none;
             transition: var(--transition);
         }
-
+    
         .notes-textarea:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
         }
-
+    
         .notes-textarea::placeholder {
             color: var(--text-medium);
         }
-
+    
         .notes-footer {
             margin-top: 1rem;
             padding-top: 0.75rem;
@@ -413,21 +413,21 @@
             justify-content: space-between;
             align-items: center;
         }
-
+    
         .auto-save {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-
+    
         .auto-save i {
             color: var(--secondary);
         }
-
+    
         .char-count {
             color: var(--text-medium);
         }
-
+    
         /* Connection Status */
         .connection-status {
             position: absolute;
@@ -445,12 +445,12 @@
             border: 1px solid var(--border);
             z-index: 20;
         }
-
+    
         [data-theme="light"] .connection-status {
             background: rgba(255, 255, 255, 0.9);
             color: var(--text-dark);
         }
-
+    
         .status-indicator {
             width: 10px;
             height: 10px;
@@ -458,21 +458,21 @@
             background: var(--secondary);
             animation: pulse 2s infinite;
         }
-
+    
         @keyframes pulse {
             0% {
                 opacity: 1;
             }
-
+    
             50% {
                 opacity: 0.5;
             }
-
+    
             100% {
                 opacity: 1;
             }
         }
-
+    
         /* Participant Info Overlay */
         .participant-info {
             position: absolute;
@@ -490,12 +490,12 @@
             border: 1px solid var(--border);
             z-index: 20;
         }
-
+    
         [data-theme="light"] .participant-info {
             background: rgba(255, 255, 255, 0.9);
             color: var(--text-dark);
         }
-
+    
         .participant-avatar {
             width: 36px;
             height: 36px;
@@ -507,7 +507,7 @@
             color: white;
             font-weight: 600;
         }
-
+    
         /* Video Loading State */
         .video-loading {
             position: absolute;
@@ -517,7 +517,7 @@
             text-align: center;
             z-index: 5;
         }
-
+    
         .loading-spinner {
             width: 60px;
             height: 60px;
@@ -527,57 +527,57 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 1rem;
         }
-
+    
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
         }
-
+    
         .video-loading p {
             color: var(--text-medium);
             font-size: 1rem;
         }
-
+    
         /* Responsive Design */
         @media (max-width: 1200px) {
             .notes-box {
                 width: 300px;
             }
-
+    
             .participant-info {
                 right: 330px;
             }
         }
-
+    
         @media (max-width: 992px) {
             .notes-box {
                 width: 280px;
                 height: calc(100vh - 180px);
             }
-
+    
             .participant-info {
                 right: 310px;
             }
-
+    
             #localVideo {
                 width: 240px;
                 height: 180px;
                 left: 15px;
                 bottom: 130px;
             }
-
+    
             .local-video-label {
                 left: 15px;
                 bottom: 115px;
             }
         }
-
+    
         @media (max-width: 768px) {
             .video-container {
                 flex-direction: column;
             }
-
+    
             .notes-box {
                 position: relative;
                 width: 100%;
@@ -589,141 +589,141 @@
                 border: none;
                 border-top: 1px solid var(--border);
             }
-
+    
             #localVideo {
                 bottom: 160px;
                 left: 10px;
                 width: 180px;
                 height: 135px;
             }
-
+    
             .local-video-label {
                 left: 10px;
                 bottom: 145px;
             }
-
+    
             .participant-info {
                 right: 10px;
                 top: 10px;
             }
-
+    
             .controls-bar {
                 height: 120px;
                 gap: 1rem;
                 padding: 0 1rem;
             }
-
+    
             .control-btn {
                 width: 50px;
                 height: 50px;
                 font-size: 1.2rem;
             }
-
+    
             .control-btn.end-call {
                 width: 60px;
                 height: 60px;
             }
-
+    
             .control-label {
                 font-size: 0.7rem;
                 bottom: -20px;
             }
-
+    
             .call-info {
                 flex-direction: column;
                 gap: 0.5rem;
                 align-items: flex-start;
             }
-
+    
             .timer-container {
                 font-size: 0.9rem;
                 padding: 0.4rem 1rem;
             }
         }
-
+    
         @media (max-width: 576px) {
             .navbar {
                 padding: 0 1rem;
             }
-
+    
             .logo {
                 font-size: 1.2rem;
             }
-
+    
             .logo i {
                 font-size: 1.2rem;
             }
-
+    
             .participant-info {
                 display: none;
             }
-
+    
             #localVideo {
                 width: 150px;
                 height: 113px;
                 bottom: 140px;
                 left: 10px;
             }
-
+    
             .local-video-label {
                 left: 10px;
                 bottom: 125px;
                 font-size: 0.8rem;
                 padding: 0.4rem 0.8rem;
             }
-
+    
             .controls-bar {
                 gap: 0.75rem;
             }
-
+    
             .control-btn {
                 width: 45px;
                 height: 45px;
                 font-size: 1.1rem;
             }
-
+    
             .control-btn.end-call {
                 width: 55px;
                 height: 55px;
             }
         }
-
+    
         /* Utility Classes */
         .hidden {
             display: none !important;
         }
-
+    
         .visible {
             display: block;
         }
-
+    
         .text-center {
             text-align: center;
         }
-
+    
         .text-muted {
             color: var(--text-medium);
         }
-
+    
         /* Scrollbar Styling */
         .notes-textarea::-webkit-scrollbar {
             width: 6px;
         }
-
+    
         .notes-textarea::-webkit-scrollbar-track {
             background: rgba(0, 0, 0, 0.1);
             border-radius: 3px;
         }
-
+    
         .notes-textarea::-webkit-scrollbar-thumb {
             background: var(--primary);
             border-radius: 3px;
         }
-
+    
         .notes-textarea::-webkit-scrollbar-thumb:hover {
             background: var(--primary-hover);
         }
-
+    
         /* Video Controls Text Visibility Fix */
         [data-theme="light"] .patient-info,
         [data-theme="light"] .notes-header h4,
@@ -733,20 +733,20 @@
         [data-theme="light"] .video-loading p {
             color: var(--text-dark);
         }
-
+    
         [data-theme="light"] .notes-action-btn {
             color: var(--text-medium);
         }
-
+    
         [data-theme="light"] .notes-action-btn:hover {
             color: var(--primary);
         }
-
+    
         /* Ensure all text in light mode is visible */
         [data-theme="light"] .text-dark {
             color: var(--text-dark) !important;
         }
-
+    
         [data-theme="light"] .text-medium {
             color: var(--text-medium) !important;
         }
@@ -754,342 +754,163 @@
 </head>
 
 <body>
-    <!-- Header -->
-    <header>
-        <nav class="navbar">
-            <a href="/doc_video_dashboard" class="logo">
-                <i class="fas fa-heartbeat"></i>
-                <span class="logo-text">TeleHealth</span>
-            </a>
-
-            <div class="call-info">
-                <div class="patient-info">
-                    <i class="fas fa-user-injured"></i>
-                    <span class="text-dark">Patient Consultation</span>
-                </div>
-                <div class="timer-container" id="callTimer">
-                    <i class="fas fa-clock"></i>
-                    <span>00:00:00</span>
-                </div>
-            </div>
-
-            <div class="header-controls">
-                <button class="theme-toggle" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
-        </nav>
+    <header
+        style="padding: 1rem; background: #1e293b; display: flex; justify-content: space-between; align-items: center;">
+        <div class="logo" style="color: #38bdf8; font-weight: bold; font-size: 1.2rem;">
+            <i class="fas fa-heartbeat"></i> TeleHealth
+        </div>
+        <div id="callTimer" style="background: #38bdf8; padding: 0.2rem 0.8rem; border-radius: 20px; color: white;">
+            00:00:00</div>
     </header>
 
-    <!-- Main Video Container -->
     <main class="video-container">
-        <!-- Connection Status -->
-        <div class="connection-status">
-            <div class="status-indicator"></div>
-            <span class="text-dark">Connected</span>
-        </div>
-
-        <!-- Participant Info -->
-        <div class="participant-info">
-            <div class="participant-avatar">
-                <i class="fas fa-user"></i>
-            </div>
-            <div>
-                <div class="text-dark">Patient</div>
-                <div class="text-muted" style="font-size: 0.8rem;">Video call in progress</div>
-            </div>
-        </div>
-
-        <!-- Local Video Label -->
-        <div class="local-video-label">
-            <i class="fas fa-user-md"></i>
-            <span>You (Doctor)</span>
-        </div>
-
-        <!-- Video Loading State (Hidden by default) -->
-        <div class="video-loading hidden" id="videoLoading">
-            <div class="loading-spinner"></div>
-            <p class="text-medium">Connecting to patient...</p>
-        </div>
-
-        <!-- Remote Video (Patient) -->
         <video id="remoteVideo" autoplay playsinline></video>
-
-        <!-- Local Video (Doctor) - Bottom Left -->
         <video id="localVideo" autoplay muted playsinline></video>
 
-        <!-- Notes Box -->
         <div class="notes-box">
-            <div class="notes-header">
-                <h4><i class="fas fa-notes-medical"></i> <span class="text-dark">Consultation Notes</span></h4>
-                <div class="notes-actions">
-                    <button class="notes-action-btn" id="clearNotes" title="Clear notes">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                    <button class="notes-action-btn" id="saveNotes" title="Save notes">
-                        <i class="fas fa-save"></i>
-                    </button>
-                </div>
-            </div>
-            <textarea id="notesText" class="notes-textarea" placeholder="Write consultation notes here... 
-• Symptoms observed
-• Diagnosis
-• Prescription
-• Follow-up recommendations"></textarea>
-            <div class="notes-footer">
-                <div class="auto-save">
-                    <i class="fas fa-check-circle"></i>
-                    <span class="text-medium">Auto-save enabled</span>
-                </div>
-                <div class="char-count">
-                    <span id="charCount" class="text-medium">0</span> characters
-                </div>
-            </div>
+            <h4 style="margin: 0; display: flex; justify-content: space-between;">
+                <span>Consultation Notes</span>
+                <button id="saveNotes" style="background: none; border: none; color: #38bdf8; cursor: pointer;"><i
+                        class="fas fa-save"></i></button>
+            </h4>
+            <textarea id="notesText" placeholder="Write consultation notes here..."></textarea>
         </div>
 
-        <!-- Controls Bar -->
         <div class="controls-bar">
-            <div class="control-group">
-                <button class="control-btn" id="toggleMic">
-                    <i class="fas fa-microphone"></i>
-                </button>
-                <span class="control-label">Microphone</span>
-            </div>
-
-            <div class="control-group">
-                <button class="control-btn" id="toggleCam">
-                    <i class="fas fa-video"></i>
-                </button>
-                <span class="control-label">Camera</span>
-            </div>
-
-            <div class="control-group">
-                <button class="control-btn end-call" id="endCall">
-                    <i class="fas fa-phone"></i>
-                </button>
-                <span class="control-label">End Call</span>
-            </div>
+            <button class="control-btn" id="toggleMic"><i class="fas fa-microphone"></i></button>
+            <button class="control-btn" id="toggleCam"><i class="fas fa-video"></i></button>
+            <button class="control-btn end-call" id="endCall"><i class="fas fa-phone"></i></button>
         </div>
     </main>
 
-<script src="/js/authGuard.js"></script>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    /* =========================
-       THEME TOGGLE
-    ========================= */
-    const themeToggle = document.getElementById("themeToggle");
-    const html = document.documentElement;
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        /* =========================
+           EXTRACT PARAMS FROM URL
+        ========================= */
+        // URL Format: /video/doc/ROOM_ID?appt=123
+        const pathParts = window.location.pathname.split('/');
+        const ROOM_ID = pathParts[pathParts.length - 1]; // Last part of URL
 
-    const savedTheme =
-        localStorage.getItem("theme") ||
-        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        const urlParams = new URLSearchParams(window.location.search);
+        const APPOINTMENT_ID = urlParams.get('appt');
 
-    html.setAttribute("data-theme", savedTheme);
-    updateThemeIcon(savedTheme);
-
-    function toggleTheme() {
-        const current = html.getAttribute("data-theme");
-        const next = current === "dark" ? "light" : "dark";
-        html.setAttribute("data-theme", next);
-        localStorage.setItem("theme", next);
-        updateThemeIcon(next);
-    }
-
-    function updateThemeIcon(theme) {
-        if (!themeToggle) return;
-        const icon = theme === "dark" ? "fa-sun" : "fa-moon";
-        themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-    }
-
-    themeToggle?.addEventListener("click", toggleTheme);
-
-    /* =========================
-       NOTES UI
-    ========================= */
-    const notesText = document.getElementById("notesText");
-    const charCount = document.getElementById("charCount");
-
-    if (notesText && charCount) {
-        notesText.addEventListener("input", () => {
-            charCount.textContent = notesText.value.length;
-        });
-
-        const savedNotes = localStorage.getItem("consultation_notes_backup");
-        if (savedNotes) {
-            notesText.value = savedNotes;
-            charCount.textContent = savedNotes.length;
+        if (!ROOM_ID) {
+            alert("Invalid Call Link");
+            window.location.href = "/doc_home";
         }
-    }
 
-    document.getElementById("clearNotes")?.addEventListener("click", () => {
-        if (confirm("Clear all notes?")) {
-            notesText.value = "";
-            charCount.textContent = "0";
-        }
-    });
+        /* =========================
+           VIDEO + SOCKET SETUP
+        ========================= */
+        const socket = io();
+        const localVideo = document.getElementById("localVideo");
+        const remoteVideo = document.getElementById("remoteVideo");
+        const toggleMic = document.getElementById("toggleMic");
+        const toggleCam = document.getElementById("toggleCam");
+        const endCall = document.getElementById("endCall");
+        const callTimer = document.getElementById("callTimer");
+        const notesText = document.getElementById("notesText");
 
-    document.getElementById("saveNotes")?.addEventListener("click", () => {
-        if (notesText.value.trim()) {
-            localStorage.setItem("consultation_notes_backup", notesText.value);
-            alert("Notes saved locally");
-        }
-    });
+        let pc;
+        let localStream;
+        let mic = true;
+        let cam = true;
 
-    /* =========================
-       VIDEO + SOCKET SETUP
-    ========================= */
-    const socket = io();
-    const ROOM_ID = "<%= roomId %>";
-    const APPOINTMENT_ID = "<%= appointment.id %>";
-
-    const localVideo = document.getElementById("localVideo");
-    const remoteVideo = document.getElementById("remoteVideo");
-    const toggleMic = document.getElementById("toggleMic");
-    const toggleCam = document.getElementById("toggleCam");
-    const endCall = document.getElementById("endCall");
-    const callTimer = document.getElementById("callTimer");
-    const videoLoading = document.getElementById("videoLoading");
-
-    let pc;
-    let localStream;
-    let mic = true;
-    let cam = true;
-
-    /* =========================
-       CALL TIMER
-    ========================= */
-    const start = Date.now();
-    if (callTimer) {
+        // Call Timer
+        const start = Date.now();
         setInterval(() => {
             const t = Date.now() - start;
-            callTimer.innerText =
-                `${String(t / 3600000 | 0).padStart(2, '0')}:` +
-                `${String(t / 60000 % 60 | 0).padStart(2, '0')}:` +
-                `${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
+            callTimer.innerText = new Date(t).toISOString().substr(11, 8);
         }, 1000);
-    }
 
-    /* =========================
-       INIT MEDIA
-    ========================= */
-    async function init() {
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-        } catch (err) {
-            alert("Camera or microphone access denied");
-            return;
+        // Init Media
+        async function init() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                socket.emit("join-room", { roomId: ROOM_ID, role: "doctor" });
+            } catch (err) {
+                alert("Camera access denied");
+            }
+        }
+        init();
+
+        // WebRTC Logic
+        function createPeer() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            pc.ontrack = e => remoteVideo.srcObject = e.streams[0];
+
+            pc.onicecandidate = e => {
+                if (e.candidate) socket.emit("signal", { roomId: ROOM_ID, payload: { candidate: e.candidate } });
+            };
         }
 
-        localVideo.srcObject = localStream;
-        socket.emit("join-room", { roomId: ROOM_ID, role: "doctor" });
-        videoLoading?.classList.add("hidden");
-    }
-
-    init();
-
-    /* =========================
-       WEBRTC
-    ========================= */
-    function createPeer() {
-        pc = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        socket.on("peer-joined", async () => { // Patient joined
+            createPeer();
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit("signal", { roomId: ROOM_ID, payload: { offer } });
         });
 
-        localStream.getTracks().forEach(track =>
-            pc.addTrack(track, localStream)
-        );
+        socket.on("signal", async ({ offer, answer, candidate }) => {
+            if (!pc) createPeer();
+            if (offer) { // Should not happen for Doctor (initiator), but good for safety
+                await pc.setRemoteDescription(offer);
+                const ans = await pc.createAnswer();
+                await pc.setLocalDescription(ans);
+                socket.emit("signal", { roomId: ROOM_ID, payload: { answer: ans } });
+            }
+            if (answer) await pc.setRemoteDescription(answer);
+            if (candidate) await pc.addIceCandidate(candidate);
+        });
 
-        pc.ontrack = e => {
-            remoteVideo.srcObject = e.streams[0];
+        // Controls
+        toggleMic.onclick = () => {
+            mic = !mic;
+            localStream.getAudioTracks()[0].enabled = mic;
+            toggleMic.innerHTML = mic ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
         };
 
-        pc.onicecandidate = e => {
-            if (e.candidate) {
-                socket.emit("signal", {
-                    roomId: ROOM_ID,
-                    payload: { candidate: e.candidate }
+        toggleCam.onclick = () => {
+            cam = !cam;
+            localStream.getVideoTracks()[0].enabled = cam;
+            toggleCam.innerHTML = cam ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
+        };
+
+        // Save Notes
+        document.getElementById("saveNotes").onclick = async () => {
+            if (!notesText.value.trim()) return;
+            try {
+                await fetch("/api/notes/save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ roomId: ROOM_ID, notes: notesText.value })
                 });
+                alert("Notes saved!");
+            } catch (e) { alert("Save failed"); }
+        };
+
+        // End Call
+        endCall.onclick = async () => {
+            if (confirm("End consultation?")) {
+                if (APPOINTMENT_ID) {
+                    await fetch(`/api/appointments/${APPOINTMENT_ID}/complete`, { method: "POST", credentials: "include" });
+                }
+                socket.emit("call-ended", { roomId: ROOM_ID });
+                window.location.href = "/doc_video_dashboard";
             }
         };
-    }
 
-    socket.on("user-ready", async () => {
-        createPeer();
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket.emit("signal", {
-            roomId: ROOM_ID,
-            payload: { offer }
+        socket.on("call-ended", () => {
+            alert("Patient left the call");
+            window.location.href = "/doc_video_dashboard";
         });
-    });
-
-    socket.on("signal", async payload => {
-        if (!pc) createPeer();
-
-        if (payload.answer) {
-            await pc.setRemoteDescription(payload.answer);
-        }
-
-        if (payload.candidate) {
-            await pc.addIceCandidate(payload.candidate);
-        }
-    });
-
-    /* =========================
-       CONTROLS
-    ========================= */
-    toggleMic?.addEventListener("click", () => {
-        mic = !mic;
-        localStream.getAudioTracks()[0].enabled = mic;
-        toggleMic.innerHTML = mic
-            ? '<i class="fas fa-microphone"></i>'
-            : '<i class="fas fa-microphone-slash"></i>';
-    });
-
-    toggleCam?.addEventListener("click", () => {
-        cam = !cam;
-        localStream.getVideoTracks()[0].enabled = cam;
-        toggleCam.innerHTML = cam
-            ? '<i class="fas fa-video"></i>'
-            : '<i class="fas fa-video-slash"></i>';
-    });
-
-    /* =========================
-       END CALL
-    ========================= */
-    endCall?.addEventListener("click", async () => {
-
-        // Save notes only if present
-        if (notesText?.value.trim()) {
-            await fetch("/api/notes/save", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    roomId: ROOM_ID,
-                    notes: notesText.value
-                })
-            });
-        }
-
-        // Mark appointment completed
-        await fetch(`/appointments/${APPOINTMENT_ID}/complete`, {
-            method: "POST",
-            credentials: "include"
-        });
-
-        // Clear backup
-        localStorage.removeItem("consultation_notes_backup");
-
-        socket.emit("call-ended", { roomId: ROOM_ID });
-        window.location.href = "/doc_video_dashboard";
-    });
-</script>
-
+    </script>
 </body>
 
 </html>

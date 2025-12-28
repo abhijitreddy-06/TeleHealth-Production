@@ -25,7 +25,6 @@ const __dirname = path.dirname(__filename);
 
 // Go UP one level from 'backend' to reach 'frontend'
 const FRONTEND_PATH = path.join(__dirname, "../frontend");
-const VIEWS_PATH = path.join(FRONTEND_PATH, "views");
 const PUBLIC_PATH = path.join(FRONTEND_PATH, "public");
 const PAGES_PATH = path.join(PUBLIC_PATH, "pages");
 
@@ -86,10 +85,6 @@ app.use((req, res, next) => {
 
 // ✅ Serve Static Files (CSS, JS, Images) from frontend/public
 app.use(express.static(PUBLIC_PATH));
-
-// ✅ Setup EJS View Engine pointing to frontend/views
-app.set("view engine", "ejs");
-app.set("views", VIEWS_PATH);
 
 /* ==================================================================
    3. CUSTOM MIDDLEWARE
@@ -444,38 +439,38 @@ app.get("/api/prescription/download/:roomId", authenticate, authorize("user", "d
 
 
 /* ==================================================================
-   5. VIEW ROUTES (FIXED: MAP EJS & HTML CORRECTLY)
+   5. VIEW ROUTES (HTML ONLY - NO EJS)
 ================================================================== */
 
-// --- Public Pages (HTML) ---
+// --- Public Pages ---
 app.get("/", (req, res) => res.sendFile(path.join(PAGES_PATH, "index.html")));
 app.get("/role", (req, res) => res.sendFile(path.join(PAGES_PATH, "role.html")));
 app.get("/services", (req, res) => res.sendFile(path.join(PAGES_PATH, "services.html")));
 app.get("/contact", (req, res) => res.sendFile(path.join(PAGES_PATH, "contact.html")));
 
-// --- Auth Pages (EJS as requested) ---
-app.get("/user_login", blockAfterLogin, (req, res) => res.render("user_login"));
-app.get("/user_signup", blockAfterLogin, (req, res) => res.render("user_signup"));
-app.get("/doc_login", blockAfterLogin, (req, res) => res.render("doc_login"));
-app.get("/doc_signup", blockAfterLogin, (req, res) => res.render("doc_signup"));
+// --- Auth Pages ---
+app.get("/user_login", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "user_login.html")));
+app.get("/user_signup", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "user_signup.html")));
+app.get("/doc_login", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_login.html")));
+app.get("/doc_signup", blockAfterLogin, (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_signup.html")));
 
 // --- User Protected Pages ---
 app.get("/user_home", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_home.html")));
-app.get("/user_profile", authenticate, authorize("user"), (req, res) => res.render("profile", { user: req.user })); // EJS
+app.get("/user_profile", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_profile.html"))); // Converted to HTML
 app.get("/user_video_dashboard", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_video_dashboard.html")));
 app.get("/appointments", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "appointments.html")));
 app.get("/records", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "records.html")));
-app.get("/predict", authenticate, (req, res) => res.render("predict", { user: req.user })); // EJS
+app.get("/predict", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "predict.html"))); // Converted to HTML
 
 // --- Doctor Protected Pages ---
 app.get("/doc_home", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_home.html")));
-app.get("/doc_profile", authenticate, authorize("doctor"), (req, res) => res.render("doc_profile", { user: req.user })); // EJS
+app.get("/doc_profile", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_profile.html"))); // Converted to HTML
 app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_video_dashboard.html")));
 
-// --- Video Call Rooms (EJS - Implicitly required for video) ---
-// I'm adding these so your video files are reachable.
-app.get("/video/user/:roomId", authenticate, authorize("user"), (req, res) => res.render("user_video", { roomId: req.params.roomId }));
-app.get("/video/doc/:roomId", authenticate, authorize("doctor"), (req, res) => res.render("doc_video", { roomId: req.params.roomId }));
+// --- Video Call Rooms (HTML) ---
+// Note: Logic inside these HTML files extracts roomId from URL
+app.get("/video/user/:roomId", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_video.html")));
+app.get("/video/doc/:roomId", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_video.html")));
 
 // Handle 404 (Must be last)
 app.use((req, res) => res.status(404).sendFile(path.join(PAGES_PATH, "404.html")));

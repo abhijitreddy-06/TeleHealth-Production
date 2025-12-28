@@ -267,7 +267,7 @@
             color: var(--primary);
         }
 
-        /* Main Content - Two Column Layout for Desktop */
+        /* Main Content */
         .container {
             max-width: 1400px;
             margin: 3rem auto;
@@ -777,7 +777,7 @@
             color: var(--border);
         }
 
-        /* Responsive Design - Matching user_home */
+        /* Responsive Design */
         @media (max-width: 1200px) {
             .ai-section {
                 gap: 1.5rem;
@@ -910,7 +910,7 @@
 </head>
 
 <body>
-    
+
     <header>
         <nav class="navbar">
             <a href="/user_home" class="logo">
@@ -955,7 +955,7 @@
         <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
     </div>
 
-    
+
     <div class="container">
         <div class="page-header">
             <h1>🧠 AI Pre-Consultation Check</h1>
@@ -963,7 +963,6 @@
         </div>
 
         <div class="ai-section">
-            <!-- Left Card: Symptoms Input -->
             <div class="input-card">
                 <div class="card-header">
                     <div class="card-icon">
@@ -992,7 +991,6 @@
                 </button>
             </div>
 
-            <!-- Right Card: Results Display -->
             <div class="results-card">
                 <div class="card-header">
                     <div class="card-icon">
@@ -1005,7 +1003,6 @@
                 </div>
 
                 <div class="results-content">
-                    <!-- Empty State -->
                     <div class="empty-results" id="emptyResults">
                         <div class="empty-icon">
                             <i class="fas fa-clipboard-list"></i>
@@ -1014,14 +1011,12 @@
                         <p class="text-medium">Enter your symptoms in the left panel to get AI-powered analysis</p>
                     </div>
 
-                    <!-- Loading State -->
                     <div class="loading-state" id="loadingState">
                         <div class="loading-spinner"></div>
                         <h3 class="text-dark">Analyzing Symptoms</h3>
                         <p class="text-medium">Our AI is processing your symptoms...</p>
                     </div>
 
-                    <!-- Error State -->
                     <div class="error-state" id="errorState">
                         <div class="error-icon">
                             <i class="fas fa-exclamation-triangle"></i>
@@ -1033,16 +1028,13 @@
                         </button>
                     </div>
 
-                    <!-- Results Display -->
                     <div class="results-display" id="resultsDisplay">
-                        <!-- Results will be populated here -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Simple Footer -->
     <footer class="simple-footer">
         <div class="footer-content">
             <div class="footer-left">
@@ -1064,163 +1056,163 @@
             </div>
         </div>
     </footer>
-<script src="/js/authGuard.js"></script>
-<script>
-    /* =========================
-       THEME TOGGLE
-    ========================= */
-    const themeToggle = document.getElementById("themeToggle");
-    const mobileThemeToggle = document.getElementById("mobileThemeToggle");
-    const html = document.documentElement;
+    <script src="/js/authGuard.js"></script>
+    <script>
+        /* =========================
+           THEME TOGGLE
+        ========================= */
+        const themeToggle = document.getElementById("themeToggle");
+        const mobileThemeToggle = document.getElementById("mobileThemeToggle");
+        const html = document.documentElement;
 
-    const savedTheme =
-        localStorage.getItem("theme") ||
-        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        const savedTheme =
+            localStorage.getItem("theme") ||
+            (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
-    html.setAttribute("data-theme", savedTheme);
-    updateThemeIcon(savedTheme);
+        html.setAttribute("data-theme", savedTheme);
+        updateThemeIcon(savedTheme);
 
-    function toggleTheme() {
-        const currentTheme = html.getAttribute("data-theme");
-        const newTheme = currentTheme === "dark" ? "light" : "dark";
-        html.setAttribute("data-theme", newTheme);
-        localStorage.setItem("theme", newTheme);
-        updateThemeIcon(newTheme);
-    }
+        function toggleTheme() {
+            const currentTheme = html.getAttribute("data-theme");
+            const newTheme = currentTheme === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+            updateThemeIcon(newTheme);
+        }
 
-    function updateThemeIcon(theme) {
-        const icon = theme === "dark" ? "fa-sun" : "fa-moon";
-        themeToggle && (themeToggle.innerHTML = `<i class="fas ${icon}"></i>`);
-        mobileThemeToggle && (mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`);
-    }
+        function updateThemeIcon(theme) {
+            const icon = theme === "dark" ? "fa-sun" : "fa-moon";
+            if (themeToggle) themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            if (mobileThemeToggle) mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
 
-    themeToggle?.addEventListener("click", toggleTheme);
-    mobileThemeToggle?.addEventListener("click", toggleTheme);
+        themeToggle?.addEventListener("click", toggleTheme);
+        mobileThemeToggle?.addEventListener("click", toggleTheme);
 
-    /* =========================
-       MOBILE MENU
-    ========================= */
-    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-    const closeMenuBtn = document.getElementById("closeMenu");
-    const mobileMenu = document.getElementById("mobileMenu");
+        /* =========================
+           MOBILE MENU
+        ========================= */
+        const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+        const closeMenuBtn = document.getElementById("closeMenu");
+        const mobileMenu = document.getElementById("mobileMenu");
 
-    mobileMenuBtn?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        mobileMenu.classList.add("active");
-        document.body.style.overflow = "hidden";
-    });
+        mobileMenuBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            mobileMenu.classList.add("active");
+            document.body.style.overflow = "hidden";
+        });
 
-    closeMenuBtn?.addEventListener("click", () => {
-        mobileMenu.classList.remove("active");
-        document.body.style.overflow = "";
-    });
-
-    document.addEventListener("click", (e) => {
-        if (
-            mobileMenu?.classList.contains("active") &&
-            !mobileMenu.contains(e.target) &&
-            e.target !== mobileMenuBtn
-        ) {
+        closeMenuBtn?.addEventListener("click", () => {
             mobileMenu.classList.remove("active");
             document.body.style.overflow = "";
-        }
-    });
-
-    /* =========================
-       CHARACTER COUNTER
-    ========================= */
-    const symptomsInput = document.getElementById("symptoms");
-    const charCount = document.getElementById("charCount");
-
-    if (symptomsInput && charCount) {
-        charCount.textContent = symptomsInput.value.length;
-        symptomsInput.addEventListener("input", () => {
-            charCount.textContent = symptomsInput.value.length;
         });
-    }
 
-    /* =========================
-       AI PRECHECK
-    ========================= */
-    async function runPrecheck() {
-        const text = symptomsInput?.value.trim();
-        const analyzeBtn = document.getElementById("analyzeBtn");
-        const emptyResults = document.getElementById("emptyResults");
-        const loadingState = document.getElementById("loadingState");
-        const errorState = document.getElementById("errorState");
-        const resultsDisplay = document.getElementById("resultsDisplay");
+        document.addEventListener("click", (e) => {
+            if (
+                mobileMenu?.classList.contains("active") &&
+                !mobileMenu.contains(e.target) &&
+                e.target !== mobileMenuBtn
+            ) {
+                mobileMenu.classList.remove("active");
+                document.body.style.overflow = "";
+            }
+        });
 
-        if (!text) {
-            errorState.classList.add("active");
-            document.getElementById("errorMessage").textContent =
-                "Please enter your symptoms";
-            emptyResults.style.display = "none";
-            loadingState.classList.remove("active");
-            resultsDisplay.classList.remove("active");
-            return;
+        /* =========================
+           CHARACTER COUNTER
+        ========================= */
+        const symptomsInput = document.getElementById("symptoms");
+        const charCount = document.getElementById("charCount");
+
+        if (symptomsInput && charCount) {
+            charCount.textContent = symptomsInput.value.length;
+            symptomsInput.addEventListener("input", () => {
+                charCount.textContent = symptomsInput.value.length;
+            });
         }
 
-        // Reset UI
-        emptyResults.style.display = "none";
-        errorState.classList.remove("active");
-        loadingState.classList.add("active");
-        resultsDisplay.classList.remove("active");
+        /* =========================
+           AI PRECHECK
+        ========================= */
+        async function runPrecheck() {
+            const text = symptomsInput?.value.trim();
+            const analyzeBtn = document.getElementById("analyzeBtn");
+            const emptyResults = document.getElementById("emptyResults");
+            const loadingState = document.getElementById("loadingState");
+            const errorState = document.getElementById("errorState");
+            const resultsDisplay = document.getElementById("resultsDisplay");
 
-        analyzeBtn.disabled = true;
-        analyzeBtn.innerHTML =
-            '<i class="fas fa-spinner fa-spin"></i><span>Analyzing...</span>';
-
-        try {
-            const res = await fetch("/api/ai/precheck", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include", // ✅ JWT SAFE
-                body: JSON.stringify({ text })
-            });
-
-            const data = await res.json();
-
-            loadingState.classList.remove("active");
-            analyzeBtn.disabled = false;
-            analyzeBtn.innerHTML =
-                '<i class="fas fa-search"></i><span>Analyze Symptoms</span>';
-
-            if (!res.ok || data.error) {
+            if (!text) {
                 errorState.classList.add("active");
                 document.getElementById("errorMessage").textContent =
-                    data.error || "Analysis failed";
+                    "Please enter your symptoms";
+                emptyResults.style.display = "none";
+                loadingState.classList.remove("active");
+                resultsDisplay.classList.remove("active");
                 return;
             }
 
-            displayResults(data);
-            resultsDisplay.classList.add("active");
+            // Reset UI
+            emptyResults.style.display = "none";
+            errorState.classList.remove("active");
+            loadingState.classList.add("active");
+            resultsDisplay.classList.remove("active");
 
-        } catch (err) {
-            console.error(err);
-
-            loadingState.classList.remove("active");
-            analyzeBtn.disabled = false;
+            analyzeBtn.disabled = true;
             analyzeBtn.innerHTML =
-                '<i class="fas fa-search"></i><span>Analyze Symptoms</span>';
+                '<i class="fas fa-spinner fa-spin"></i><span>Analyzing...</span>';
 
-            errorState.classList.add("active");
-            document.getElementById("errorMessage").textContent =
-                "AI service is currently unavailable. Please try again later.";
+            try {
+                const res = await fetch("/api/ai/precheck", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include", // ✅ JWT SAFE
+                    body: JSON.stringify({ text })
+                });
+
+                const data = await res.json();
+
+                loadingState.classList.remove("active");
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML =
+                    '<i class="fas fa-search"></i><span>Analyze Symptoms</span>';
+
+                if (!res.ok || data.error) {
+                    errorState.classList.add("active");
+                    document.getElementById("errorMessage").textContent =
+                        data.error || "Analysis failed";
+                    return;
+                }
+
+                displayResults(data);
+                resultsDisplay.classList.add("active");
+
+            } catch (err) {
+                console.error(err);
+
+                loadingState.classList.remove("active");
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML =
+                    '<i class="fas fa-search"></i><span>Analyze Symptoms</span>';
+
+                errorState.classList.add("active");
+                document.getElementById("errorMessage").textContent =
+                    "AI service is currently unavailable. Please try again later.";
+            }
         }
-    }
 
-    /* =========================
-       DISPLAY RESULTS
-    ========================= */
-    function displayResults(data) {
-        const resultsDisplay = document.getElementById("resultsDisplay");
-        let html = "";
+        /* =========================
+           DISPLAY RESULTS
+        ========================= */
+        function displayResults(data) {
+            const resultsDisplay = document.getElementById("resultsDisplay");
+            let html = "";
 
-        if (data.top_conditions?.length) {
-            html += `<h4 class="text-dark" style="margin-bottom:1rem;">Possible Conditions</h4>`;
-            data.top_conditions.forEach(c => {
-                const percent = Math.round(c.confidence * 100);
-                html += `
+            if (data.top_conditions?.length) {
+                html += `<h4 class="text-dark" style="margin-bottom:1rem;">Possible Conditions</h4>`;
+                data.top_conditions.forEach(c => {
+                    const percent = Math.round(c.confidence * 100);
+                    html += `
                 <div class="condition-card">
                     <div class="condition-header">
                         <div class="condition-name text-dark">${c.condition}</div>
@@ -1231,10 +1223,10 @@
                     </div>
                 </div>
             `;
-            });
-        }
+                });
+            }
 
-        html += `
+            html += `
         <div class="severity-section">
             <div class="severity-header">
                 <i class="fas fa-exclamation-circle"></i>
@@ -1251,8 +1243,8 @@
         </div>
     `;
 
-        if (data.red_flags?.length) {
-            html += `
+            if (data.red_flags?.length) {
+                html += `
             <div class="red-flags-section">
                 <h4 class="text-dark">
                     <i class="fas fa-exclamation-triangle"></i> Red Flags
@@ -1262,27 +1254,27 @@
                 </ul>
             </div>
         `;
-        }
+            }
 
-        html += `
+            html += `
         <div class="disclaimer text-medium">
             <i class="fas fa-info-circle"></i>
             ${data.disclaimer || "This AI analysis is informational only."}
         </div>
     `;
 
-        resultsDisplay.innerHTML = html;
-    }
+            resultsDisplay.innerHTML = html;
+        }
 
-    /* =========================
-       RETRY
-    ========================= */
-    function retryAnalysis() {
-        document.getElementById("errorState").classList.remove("active");
-        document.getElementById("emptyResults").style.display = "flex";
-        if (symptomsInput.value.trim()) runPrecheck();
-    }
-</script>
+        /* =========================
+           RETRY
+        ========================= */
+        function retryAnalysis() {
+            document.getElementById("errorState").classList.remove("active");
+            document.getElementById("emptyResults").style.display = "flex";
+            if (symptomsInput.value.trim()) runPrecheck();
+        }
+    </script>
 
 </body>
 

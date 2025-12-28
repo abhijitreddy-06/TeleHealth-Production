@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleHealth - Your Profile</title>
+    <title>TeleHealth - Doctor Profile</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+
     <style>
         :root {
             /* Color Variables */
@@ -533,7 +535,7 @@
             text-align: center;
             margin-top: auto;
         }
-    
+
         .footer-content {
             max-width: 1400px;
             margin: 0 auto;
@@ -542,13 +544,13 @@
             align-items: center;
             gap: 1rem;
         }
-    
+
         .footer-left {
             display: flex;
             align-items: center;
             gap: 0.8rem;
         }
-    
+
         .footer-logo {
             display: flex;
             align-items: center;
@@ -557,60 +559,60 @@
             font-weight: 600;
             text-decoration: none;
         }
-    
+
         .footer-logo i {
             color: var(--secondary);
             font-size: 1.2rem;
         }
-    
+
         .copyright {
             color: var(--text-medium);
             font-size: 0.9rem;
         }
-    
+
         .footer-links {
             display: flex;
             gap: 1.5rem;
             align-items: center;
         }
-    
+
         .footer-links a {
             color: var(--text-medium);
             text-decoration: none;
             font-size: 0.9rem;
             transition: var(--transition);
         }
-    
+
         .footer-links a:hover {
             color: var(--primary);
         }
-    
+
         .footer-links .separator {
             color: var(--border);
         }
-    
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .simple-footer {
                 padding: 1rem 5%;
             }
-    
+
             .footer-content {
                 flex-direction: column;
                 gap: 0.8rem;
                 text-align: center;
             }
-    
+
             .footer-links {
                 flex-wrap: wrap;
                 justify-content: center;
                 gap: 1rem;
             }
-    
+
             .separator {
                 display: none;
             }
-    
+
             .footer-links a {
                 font-size: 0.85rem;
             }
@@ -619,21 +621,18 @@
 </head>
 
 <body>
-    
+
     <header>
         <nav class="navbar">
-            <a href="/user_home" class="logo">
+            <a href="/doc_home" class="logo">
                 <i class="fas fa-heartbeat"></i>
                 <span class="logo-text">TeleHealth</span>
             </a>
 
             <div class="nav-links">
-                <a href="/user_home" class="active"><i class="fas fa-home"></i> Home</a>
-                <a href="/predict"><i class="fas fa-robot"></i>AI Pre Advice</a>
-                <a href="/user_video_dashboard"><i class="fas fa-video"></i>video</a>
-                <a href="/appointments"><i class="fas fa-user-md"></i>Appointments</a>
-                <a href="/records"><i class="fas fa-folder"></i> My Records</a>
-                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+                <a href="/doc_home"><i class="fas fa-home"></i> Home</a>
+                <a href="/doc_video_dashboard"><i class="fas fa-video"></i>Video</a>
+                <a href="/doc_profile" class="active"><i class="fas fa-user-circle"></i>Profile</a>
                 <button class="theme-toggle" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -650,87 +649,68 @@
         </nav>
     </header>
 
-
     <div class="mobile-menu" id="mobileMenu">
         <button class="close-menu" id="closeMenu">
             <i class="fas fa-times"></i>
         </button>
-                <a href="/user_home" class="active"><i class="fas fa-home"></i> Home</a>
-                <a href="/predict"><i class="fas fa-robot"></i>AI Pre Advice</a>
-                <a href="/user_video_dashboard"><i class="fas fa-video"></i>video</a>
-                <a href="/appointments"><i class="fas fa-user-md"></i>Appointments</a>
-                <a href="/records"><i class="fas fa-folder"></i> My Records</a>
-                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+        <a href="/doc_home"><i class="fas fa-home"></i> Home</a>
+        <a href="/doc_video_dashboard"><i class="fas fa-video"></i>Video</a>
+        <a href="/doc_profile" class="active"><i class="fas fa-user-circle"></i> Profile</a>
     </div>
 
-    <!-- Profile Section -->
     <section class="profile-section">
+
         <div class="profile-header">
-            <h1>Your Health Profile</h1>
-            <p>Manage and view your personal health information securely</p>
+            <h1>Doctor Profile</h1>
+            <p>View and manage your professional details</p>
         </div>
 
         <div class="profile-card">
-            <div class="profile-grid">
+
+            <div id="loading" style="text-align: center; padding: 2rem;">
+                <i class="fas fa-spinner fa-spin fa-2x"></i> Loading...
+            </div>
+
+            <div class="profile-grid" id="profileGrid" style="display: none;">
+
                 <div class="profile-item">
                     <label>Full Name</label>
-                    <div class="value">
-                        <%= profile.fullName %>
-                    </div>
+                    <div class="value" id="docName">-</div>
                 </div>
 
                 <div class="profile-item">
-                    <label>Date of Birth</label>
-                    <div class="value">
-                        <%= profile.dob %>
-                    </div>
+                    <label>Specialization</label>
+                    <div class="value" id="docSpec">-</div>
                 </div>
 
                 <div class="profile-item">
-                    <label>Gender</label>
-                    <div class="value">
-                        <% if (profile.gender) { %>
-                            <%= profile.gender %>
-                                <% } else if (profile.customGender) { %>
-                                    <%= profile.customGender %>
-                                        <% } else { %>
-                                            Not specified
-                                            <% } %>
-                    </div>
+                    <label>Experience</label>
+                    <div class="value" id="docExp">-</div>
                 </div>
 
                 <div class="profile-item">
-                    <label>Height</label>
-                    <div class="value">
-                        <%= profile.height %> cm
-                    </div>
+                    <label>Qualification</label>
+                    <div class="value" id="docQual">-</div>
                 </div>
 
                 <div class="profile-item">
-                    <label>Weight</label>
-                    <div class="value">
-                        <%= profile.weight %> kg
-                    </div>
+                    <label>Hospital / Clinic</label>
+                    <div class="value" id="docHospital">-</div>
                 </div>
 
                 <div class="profile-item">
-                    <label>Blood Group</label>
-                    <div class="value">
-                        <%= profile.bloodGroup || "Not specified" %>
-                    </div>
+                    <label>Bio</label>
+                    <div class="value" id="docBio">-</div>
                 </div>
 
-                <div class="profile-item">
-                    <label>Allergies</label>
-                    <div class="value">
-                        <%= profile.allergies || "None" %>
-                    </div>
-                </div>
             </div>
 
-            <div class="profile-actions">
-                <a href="/logout" class="btn btn-primary"><i class="fas fa-edit"></i>Log out</a>
+            <div class="profile-actions" id="actions" style="display: none;">
+                <a href="#" onclick="logout(event)" class="btn btn-primary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
             </div>
+
         </div>
     </section>
 
@@ -740,9 +720,9 @@
                 <a href="/user_home" class="footer-logo">
                     <i class="fas fa-heartbeat"></i>
                     <span>TeleHealth</span>
-                    </a>
-                    <div class="copyright">
-                        © 2025 TeleHealth. All rights reserved.
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
                 </div>
             </div>
 
@@ -755,75 +735,128 @@
             </div>
         </div>
     </footer>
-<script src="/js/authGuard.js"></script>
-<script>
-    /* =========================
-       THEME TOGGLE
-    ========================= */
-    const themeToggle = document.getElementById("themeToggle");
-    const mobileThemeToggle = document.getElementById("mobileThemeToggle");
-    const html = document.documentElement;
 
-    const savedTheme =
-        localStorage.getItem("theme") ||
-        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    <script src="/js/authGuard.js"></script>
+    <script>
+        /* =========================
+           DATA FETCHING LOGIC
+        ========================= */
+        document.addEventListener("DOMContentLoaded", async () => {
+            const loading = document.getElementById("loading");
+            const grid = document.getElementById("profileGrid");
+            const actions = document.getElementById("actions");
 
-    html.setAttribute("data-theme", savedTheme);
-    updateThemeIcon(savedTheme);
+            try {
+                // Fetch doctor profile
+                const res = await fetch("/api/doctor/profile", { credentials: "include" });
 
-    function toggleTheme() {
-        const currentTheme = html.getAttribute("data-theme");
-        const newTheme = currentTheme === "dark" ? "light" : "dark";
+                if (res.status === 401 || res.status === 403) {
+                    window.location.href = "/doc_login";
+                    return;
+                }
 
-        html.setAttribute("data-theme", newTheme);
-        localStorage.setItem("theme", newTheme);
-        updateThemeIcon(newTheme);
-    }
+                const data = await res.json();
 
-    function updateThemeIcon(theme) {
-        const icon = theme === "dark" ? "fa-sun" : "fa-moon";
+                if (data.exists && data.profile) {
+                    const p = data.profile;
+                    document.getElementById("docName").textContent = p.fullName || "Not set";
+                    document.getElementById("docSpec").textContent = p.specialization || "Not set";
+                    document.getElementById("docExp").textContent = (p.experience ? p.experience + " years" : "Not set");
+                    document.getElementById("docQual").textContent = p.qualification || "Not specified";
+                    document.getElementById("docHospital").textContent = p.hospital || "Not specified";
+                    document.getElementById("docBio").textContent = p.bio || "No bio added";
+                } else {
+                    document.querySelector(".profile-header p").textContent = "Please complete your profile setup.";
+                }
 
-        if (themeToggle) {
-            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+                // Show UI
+                loading.style.display = "none";
+                grid.style.display = "grid";
+                actions.style.display = "flex";
+
+            } catch (err) {
+                console.error("Profile Error:", err);
+                loading.innerHTML = "<span style='color:red'>Failed to load profile.</span>";
+            }
+        });
+
+        async function logout(e) {
+            e.preventDefault();
+            try {
+                const res = await fetch("/api/logout", { method: "POST" });
+                if (res.ok) {
+                    window.location.href = "/doc_login";
+                } else {
+                    alert("Logout failed");
+                }
+            } catch (err) {
+                console.error("Logout error:", err);
+            }
         }
 
-        if (mobileThemeToggle) {
-            mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        /* =========================
+           THEME TOGGLE
+        ========================= */
+        const themeToggle = document.getElementById('themeToggle');
+        const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+        const html = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
         }
-    }
 
-    themeToggle?.addEventListener("click", toggleTheme);
-    mobileThemeToggle?.addEventListener("click", toggleTheme);
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-    /* =========================
-       MOBILE MENU
-    ========================= */
-    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-    const closeMenuBtn = document.getElementById("closeMenu");
-    const mobileMenu = document.getElementById("mobileMenu");
-
-    mobileMenuBtn?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        mobileMenu.classList.add("active");
-        document.body.style.overflow = "hidden";
-    });
-
-    closeMenuBtn?.addEventListener("click", () => {
-        mobileMenu.classList.remove("active");
-        document.body.style.overflow = "";
-    });
-
-    document.addEventListener("click", (e) => {
-        if (
-            mobileMenu?.classList.contains("active") &&
-            !mobileMenu.contains(e.target) &&
-            e.target !== mobileMenuBtn
-        ) {
-            mobileMenu.classList.remove("active");
-            document.body.style.overflow = "";
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
         }
-    });
-</script>
+
+        function updateThemeIcon(theme) {
+            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+            if (themeToggle) themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            if (mobileThemeToggle) mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
+
+        if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+        if (mobileThemeToggle) mobileThemeToggle.addEventListener('click', toggleTheme);
+
+
+        /* =========================
+           MOBILE MENU
+        ========================= */
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenu');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                mobileMenu.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        if (closeMenuBtn) {
+            closeMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (mobileMenu && mobileMenu.classList.contains('active') &&
+                !mobileMenu.contains(e.target) &&
+                e.target !== mobileMenuBtn) {
+                mobileMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
 
 </body>
 
