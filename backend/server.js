@@ -444,27 +444,6 @@ app.post("/api/logout", (req, res) => {
   }
 });
 
-// --- B. AI API ---
-app.post("/api/ai/precheck", authenticate, async (req, res) => {
-  try {
-    const AI_URL = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
-    const response = await fetch(`${AI_URL}/ai/precheck`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    try {
-      await db.query(`INSERT INTO ai_prechecks (user_id, symptoms, ai_response, severity) VALUES ($1, $2, $3, $4)`,
-        [req.user.id, req.body.text, JSON.stringify(data), data.severity || "unknown"]);
-    } catch (e) {
-      console.error("Error saving AI precheck:", e);
-    }
-    res.json(data);
-  } catch (err) {
-    console.error("AI service error:", err);
-    res.status(500).json({ error: "AI service unavailable" });
-  }
-});
-
 // --- C. PROFILE API (COMPLETELY UPDATED) ---
 app.get("/api/user/profile", authenticate, authorize("user"), async (req, res) => {
   try {
@@ -557,7 +536,7 @@ app.post("/api/user/profile", authenticate, authorize("user"), async (req, res) 
     res.json({
       success: true,
       message: "Profile saved successfully",
-      redirect: "/user_home"
+      redirect: "/user_profile"  // CHANGED: Redirect to profile page instead of home
     });
   } catch (err) {
     console.error("Error saving user profile:", err);
@@ -655,7 +634,7 @@ app.post("/api/doctor/profile", authenticate, authorize("doctor"), async (req, r
     res.json({
       success: true,
       message: "Profile saved successfully",
-      redirect: "/doc_home"
+      redirect: "/doc_profile"  // CHANGED: Redirect to profile page instead of home
     });
   } catch (err) {
     console.error("Error saving doctor profile:", err);
@@ -665,6 +644,27 @@ app.post("/api/doctor/profile", authenticate, authorize("doctor"), async (req, r
     }
 
     res.status(500).json({ error: "Failed to save profile" });
+  }
+});
+
+// --- B. AI API ---
+app.post("/api/ai/precheck", authenticate, async (req, res) => {
+  try {
+    const AI_URL = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
+    const response = await fetch(`${AI_URL}/ai/precheck`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    try {
+      await db.query(`INSERT INTO ai_prechecks (user_id, symptoms, ai_response, severity) VALUES ($1, $2, $3, $4)`,
+        [req.user.id, req.body.text, JSON.stringify(data), data.severity || "unknown"]);
+    } catch (e) {
+      console.error("Error saving AI precheck:", e);
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("AI service error:", err);
+    res.status(500).json({ error: "AI service unavailable" });
   }
 });
 
@@ -1073,9 +1073,42 @@ app.get("/user_home", authenticate, authorize("user"), async (req, res) => {
   }
 });
 
-app.get("/user_profile", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_profile.html")));
+app.get("/user_profile", authenticate, authorize("user"), async (req, res) => {
+  try {
+    // Check if user has a profile
+    const profileExists = await checkProfileExists(req.user.id, "user");
+    if (!profileExists) {
+      // If no profile exists, redirect to create profile
+      return res.redirect('/user_profile_create');
+    }
+
+    // Send the profile page
+    res.sendFile(path.join(PAGES_PATH, "user_profile.html"));
+  } catch (err) {
+    console.error("Error loading user profile page:", err);
+    res.status(500).send("Internal server error");
+  }
+});
+
+// Redirect from /userprofile to /user_profile
 app.get("/userprofile", authenticate, authorize("user"), (req, res) => res.redirect("/user_profile"));
-app.get("/user_profile_create", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_profile_create.html")));
+
+// Profile creation page
+app.get("/user_profile_create", authenticate, authorize("user"), async (req, res) => {
+  try {
+    // Check if user already has a profile
+    const profileExists = await checkProfileExists(req.user.id, "user");
+    if (profileExists) {
+      // If profile already exists, redirect to profile page
+      return res.redirect('/user_profile');
+    }
+
+    res.sendFile(path.join(PAGES_PATH, "user_profile_create.html"));
+  } catch (err) {
+    console.error("Error loading user profile create page:", err);
+    res.status(500).send("Internal server error");
+  }
+});
 
 app.get("/user_video_dashboard", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "user_video_dashboard.html")));
 app.get("/appointments", authenticate, authorize("user"), (req, res) => res.sendFile(path.join(PAGES_PATH, "appointments.html")));
@@ -1097,9 +1130,42 @@ app.get("/doc_home", authenticate, authorize("doctor"), async (req, res) => {
   }
 });
 
-app.get("/doc_profile", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_profile.html")));
+app.get("/doc_profile", authenticate, authorize("doctor"), async (req, res) => {
+  try {
+    // Check if doctor has a profile
+    const profileExists = await checkProfileExists(req.user.id, "doctor");
+    if (!profileExists) {
+      // If no profile exists, redirect to create profile
+      return res.redirect('/doc_profile_create');
+    }
+
+    // Send the profile page
+    res.sendFile(path.join(PAGES_PATH, "doc_profile.html"));
+  } catch (err) {
+    console.error("Error loading doctor profile page:", err);
+    res.status(500).send("Internal server error");
+  }
+});
+
+// Redirect from /docprofile to /doc_profile
 app.get("/docprofile", authenticate, authorize("doctor"), (req, res) => res.redirect("/doc_profile"));
-app.get("/doc_profile_create", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_profile_create.html")));
+
+// Profile creation page
+app.get("/doc_profile_create", authenticate, authorize("doctor"), async (req, res) => {
+  try {
+    // Check if doctor already has a profile
+    const profileExists = await checkProfileExists(req.user.id, "doctor");
+    if (profileExists) {
+      // If profile already exists, redirect to profile page
+      return res.redirect('/doc_profile');
+    }
+
+    res.sendFile(path.join(PAGES_PATH, "doc_profile_create.html"));
+  } catch (err) {
+    console.error("Error loading doctor profile create page:", err);
+    res.status(500).send("Internal server error");
+  }
+});
 
 app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => res.sendFile(path.join(PAGES_PATH, "doc_video_dashboard.html")));
 
