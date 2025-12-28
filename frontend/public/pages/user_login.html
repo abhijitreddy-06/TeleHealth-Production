@@ -204,8 +204,10 @@
                         const res = await fetch('/api/user_login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include', // 🔥 REQUIRED
                             body: JSON.stringify({ phone, password })
                         });
+
 
                         const data = await res.json();
 

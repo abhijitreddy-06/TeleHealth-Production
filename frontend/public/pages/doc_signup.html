@@ -78,7 +78,7 @@
                     </div>
                     <div class="form-group">
                         <label for="password">Confirm Password</label>
-                        <input type="password" id="password" class="form-control"
+                        <input type="password" id="confirmpassword" class="form-control"
                             placeholder="Enter your password again" name="confirmpassword" required>
                     </div>
                     <div class="form-footer">
@@ -197,7 +197,8 @@
                 const passwordInput = document.getElementById('password');
                 // The confirm password input in your doc_signup.html was: <input type="password" id="password" ... name="confirmpassword">
                 // This is a duplicate ID "password". You should probably fix the ID in HTML, but I will target by name to be safe.
-                const confirmInput = document.querySelector('input[name="confirmpassword"]');
+                const confirmInput = document.getElementById('confirmpassword');
+
 
                 if (signupForm) {
                     signupForm.addEventListener('submit', async (e) => {
@@ -221,6 +222,7 @@
                             const res = await fetch('/api/doc_signup', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
                                 body: JSON.stringify({ phone, password, confirmpassword })
                             });
 
