@@ -67,44 +67,14 @@ const server = http.createServer(app);
 app.set('trust proxy', 1);
 
 
-// Determine environment
-const isProduction = process.env.NODE_ENV === 'production';
+// Simple CORS setup that should work
+app.use(cors({
+  origin: ['https://telehealth-production.onrender.com', 'http://localhost:3000'],
+  credentials: true
+}));
 
-// CORS Configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
 
-    // In development, allow all origins
-    if (!isProduction) {
-      return callback(null, true);
-    }
 
-    const allowedOrigins = [
-      'https://telehealth-production.onrender.com',
-      'https://telehealth-backend-9c46.onrender.com',
-      'http://localhost:3000',
-      'http://localhost:5173'
-    ];
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log(`CORS blocked for origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
-  exposedHeaders: ['Set-Cookie'],
-  maxAge: 86400, // 24 hours
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
 
 
 
