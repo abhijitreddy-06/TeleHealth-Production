@@ -70,37 +70,54 @@ app.set('trust proxy', 1);
 // Determine environment
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Define allowed origins
+const allowedOrigins = [
+  'https://telehealth-production.onrender.com',
+  'https://telehealth-backend-9c46.onrender.com', // Allow backend to call itself
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
 // CORS Configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
     // In development, allow all origins
     if (!isProduction) {
       return callback(null, true);
     }
 
-    // In production, allow specific origins
-    const allowedOrigins = [
-      'https://telehealth-production.onrender.com',
-      'https://telehealth-production.onrender.com' // If different
-    ];
-
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.error(`CORS blocked: ${origin}`);
+      console.log(`CORS blocked for origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Set-Cookie']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
+  exposedHeaders: ['Set-Cookie'],
+  maxAge: 86400 // 24 hours
 };
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// Handle preflight requests explicitly
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin) || !isProduction) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+  res.sendStatus(200);
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -183,13 +200,14 @@ app.post("/api/user_signup", async (req, res) => {
     const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
 
     // In your authentication routes (user_login, user_signup, doc_login, doc_signup):
+    // In your auth routes (user_login, user_signup, doc_login, doc_signup):
     res.cookie("token", token, {
       httpOnly: true,
       secure: isProduction,          // Secure only in production
       sameSite: isProduction ? "None" : "Lax", // None for cross-site in production
       path: "/",
-      maxAge: 2 * 60 * 60 * 1000, // 2 hours
-      domain: isProduction ? ".onrender.com" : undefined // Set domain for production
+      maxAge: 2 * 60 * 60 * 1000 // 2 hours
+      // REMOVE: domain: isProduction ? ".onrender.com" : undefined
     });
 
 
@@ -208,13 +226,14 @@ app.post("/api/user_login", async (req, res) => {
     const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
 
     // In your authentication routes (user_login, user_signup, doc_login, doc_signup):
+    // In your auth routes (user_login, user_signup, doc_login, doc_signup):
     res.cookie("token", token, {
       httpOnly: true,
       secure: isProduction,          // Secure only in production
       sameSite: isProduction ? "None" : "Lax", // None for cross-site in production
       path: "/",
-      maxAge: 2 * 60 * 60 * 1000, // 2 hours
-      domain: isProduction ? ".onrender.com" : undefined // Set domain for production
+      maxAge: 2 * 60 * 60 * 1000 // 2 hours
+      // REMOVE: domain: isProduction ? ".onrender.com" : undefined
     });
 
 
@@ -238,13 +257,14 @@ app.post("/api/doc_signup", async (req, res) => {
     const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
 
     // In your authentication routes (user_login, user_signup, doc_login, doc_signup):
+    // In your auth routes (user_login, user_signup, doc_login, doc_signup):
     res.cookie("token", token, {
       httpOnly: true,
       secure: isProduction,          // Secure only in production
       sameSite: isProduction ? "None" : "Lax", // None for cross-site in production
       path: "/",
-      maxAge: 2 * 60 * 60 * 1000, // 2 hours
-      domain: isProduction ? ".onrender.com" : undefined // Set domain for production
+      maxAge: 2 * 60 * 60 * 1000 // 2 hours
+      // REMOVE: domain: isProduction ? ".onrender.com" : undefined
     });
 
 
@@ -263,13 +283,14 @@ app.post("/api/doc_login", async (req, res) => {
     const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
 
     // In your authentication routes (user_login, user_signup, doc_login, doc_signup):
+    // In your auth routes (user_login, user_signup, doc_login, doc_signup):
     res.cookie("token", token, {
       httpOnly: true,
       secure: isProduction,          // Secure only in production
       sameSite: isProduction ? "None" : "Lax", // None for cross-site in production
       path: "/",
-      maxAge: 2 * 60 * 60 * 1000, // 2 hours
-      domain: isProduction ? ".onrender.com" : undefined // Set domain for production
+      maxAge: 2 * 60 * 60 * 1000 // 2 hours
+      // REMOVE: domain: isProduction ? ".onrender.com" : undefined
     });
 
     res.json({ success: true, role: "doctor" });
@@ -525,48 +546,25 @@ app.get("/api/prescription/download/:roomId", authenticate, authorize("user", "d
     doc.end();
   } catch (err) { res.status(500).json({ error: "Failed to generate prescription" }); }
 });
-app.get('/api/debug/cookies', (req, res) => {
+// Debug endpoint to check CORS headers
+app.get('/api/debug/headers', (req, res) => {
   res.json({
-    cookies: req.cookies,
-    headers: req.headers,
-    secure: req.secure,
-    host: req.get('host'),
-    origin: req.get('origin'),
-    referer: req.get('referer')
-  });
-});
-app.get('/api/cors-test', (req, res) => {
-  console.log('Origin:', req.headers.origin);
-  console.log('Host:', req.headers.host);
-  console.log('Referer:', req.headers.referer);
-
-  res.json({
-    message: 'CORS test successful',
     origin: req.headers.origin,
     host: req.headers.host,
-    allowedOrigins: allowedOrigins,
+    referer: req.headers.referer,
     headers: req.headers
   });
 });
-// Also add a test endpoint
-app.post('/api/test-login', async (req, res) => {
-  try {
-    const { phone, password } = req.body;
-    const token = jwt.sign({ id: 1, phone, role: "user" }, JWT_SECRET, { expiresIn: "2h" });
 
-    res.cookie("test_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? "None" : "Lax",
-      path: "/",
-      maxAge: 2 * 60 * 60 * 1000
-    });
-
-    res.json({ success: true, message: "Test cookie set" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// Simple test endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    service: 'TeleHealth Backend'
+  });
 });
+
 
 /* ==================================================================
    5. VIEW ROUTES (HTML ONLY - NO EJS)
@@ -609,10 +607,16 @@ app.use((req, res) => res.status(404).sendFile(path.join(PAGES_PATH, "404.html")
 /* ==================================================================
    6. SOCKET.IO
 ================================================================== */
+/* ==================================================================
+   6. SOCKET.IO
+================================================================== */
 const io = new Server(server, {
-  cors: { origin: "https://telehealth-production.onrender.com", credentials: true }
+  cors: {
+    origin: ['https://telehealth-production.onrender.com', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST']
+  }
 });
-
 io.on("connection", (socket) => {
   socket.on("join-room", ({ roomId, role }) => {
     if (!roomId || !role) return;
