@@ -1463,49 +1463,85 @@ function videoSocket(io) {
             console.log(`Doctor ending call in room ${roomId}`);
 
             try {
+                // Check if appointment exists and is valid
+                const appointmentCheck = await db.query(
+                    `SELECT id, user_id, doctor_id, status 
+             FROM appointments 
+             WHERE room_id = $1 AND id = $2`,
+                    [roomId, appointmentId]
+                );
+
+                if (appointmentCheck.rows.length === 0) {
+                    console.log(`❌ Invalid appointment: ${appointmentId} in room ${roomId}`);
+                    socket.emit('prescription-error', { message: 'Invalid appointment' });
+                    return;
+                }
+
+                console.log('📝 Saving prescription notes...');
+
                 // Save the prescription to database
                 if (notes && notes.trim()) {
-                    await db.query(
-                        `INSERT INTO doctor_notes (room_id, appointment_id, notes, sent)
-                         VALUES ($1, $2, $3, TRUE)
-                         ON CONFLICT (room_id) 
-                         DO UPDATE SET notes = EXCLUDED.notes, sent = TRUE`,
+                    const saveResult = await db.query(
+                        `INSERT INTO doctor_notes (room_id, appointment_id, notes, sent, created_at)
+                 VALUES ($1, $2, $3, TRUE, NOW())
+                 ON CONFLICT (room_id) 
+                 DO UPDATE SET 
+                    notes = EXCLUDED.notes, 
+                    sent = TRUE, 
+                    created_at = NOW()
+                 RETURNING id`,
                         [roomId, appointmentId, notes]
                     );
 
-                    console.log(`Prescription saved for room ${roomId}`);
+                    console.log(`✅ Prescription saved with ID: ${saveResult.rows[0]?.id}`);
+                } else {
+                    // Save empty notes if doctor didn't write anything
+                    await db.query(
+                        `INSERT INTO doctor_notes (room_id, appointment_id, notes, sent, created_at)
+                 VALUES ($1, $2, $3, TRUE, NOW())
+                 ON CONFLICT (room_id) 
+                 DO UPDATE SET 
+                    notes = EXCLUDED.notes, 
+                    sent = TRUE, 
+                    created_at = NOW()`,
+                        [roomId, appointmentId, "No prescription notes provided."]
+                    );
+                    console.log('✅ Empty prescription saved');
                 }
 
                 // Update appointment status to completed
                 await db.query(
                     `UPDATE appointments 
-                     SET status = 'completed'
-                     WHERE room_id = $1`,
-                    [roomId]
+             SET status = 'completed', completed_at = NOW()
+             WHERE room_id = $1 AND id = $2`,
+                    [roomId, appointmentId]
                 );
 
-                console.log(`Appointment completed for room ${roomId}`);
+                console.log(`✅ Appointment ${appointmentId} marked as completed`);
 
                 // Notify user that prescription is ready and call is ending
-                socket.to(roomId).emit("call-ended-with-prescription", {
-                    roomId,
-                    message: "Doctor ended the consultation. Prescription is ready."
-                });
-
-                // Also send regular call-ended for backward compatibility
-                socket.to(roomId).emit("call-ended", {
-                    roomId,
-                    message: "Doctor ended the consultation"
-                });
-
-                console.log(`Notification sent to user in room ${roomId}`);
+                setTimeout(() => {
+                    socket.to(roomId).emit("call-ended-with-prescription", {
+                        roomId,
+                        message: "Doctor ended the consultation. Prescription is ready."
+                    });
+                    console.log(`📢 Notification sent to user in room ${roomId}`);
+                }, 500);
 
             } catch (error) {
-                console.error("Error ending call:", error);
-                // Still notify user but without prescription
+                console.error("❌ Error ending call:", error);
+                console.error("❌ Error stack:", error.stack);
+
+                // Notify doctor about the error
+                socket.emit('prescription-error', {
+                    message: 'Failed to save prescription',
+                    error: error.message
+                });
+
+                // Still notify user that call ended (without prescription)
                 socket.to(roomId).emit("call-ended", {
                     roomId,
-                    message: "Consultation ended"
+                    message: "Consultation ended. Prescription may not be available."
                 });
             }
         });
@@ -1517,6 +1553,7 @@ function videoSocket(io) {
 }
 // Prescription PDF Routes
 // Prescription PDF Routes - ENSURE THIS EXISTS
+// Prescription PDF Routes - UPDATED
 function prescriptionRoutes(app) {
     app.get("/api/prescription/download/:roomId",
         authenticate,
@@ -1524,73 +1561,329 @@ function prescriptionRoutes(app) {
             try {
                 const { roomId } = req.params;
 
-                console.log('Generating prescription for room:', roomId);
+                console.log('🔍 Generating prescription for room:', roomId);
+                console.log('👤 User ID:', req.user.id);
+                console.log('👤 User Role:', req.user.role);
 
-                const result = await db.query(
-                    `SELECT dn.notes, a.appointment_date,
-                            dp.full_name as doctor_name,
-                            dp.specialization,
-                            dp.qualification
-                     FROM doctor_notes dn
-                     JOIN appointments a ON a.room_id = dn.room_id
-                     LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
-                     WHERE dn.room_id = $1 AND dn.sent = TRUE`,
+                // First, let's check if the user has access to this room
+                let appointmentQuery;
+                if (req.user.role === "user") {
+                    appointmentQuery = await db.query(
+                        `SELECT a.id, a.user_id, a.doctor_id, a.appointment_date,
+                                dp.full_name as doctor_name,
+                                dp.specialization,
+                                dp.qualification,
+                                dp.hospital_name
+                         FROM appointments a
+                         LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
+                         WHERE a.room_id = $1 AND a.user_id = $2`,
+                        [roomId, req.user.id]
+                    );
+                } else if (req.user.role === "doctor") {
+                    appointmentQuery = await db.query(
+                        `SELECT a.id, a.user_id, a.doctor_id, a.appointment_date,
+                                dp.full_name as doctor_name,
+                                dp.specialization,
+                                dp.qualification,
+                                dp.hospital_name
+                         FROM appointments a
+                         LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
+                         WHERE a.room_id = $1 AND a.doctor_id = $2`,
+                        [roomId, req.user.id]
+                    );
+                }
+
+                console.log('📋 Appointment query result:', appointmentQuery.rows);
+
+                if (!appointmentQuery.rows.length) {
+                    console.log('❌ No appointment found for room:', roomId);
+                    return res.status(404).send(`
+                        <h2>Prescription Not Found</h2>
+                        <p>No appointment found for this consultation.</p>
+                        <p>Room ID: ${roomId}</p>
+                        <p>User ID: ${req.user.id}</p>
+                        <a href="/user_video_dashboard">Return to Dashboard</a>
+                    `);
+                }
+
+                const appointment = appointmentQuery.rows[0];
+
+                // Get prescription notes from doctor_notes table
+                const notesQuery = await db.query(
+                    `SELECT notes, created_at
+                     FROM doctor_notes
+                     WHERE room_id = $1
+                     ORDER BY created_at DESC
+                     LIMIT 1`,
                     [roomId]
                 );
 
-                if (!result.rows.length) {
-                    return res.status(404).send("Prescription not found or not yet sent by doctor");
+                console.log('📝 Notes query result:', notesQuery.rows);
+
+                let notes = "No prescription notes provided by the doctor.";
+                let prescriptionDate = new Date();
+
+                if (notesQuery.rows.length > 0) {
+                    notes = notesQuery.rows[0].notes || notes;
+                    prescriptionDate = notesQuery.rows[0].created_at || prescriptionDate;
                 }
 
-                const notes = result.rows[0].notes || "No prescription notes provided.";
-                const doctorName = result.rows[0].doctor_name || "Doctor";
-                const specialization = result.rows[0].specialization || "";
-                const qualification = result.rows[0].qualification || "";
-                const appointmentDate = new Date(result.rows[0].appointment_date).toLocaleDateString();
+                // Get patient information if available
+                let patientName = "Patient";
+                let patientInfo = "";
 
+                if (req.user.role === "doctor") {
+                    const patientQuery = await db.query(
+                        `SELECT full_name, date_of_birth, gender, blood_group
+                         FROM user_profile
+                         WHERE user_id = $1`,
+                        [appointment.user_id]
+                    );
+
+                    if (patientQuery.rows.length > 0) {
+                        const patient = patientQuery.rows[0];
+                        patientName = patient.full_name || "Patient";
+                        patientInfo = `Patient: ${patientName}`;
+                        if (patient.date_of_birth) {
+                            const dob = new Date(patient.date_of_birth);
+                            const age = new Date().getFullYear() - dob.getFullYear();
+                            patientInfo += ` | Age: ${age} years`;
+                        }
+                        if (patient.gender) {
+                            patientInfo += ` | Gender: ${patient.gender}`;
+                        }
+                        if (patient.blood_group) {
+                            patientInfo += ` | Blood Group: ${patient.blood_group}`;
+                        }
+                    }
+                } else {
+                    // For user, get their own info
+                    const patientQuery = await db.query(
+                        `SELECT full_name, date_of_birth, gender, blood_group
+                         FROM user_profile
+                         WHERE user_id = $1`,
+                        [req.user.id]
+                    );
+
+                    if (patientQuery.rows.length > 0) {
+                        const patient = patientQuery.rows[0];
+                        patientName = patient.full_name || "Patient";
+                        patientInfo = `Patient: ${patientName}`;
+                        if (patient.date_of_birth) {
+                            const dob = new Date(patient.date_of_birth);
+                            const age = new Date().getFullYear() - dob.getFullYear();
+                            patientInfo += ` | Age: ${age} years`;
+                        }
+                        if (patient.gender) {
+                            patientInfo += ` | Gender: ${patient.gender}`;
+                        }
+                        if (patient.blood_group) {
+                            patientInfo += ` | Blood Group: ${patient.blood_group}`;
+                        }
+                    }
+                }
+
+                // Doctor info
+                const doctorName = appointment.doctor_name || "Dr. Unknown";
+                const specialization = appointment.specialization || "General Physician";
+                const qualification = appointment.qualification || "MD";
+                const hospital = appointment.hospital_name || "TeleHealth Clinic";
+
+                // Format dates
+                const appointmentDate = appointment.appointment_date
+                    ? new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    })
+                    : new Date().toLocaleDateString();
+
+                const prescriptionDateStr = new Date(prescriptionDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                console.log('📄 Generating PDF with data:', {
+                    doctorName,
+                    specialization,
+                    patientName,
+                    appointmentDate,
+                    prescriptionDateStr,
+                    notesLength: notes.length
+                });
+
+                // Set headers for PDF
                 res.setHeader("Content-Type", "application/pdf");
                 res.setHeader(
                     "Content-Disposition",
-                    'attachment; filename="prescription.pdf"'
+                    `attachment; filename="Prescription_${roomId}_${Date.now()}.pdf"`
                 );
 
-                const doc = new PDFDocument({ margin: 50 });
+                // Create PDF
+                const doc = new PDFDocument({
+                    margin: 50,
+                    size: 'A4',
+                    info: {
+                        Title: 'Medical Prescription',
+                        Author: 'TeleHealth System',
+                        Subject: 'Medical Consultation Prescription',
+                        Keywords: 'prescription, medical, telehealth',
+                        CreationDate: new Date()
+                    }
+                });
+
+                // Pipe to response
                 doc.pipe(res);
 
-                // Header
-                doc.fontSize(25).text("MEDICAL PRESCRIPTION", { align: "center" });
-                doc.moveDown(0.5);
-                doc.fontSize(10).text("TeleHealth Consultation", { align: "center" });
-                doc.moveDown(1);
+                try {
+                    // Add header with logo
+                    doc.fontSize(18).text('TELEHEALTH PRESCRIPTION', {
+                        align: 'center',
+                        underline: true
+                    });
+                    doc.moveDown(0.5);
+                    doc.fontSize(10).text('Electronic Medical Prescription', { align: 'center' });
+                    doc.moveDown(1);
 
-                // Doctor Information
-                doc.fontSize(12).text("Prescribing Doctor:", { underline: true });
-                doc.moveDown(0.3);
-                doc.fontSize(11).text(`Dr. ${doctorName}`);
-                if (specialization) doc.text(`Specialization: ${specialization}`);
-                if (qualification) doc.text(`Qualification: ${qualification}`);
-                doc.moveDown(1);
+                    // Add line separator
+                    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+                    doc.moveDown(1);
 
-                // Patient Information
-                doc.fontSize(12).text("Consultation Details:", { underline: true });
-                doc.moveDown(0.3);
-                doc.fontSize(11).text(`Date: ${appointmentDate}`);
-                doc.text(`Consultation ID: ${roomId}`);
-                doc.moveDown(1);
+                    // Doctor Information Section
+                    doc.fontSize(12).fillColor('#333333').text('PRESCRIBING PHYSICIAN:', {
+                        underline: true
+                    });
+                    doc.moveDown(0.3);
+                    doc.fontSize(11).fillColor('#000000');
+                    doc.text(`Dr. ${doctorName}`, { continued: true });
+                    doc.fontSize(9).fillColor('#666666').text(` (${qualification})`, {
+                        align: 'left'
+                    });
+                    doc.fontSize(10);
+                    doc.text(`Specialization: ${specialization}`);
+                    doc.text(`Hospital/Clinic: ${hospital}`);
+                    doc.moveDown(1);
 
-                // Prescription Notes
-                doc.fontSize(12).text("Prescription & Recommendations:", { underline: true });
-                doc.moveDown(0.3);
-                doc.fontSize(11).text(notes);
+                    // Patient Information Section
+                    doc.fontSize(12).fillColor('#333333').text('PATIENT INFORMATION:', {
+                        underline: true
+                    });
+                    doc.moveDown(0.3);
+                    doc.fontSize(10);
+                    doc.text(patientInfo);
+                    doc.moveDown(1);
 
-                doc.moveDown(2);
-                doc.fontSize(10).text("This is an electronic prescription generated by TeleHealth.", { align: "center" });
-                doc.text("Please consult your doctor for any follow-up questions.", { align: "center" });
+                    // Consultation Details
+                    doc.fontSize(12).fillColor('#333333').text('CONSULTATION DETAILS:', {
+                        underline: true
+                    });
+                    doc.moveDown(0.3);
+                    doc.fontSize(10);
+                    doc.text(`Appointment Date: ${appointmentDate}`);
+                    doc.text(`Prescription Date: ${prescriptionDateStr}`);
+                    doc.text(`Consultation ID: ${roomId}`);
+                    doc.moveDown(1.5);
 
-                doc.end();
+                    // Prescription Content
+                    doc.fontSize(12).fillColor('#333333').text('MEDICAL PRESCRIPTION:', {
+                        underline: true
+                    });
+                    doc.moveDown(0.5);
+
+                    // Prescription box with border
+                    const prescriptionY = doc.y;
+                    doc.rect(50, prescriptionY, 500, 200).stroke();
+                    doc.moveDown(0.1);
+
+                    // Add prescription content
+                    doc.fontSize(11).fillColor('#000000');
+                    const lines = notes.split('\n');
+                    let lineY = prescriptionY + 20;
+
+                    for (let line of lines) {
+                        if (line.trim()) {
+                            doc.text(`• ${line.trim()}`, 60, lineY, {
+                                width: 480,
+                                align: 'left'
+                            });
+                            lineY += 20;
+                        }
+                    }
+
+                    doc.y = prescriptionY + 210;
+                    doc.moveDown(2);
+
+                    // Doctor's Signature
+                    doc.fontSize(10).fillColor('#333333');
+                    doc.text('________________________________', 400, doc.y, { align: 'right' });
+                    doc.text(`Dr. ${doctorName}`, 400, doc.y + 20, { align: 'right' });
+                    doc.text(qualification, 400, doc.y + 35, { align: 'right' });
+                    doc.text(specialization, 400, doc.y + 50, { align: 'right' });
+
+                    doc.moveDown(4);
+
+                    // Footer
+                    doc.fontSize(8).fillColor('#666666');
+                    doc.text('This is an electronically generated prescription from TeleHealth System.', {
+                        align: 'center'
+                    });
+                    doc.text('For any queries, please contact: support@telehealth.com | Phone: 1800-TELEHEALTH', {
+                        align: 'center'
+                    });
+                    doc.text('Prescription ID: ' + roomId + ' | Generated on: ' + new Date().toLocaleString(), {
+                        align: 'center'
+                    });
+
+                    // End the document
+                    doc.end();
+
+                    console.log('✅ PDF generated successfully for room:', roomId);
+
+                } catch (pdfError) {
+                    console.error('❌ PDF generation error:', pdfError);
+                    // Fallback to simple text response
+                    res.setHeader("Content-Type", "text/html");
+                    res.send(`
+                        <h2>Prescription</h2>
+                        <h3>Dr. ${doctorName} (${specialization})</h3>
+                        <p><strong>Patient:</strong> ${patientName}</p>
+                        <p><strong>Date:</strong> ${prescriptionDateStr}</p>
+                        <p><strong>Consultation ID:</strong> ${roomId}</p>
+                        <hr>
+                        <h4>Prescription Notes:</h4>
+                        <pre>${notes}</pre>
+                        <hr>
+                        <p><em>Digitally signed by Dr. ${doctorName}</em></p>
+                        <a href="/user_video_dashboard">Return to Dashboard</a>
+                    `);
+                }
+
             } catch (err) {
-                logger.error("PDF generation error:", err);
-                res.status(500).send("Failed to generate prescription");
+                console.error('❌ Prescription route error:', err);
+                console.error('❌ Error stack:', err.stack);
+
+                // Send a user-friendly error message
+                res.setHeader("Content-Type", "text/html");
+                res.status(500).send(`
+                    <h2>Error Generating Prescription</h2>
+                    <p>We encountered an error while generating your prescription.</p>
+                    <p><strong>Error:</strong> ${err.message}</p>
+                    <p><strong>Room ID:</strong> ${req.params.roomId}</p>
+                    <p><strong>User ID:</strong> ${req.user.id}</p>
+                    <hr>
+                    <h3>What to do:</h3>
+                    <ol>
+                        <li>Return to your dashboard</li>
+                        <li>Contact support if the problem persists</li>
+                        <li>Your consultation notes are saved in the system</li>
+                    </ol>
+                    <a href="/user_video_dashboard" style="display:inline-block; padding:10px 20px; background:#007bff; color:white; text-decoration:none; border-radius:5px;">
+                        Return to Dashboard
+                    </a>
+                `);
             }
         }
     );
@@ -1618,54 +1911,44 @@ protectedRoutes(app, PROJECT_ROOT);
 // ==============================================
 
 // Add this to test Supabase connection
-app.get("/debug/appointments", authenticate, async (req, res) => {
-    try {
-        
+// Add this to your routes for testing
+app.get("/api/prescription/test/:roomId",
+    authenticate,
+    async (req, res) => {
+        try {
+            const { roomId } = req.params;
 
-        // Test doctor query
-        const doctorResult = await db.query(
-            `SELECT a.id, a.appointment_date, a.appointment_time,
-                    a.status, a.room_id,
-                    COALESCE(up.full_name, 'Patient') AS user_name
-             FROM appointments a
-             LEFT JOIN user_profile up ON up.user_id = a.user_id
-             WHERE a.doctor_id = $1
-               AND a.status IN ('scheduled','started')
-             ORDER BY a.appointment_date, a.appointment_time
-             LIMIT 1`,
-            [req.user.id]
-        );
+            const notesQuery = await db.query(
+                `SELECT notes, created_at, sent
+                 FROM doctor_notes
+                 WHERE room_id = $1`,
+                [roomId]
+            );
 
-        // Test user query
-        const userResult = await db.query(
-            `SELECT a.id, a.appointment_date, a.appointment_time,
-                    a.status, a.room_id,
-                    COALESCE(dp.full_name, 'Doctor') AS doctor_name,
-                    COALESCE(dp.specialization, 'General') AS specialization
-             FROM appointments a
-             LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
-             WHERE a.user_id = $1
-               AND a.status IN ('scheduled','started')
-             ORDER BY a.appointment_date, a.appointment_time
-             LIMIT 1`,
-            [req.user.id]
-        );
+            const appointmentQuery = await db.query(
+                `SELECT id, user_id, doctor_id, status, appointment_date
+                 FROM appointments
+                 WHERE room_id = $1`,
+                [roomId]
+            );
 
-        res.json({
-            role: req.user.role,
-            doctorQueryResults: doctorResult.rows,
-            userQueryResults: userResult.rows,
-            tablesExist: {
-                appointments: await tableExists('appointments'),
-                user_profile: await tableExists('user_profile'),
-                doc_profile: await tableExists('doc_profile')
-            }
-        });
+            res.json({
+                roomId,
+                notesExists: notesQuery.rows.length > 0,
+                notes: notesQuery.rows[0] || null,
+                appointmentExists: appointmentQuery.rows.length > 0,
+                appointment: appointmentQuery.rows[0] || null,
+                tables: {
+                    doctor_notes: await tableExists('doctor_notes'),
+                    appointments: await tableExists('appointments')
+                }
+            });
 
-    } catch (err) {
-        res.json({ error: err.message, stack: err.stack });
+        } catch (error) {
+            res.json({ error: error.message });
+        }
     }
-});
+);
 
 async function tableExists(tableName) {
     try {

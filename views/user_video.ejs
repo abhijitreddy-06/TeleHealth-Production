@@ -894,19 +894,75 @@
         themeToggle.addEventListener('click', toggleTheme);
 
         // Function to download prescription
+        // Updated downloadPrescription function with better error handling
         function downloadPrescription(roomId) {
-            console.log('Downloading prescription for room:', roomId);
+            console.log('📥 Downloading prescription for room:', roomId);
 
             const downloadUrl = `/api/prescription/download/${roomId}`;
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            a.download = 'prescription.pdf';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
 
-            // Also open in new tab as backup
-            window.open(downloadUrl, '_blank');
+            // Show loading state
+            const downloadBtn = document.getElementById('manualDownloadBtn');
+            const originalText = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+            downloadBtn.disabled = true;
+
+            // Create hidden iframe for download
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = downloadUrl;
+
+            iframe.onload = function () {
+                console.log('Iframe loaded, checking status...');
+
+                // Re-enable button after 3 seconds
+                setTimeout(() => {
+                    downloadBtn.innerHTML = originalText;
+                    downloadBtn.disabled = false;
+
+                    // Check if download was successful
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const iframeText = iframeDoc.body ? iframeDoc.body.innerText : '';
+
+                    if (iframeText.includes('Error') || iframeText.includes('Not Found')) {
+                        console.error('❌ Download failed:', iframeText);
+
+                        // Show error message to user
+                        overlayMessage.textContent = 'Prescription download failed. Please try again or contact support.';
+
+                        // Also try direct fetch to see the error
+                        fetch(downloadUrl)
+                            .then(response => {
+                                if (!response.ok) {
+                                    return response.text().then(text => {
+                                        console.error('Server response:', text);
+                                    });
+                                }
+                            })
+                            .catch(fetchError => {
+                                console.error('Fetch error:', fetchError);
+                            });
+                    } else {
+                        console.log('✅ Download initiated successfully');
+                    }
+
+                    // Remove iframe after processing
+                    document.body.removeChild(iframe);
+                }, 3000);
+            };
+
+            iframe.onerror = function () {
+                console.error('❌ Iframe error loading prescription');
+                downloadBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Try Again';
+                downloadBtn.disabled = false;
+                document.body.removeChild(iframe);
+            };
+
+            document.body.appendChild(iframe);
+
+            // Also open in new tab as backup (after delay)
+            setTimeout(() => {
+                window.open(downloadUrl, '_blank');
+            }, 1000);
         }
 
         // Function to cleanup and end call
