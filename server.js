@@ -943,7 +943,7 @@ function protectedRoutes(app, PROJECT_ROOT) {
     });
 
     app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => {
-        res.render("doc_video_dashboard");
+        res.sendFile(path.join(PROJECT_ROOT, "public/pages/doc_video_dashboard.html"));
     });
 
     app.get("/user_video/:roomId", authenticate, authorize("user"), (req, res) => {
