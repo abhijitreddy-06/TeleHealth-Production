@@ -437,23 +437,34 @@ function appointmentRoutes(app) {
         authorize("doctor"),
         async (req, res) => {
             try {
+                console.log("Fetching appointments for doctor:", req.user.id);
+
                 const result = await db.query(
                     `SELECT a.id, a.appointment_date, a.appointment_time,
-                        a.status, a.room_id, 
-                        COALESCE(up.full_name, 'Patient') AS user_name
-                 FROM appointments a
-                 LEFT JOIN user_profile up ON up.user_id = a.user_id
-                 WHERE a.doctor_id = $1
-                   AND a.status IN ('scheduled','started')
-                 ORDER BY a.appointment_date, a.appointment_time
-                 LIMIT 1`,
+                            a.status, a.room_id, 
+                            COALESCE(up.full_name, 'Patient') AS user_name
+                     FROM appointments a
+                     LEFT JOIN user_profile up ON up.user_id = a.user_id
+                     WHERE a.doctor_id = $1
+                       AND a.status IN ('scheduled','started')
+                     ORDER BY a.appointment_date, a.appointment_time
+                     LIMIT 1`,
                     [req.user.id]
                 );
 
-                console.log("API - Doctor appointments:", result.rows);
+                console.log("API - Doctor appointments found:", result.rows.length);
+
+                // Make sure we return JSON, not HTML
+                res.setHeader('Content-Type', 'application/json');
+
+                if (result.rows.length === 0) {
+                    return res.json([]); // Return empty array, not error
+                }
+
                 res.json(result.rows);
             } catch (err) {
                 console.error("Fetch doctor appointments error:", err);
+                res.setHeader('Content-Type', 'application/json');
                 res.status(500).json({
                     error: "Failed to load appointment",
                     details: process.env.NODE_ENV === 'development' ? err.message : undefined
