@@ -750,7 +750,7 @@
                     <i class="fas fa-user-md"></i>
                     <span class="text-dark">Doctor Consultation</span>
                 </div>
-                <div class="timer-container" id="timer">
+                <div class="timer-container" id="callTimer">
                     <i class="fas fa-clock"></i>
                     <span>00:00:00</span>
                 </div>
@@ -767,90 +767,65 @@
     <!-- Main Video Container -->
     <main class="video-container">
         <!-- Connection Status -->
-        <div class="connection-status">
-            <div class="status-indicator"></div>
-            <span class="text-dark">Connecting to doctor...</span>
+        <div class="connection-status" id="connectionStatus">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span class="text-dark" id="statusText">Connecting to doctor...</span>
         </div>
 
-        <!-- Doctor Info Overlay -->
-        <div class="doctor-info-overlay">
-            <div class="doctor-avatar">
+        <!-- Doctor Info -->
+        <div class="participant-info" id="participantInfo">
+            <div class="participant-avatar">
                 <i class="fas fa-user-md"></i>
             </div>
             <div>
-                <div class="text-dark">Doctor</div>
-                <div class="text-medium" style="font-size: 0.8rem;">Video consultation</div>
-            </div>
-        </div>
-
-        <!-- Local Video Label -->
-        <div class="local-video-label">
-            <i class="fas fa-user"></i>
-            <span>You (Patient)</span>
-        </div>
-
-        <!-- Loading Overlay -->
-        <div class="loading-overlay visible" id="loading">
-            <div class="loading-content">
-                <div class="loading-spinner"></div>
-                <h2>Connecting to Doctor…</h2>
-                <p class="text-medium">Please wait while we connect you with your healthcare provider.</p>
-
-                <div class="loading-details">
-                    <h4><i class="fas fa-info-circle"></i> Connection in progress:</h4>
-                    <ul>
-                        <li>Establishing secure connection</li>
-                        <li>Requesting camera and microphone access</li>
-                        <li>Connecting to doctor's device</li>
-                    </ul>
-                </div>
-
-                <div class="permission-prompt">
-                    <h3><i class="fas fa-shield-alt"></i> Permission Required</h3>
-                    <div class="permission-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Allow camera access for video consultation</span>
-                    </div>
-                    <div class="permission-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Allow microphone access for audio communication</span>
-                    </div>
-                </div>
+                <div class="text-dark" id="participantName">Doctor</div>
+                <div class="text-muted" style="font-size: 0.8rem;" id="callStatus">Connecting to video call...</div>
             </div>
         </div>
 
         <!-- Remote Video (Doctor) -->
-        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="video-wrapper">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="video-label">
+                <i class="fas fa-user-md"></i>
+                <span>Doctor</span>
+            </div>
+        </div>
 
-        <!-- Local Video (User) - Bottom Left -->
-        <video id="localVideo" autoplay muted playsinline></video>
+        <!-- Local Video (User) - Bottom Right -->
+        <div class="video-wrapper local-video">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <div class="video-label">
+                <i class="fas fa-user"></i>
+                <span>You</span>
+            </div>
+        </div>
 
         <!-- Controls Bar -->
         <div class="controls-bar">
             <div class="control-group">
-                <button class="control-btn" id="micBtn">
+                <button class="control-btn active" id="toggleMic">
                     <i class="fas fa-microphone"></i>
                 </button>
-                <span class="control-label">Microphone</span>
+                <span class="control-label">Mic On</span>
             </div>
 
             <div class="control-group">
-                <button class="control-btn" id="camBtn">
+                <button class="control-btn active" id="toggleCam">
                     <i class="fas fa-video"></i>
                 </button>
-                <span class="control-label">Camera</span>
+                <span class="control-label">Camera On</span>
             </div>
         </div>
 
         <!-- Call Ended Overlay -->
-        <div class="call-ended-overlay" id="callEndedOverlay">
+        <div class="call-ended-overlay" id="callEndedOverlay" style="display: none;">
             <div class="call-ended-content">
                 <div class="call-ended-icon">
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <h2>Consultation Completed</h2>
-                <p class="text-medium">Your video consultation has ended. Your prescription is being downloaded
-                    automatically.</p>
+                <p class="text-medium">Your video consultation has ended.</p>
                 <button class="prescription-download-btn" id="manualDownloadBtn">
                     <i class="fas fa-download"></i>
                     Download Prescription
@@ -862,143 +837,407 @@
         </div>
     </main>
 
-    <!-- Original Scripts (Unchanged) -->
+    <!-- Add the same CSS as doc_video.ejs -->
+    <style>
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: var(--dark-bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-wrapper.local-video {
+            position: absolute;
+            bottom: 120px;
+            right: 20px;
+            width: 300px;
+            height: 200px;
+            border: 3px solid var(--primary);
+            z-index: 10;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .video-label i {
+            margin-right: 5px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--warning);
+            margin-right: 8px;
+        }
+
+        .status-indicator.connected {
+            background: var(--success);
+        }
+
+        .status-indicator.disconnected {
+            background: var(--error);
+        }
+
+        .call-ended-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .call-ended-content {
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: var(--radius);
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .call-ended-icon {
+            font-size: 4rem;
+            color: var(--success);
+            margin-bottom: 1.5rem;
+        }
+
+        .prescription-download-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 2rem auto 0;
+        }
+
+        .prescription-download-btn:hover {
+            background: var(--primary-hover);
+        }
+    </style>
+
     <script src="/socket.io/socket.io.js"></script>
-    <script defer>
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Variables
+            const ROOM_ID = "<%= roomId %>";
 
-        const themeToggle = document.getElementById('themeToggle');
-        const html = document.documentElement;
+            let localStream = null;
+            let remoteStream = null;
+            let peerConnection = null;
+            let socket = null;
+            let callStartTime = null;
+            let isAudioMuted = false;
+            let isVideoOff = false;
 
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        if (savedTheme) {
+            // DOM Elements
+            const localVideo = document.getElementById('localVideo');
+            const remoteVideo = document.getElementById('remoteVideo');
+            const toggleMic = document.getElementById('toggleMic');
+            const toggleCam = document.getElementById('toggleCam');
+            const callTimer = document.getElementById('callTimer');
+            const statusText = document.getElementById('statusText');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const callEndedOverlay = document.getElementById('callEndedOverlay');
+
+            // Theme Toggle
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
+
+            const savedTheme = localStorage.getItem('theme') || 'dark';
             html.setAttribute('data-theme', savedTheme);
             updateThemeIcon(savedTheme);
-        }
 
-        function toggleTheme() {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon(newTheme);
-        }
-
-        function updateThemeIcon(theme) {
-            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-        }
-
-        themeToggle.addEventListener('click', toggleTheme);
-
-        // Original JavaScript Logic (Unchanged with some enhancements)
-        const socket = io();
-        const ROOM_ID = "<%= roomId %>";
-        let pc, localStream, mic = true, cam = true;
-        const start = Date.now();
-        console.log("ROOM_ID =", ROOM_ID);
-
-        setInterval(() => {
-            const t = Date.now() - start;
-            timer.innerText = `${String(t / 3600000 | 0).padStart(2, '0')}:${String(t / 60000 % 60 | 0).padStart(2, '0')}:${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
-        }, 1000);
-
-        async function init() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-                socket.emit("join-room", { roomId: ROOM_ID, role: "user" });
-
-                // Update connection status
-                document.querySelector('.connection-status span').textContent = 'Waiting for doctor...';
-            } catch (error) {
-                console.error("Error accessing media devices:", error);
-                document.querySelector('.loading-overlay h2').textContent = "Permission Required";
-                document.querySelector('.loading-overlay p').textContent = "Please allow camera and microphone access to continue.";
+            function toggleTheme() {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
             }
-        }
-        init();
 
-        function createPeer() {
-            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-            localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-            pc.ontrack = e => {
-                remoteVideo.srcObject = e.streams[0];
-                loading.style.display = "none";
-                document.querySelector('.connection-status span').textContent = 'Connected';
-                document.querySelector('.connection-status .status-indicator').style.background = '#10b981';
-            };
-            pc.onicecandidate = e => e.candidate && socket.emit("signal", { roomId: ROOM_ID, payload: { candidate: e.candidate } });
-        }
-
-        socket.on("signal", async p => {
-            if (!pc) createPeer();
-            if (p.offer) {
-                await pc.setRemoteDescription(p.offer);
-                const ans = await pc.createAnswer();
-                await pc.setLocalDescription(ans);
-                socket.emit("signal", { roomId: ROOM_ID, payload: { answer: ans } });
+            function updateThemeIcon(theme) {
+                const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+                themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
             }
-            if (p.candidate) await pc.addIceCandidate(p.candidate);
-        });
 
-        micBtn.onclick = () => {
-            mic = !mic;
-            localStream.getAudioTracks()[0].enabled = mic;
-            micBtn.innerHTML = mic ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
-            micBtn.classList.toggle('active', mic);
-        };
+            themeToggle.addEventListener('click', toggleTheme);
 
-        camBtn.onclick = () => {
-            cam = !cam;
-            localStream.getVideoTracks()[0].enabled = cam;
-            camBtn.innerHTML = cam ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
-            camBtn.classList.toggle('active', cam);
-        };
+            // Initialize Socket.io
+            function initSocket() {
+                socket = io();
 
-        socket.on("call-ended", () => {
+                socket.on('connect', () => {
+                    console.log('Connected to signaling server');
+                    updateStatus('Connecting to doctor...', 'warning');
+                    socket.emit('join-room', { roomId: ROOM_ID, role: 'user' });
+                });
+
+                socket.on('signal', async (data) => {
+                    console.log('Received signal:', data.type || 'candidate');
+
+                    if (!peerConnection) {
+                        await createPeerConnection();
+                    }
+
+                    if (data.offer) {
+                        console.log('Received offer from doctor');
+                        updateStatus('Doctor connected, establishing call...', 'warning');
+
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+                        const answer = await peerConnection.createAnswer();
+                        await peerConnection.setLocalDescription(answer);
+
+                        socket.emit('signal', {
+                            roomId: ROOM_ID,
+                            answer: answer
+                        });
+
+                    } else if (data.candidate) {
+                        try {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        } catch (e) {
+                            console.error('Error adding ICE candidate:', e);
+                        }
+                    }
+                });
+
+                socket.on('call-ended', () => {
+                    console.log('Doctor ended the call');
+                    showCallEndedOverlay();
+                });
+
+                socket.on('disconnect', () => {
+                    updateStatus('Disconnected from server', 'disconnected');
+                });
+            }
+
+            // Update status display
+            function updateStatus(message, type) {
+                statusText.textContent = message;
+                statusIndicator.className = 'status-indicator';
+                if (type === 'connected') {
+                    statusIndicator.classList.add('connected');
+                } else if (type === 'disconnected') {
+                    statusIndicator.classList.add('disconnected');
+                }
+            }
+
+            // Get user media
+            async function getLocalStream() {
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 },
+                            frameRate: { ideal: 30 }
+                        },
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+
+                    localVideo.srcObject = localStream;
+                    console.log('Local stream obtained');
+
+                } catch (error) {
+                    console.error('Error accessing media devices:', error);
+                    alert('Unable to access camera and microphone. Please check permissions.');
+                }
+            }
+
+            // Create peer connection
+            async function createPeerConnection() {
+                const configuration = {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
+                    ]
+                };
+
+                peerConnection = new RTCPeerConnection(configuration);
+
+                // Add local stream tracks
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // Handle remote stream
+                peerConnection.ontrack = (event) => {
+                    console.log('Received remote track');
+                    if (!remoteVideo.srcObject) {
+                        remoteVideo.srcObject = event.streams[0];
+                        remoteStream = event.streams[0];
+                        updateStatus('Call connected', 'connected');
+                        startTimer();
+                    }
+                };
+
+                // Handle ICE candidates
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('signal', {
+                            roomId: ROOM_ID,
+                            candidate: event.candidate
+                        });
+                    }
+                };
+
+                // Handle connection state changes
+                peerConnection.oniceconnectionstatechange = () => {
+                    console.log('ICE connection state:', peerConnection.iceConnectionState);
+                    if (peerConnection.iceConnectionState === 'disconnected' ||
+                        peerConnection.iceConnectionState === 'failed') {
+                        updateStatus('Connection lost', 'disconnected');
+                    } else if (peerConnection.iceConnectionState === 'connected') {
+                        updateStatus('Call connected', 'connected');
+                        startTimer();
+                    }
+                };
+            }
+
+            // Start call timer
+            function startTimer() {
+                if (!callStartTime) {
+                    callStartTime = Date.now();
+
+                    setInterval(() => {
+                        const elapsed = Date.now() - callStartTime;
+                        const hours = Math.floor(elapsed / 3600000);
+                        const minutes = Math.floor((elapsed % 3600000) / 60000);
+                        const seconds = Math.floor((elapsed % 60000) / 1000);
+
+                        callTimer.innerHTML = `
+                            <i class="fas fa-clock"></i>
+                            <span>${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</span>
+                        `;
+                    }, 1000);
+                }
+            }
+
+            // Toggle microphone
+            toggleMic.addEventListener('click', () => {
+                if (localStream) {
+                    localStream.getAudioTracks().forEach(track => {
+                        track.enabled = !track.enabled;
+                    });
+
+                    isAudioMuted = !localStream.getAudioTracks()[0].enabled;
+                    toggleMic.classList.toggle('active', !isAudioMuted);
+                    toggleMic.innerHTML = isAudioMuted ?
+                        '<i class="fas fa-microphone-slash"></i>' :
+                        '<i class="fas fa-microphone"></i>';
+
+                    document.querySelector('.control-group:nth-child(1) .control-label').textContent =
+                        isAudioMuted ? 'Mic Off' : 'Mic On';
+                }
+            });
+
+            // Toggle camera
+            toggleCam.addEventListener('click', () => {
+                if (localStream) {
+                    localStream.getVideoTracks().forEach(track => {
+                        track.enabled = !track.enabled;
+                    });
+
+                    isVideoOff = !localStream.getVideoTracks()[0].enabled;
+                    toggleCam.classList.toggle('active', !isVideoOff);
+                    toggleCam.innerHTML = isVideoOff ?
+                        '<i class="fas fa-video-slash"></i>' :
+                        '<i class="fas fa-video"></i>';
+
+                    document.querySelector('.control-group:nth-child(2) .control-label').textContent =
+                        isVideoOff ? 'Camera Off' : 'Camera On';
+                }
+            });
+
             // Show call ended overlay
-            const callEndedOverlay = document.getElementById('callEndedOverlay');
-            callEndedOverlay.style.display = 'flex';
+            function showCallEndedOverlay() {
+                // Close peer connection
+                if (peerConnection) {
+                    peerConnection.close();
+                    peerConnection = null;
+                }
 
-            // Auto-download prescription
-            setTimeout(() => {
-                const a = document.createElement("a");
-                a.href = `/api/prescription/${ROOM_ID}`;
-                a.download = "prescription.pdf";
+                // Stop local stream
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                }
+
+                // Disconnect socket
+                if (socket) {
+                    socket.disconnect();
+                }
+
+                // Show overlay
+                callEndedOverlay.style.display = 'flex';
+
+                // Auto-redirect after 10 seconds
+                setTimeout(() => {
+                    window.location.href = "/user_video_dashboard";
+                }, 10000);
+            }
+
+            // Manual download prescription
+            document.getElementById('manualDownloadBtn').addEventListener('click', function () {
+                const downloadUrl = `/api/prescription/download/${ROOM_ID}`;
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = 'prescription.pdf';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-            }, 1000);
+            });
 
-            // Redirect after 5 seconds
-            setTimeout(() => {
-                location.href = "/user_video_dashboard";
-            }, 5000);
-        });
+            // Initialize
+            async function init() {
+                updateStatus('Initializing call...', 'warning');
+                await getLocalStream();
+                initSocket();
+            }
 
-        // Manual download button
-        document.getElementById('manualDownloadBtn').addEventListener('click', function () {
-            const a = document.createElement("a");
-            a.href = `/api/prescription/${ROOM_ID}`;
-            a.download = "prescription.pdf";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            alert("Prescription downloaded");
-        });
+            init();
 
-        // Update loading status based on connection state
-        socket.on('connect', () => {
-            console.log('Connected to signaling server');
+            // Handle page unload
+            window.addEventListener('beforeunload', (e) => {
+                if (peerConnection || socket?.connected) {
+                    e.preventDefault();
+                    e.returnValue = 'Are you sure you want to leave the call?';
+                    return e.returnValue;
+                }
+            });
         });
-
-        socket.on('disconnect', () => {
-            document.querySelector('.connection-status span').textContent = 'Disconnected - Reconnecting...';
-        });
-    });
-</script>
+    </script>
 </body>
 
 </html>

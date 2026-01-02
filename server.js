@@ -172,10 +172,12 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: process.env.NODE_ENV === 'production'
-            ? process.env.FRONTEND_URL || 'https://your-frontend.com'
-            : ['http://localhost:3000', 'http://localhost:8080'],
-        credentials: true
-    }
+            ? ['https://telehealth-production.onrender.com']
+            : ['http://localhost:3000'],
+        credentials: true,
+        methods: ['GET', 'POST']
+    },
+    transports: ['websocket', 'polling']
 });
 
 // CORS configuration for production
@@ -1460,30 +1462,33 @@ function videoDashboardRoutes(app) {
 // Video Socket Function
 function videoSocket(io) {
     io.on("connection", socket => {
-        logger.info(`Socket connected: ${socket.id}`);
+        console.log(`Socket connected: ${socket.id}`);
 
         socket.on("join-room", ({ roomId, role }) => {
             socket.join(roomId);
             socket.roomId = roomId;
-            logger.info(`Socket ${socket.id} (${role}) joined room ${roomId}`);
+            socket.role = role;
+            console.log(`Socket ${socket.id} (${role}) joined room ${roomId}`);
 
+            // Notify the other participant
             if (role === "user") {
                 socket.to(roomId).emit("user-ready");
             }
         });
 
-        socket.on("signal", ({ roomId, payload }) => {
+        socket.on("signal", ({ roomId, ...payload }) => {
+            console.log(`Signal from ${socket.id} in room ${roomId}:`, payload);
             socket.to(roomId).emit("signal", payload);
         });
 
         socket.on("call-ended", ({ roomId }) => {
-            logger.info(`Call ended in room ${roomId}`);
-            io.to(roomId).emit("call-ended", { roomId });
-            io.in(roomId).socketsLeave(roomId);
+            console.log(`Call ended in room ${roomId}`);
+            socket.to(roomId).emit("call-ended", { roomId });
+            socket.leave(roomId);
         });
 
         socket.on("disconnect", () => {
-            logger.info(`Socket disconnected: ${socket.id}`);
+            console.log(`Socket disconnected: ${socket.id}`);
         });
     });
 }
