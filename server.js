@@ -926,9 +926,7 @@ function protectedRoutes(app, PROJECT_ROOT) {
         res.sendFile(path.join(PROJECT_ROOT, "public/pages/appointments.html"));
     });
 
-    app.get("/user_video_dashboard", authenticate, authorize("user"), (req, res) => {
-        res.sendFile(path.join(PROJECT_ROOT, "public/pages/user_video_dashboard.html"));
-    });
+
 
     app.get("/user_video/:roomId", authenticate, authorize("user"), (req, res) => {
         res.render("user_video", { roomId: req.params.roomId });
@@ -939,9 +937,7 @@ function protectedRoutes(app, PROJECT_ROOT) {
         res.sendFile(path.join(PROJECT_ROOT, "public/pages/doc_home.html"));
     });
 
-    app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => {
-        res.sendFile(path.join(PROJECT_ROOT, "public/pages/doc_video_dashboard.html"));
-    });
+
 
     app.get("/records", authenticate, authorize("user"), (req, res) => {
         res.sendFile(path.join(PROJECT_ROOT, "public/pages/records.html"));
@@ -1284,121 +1280,93 @@ function videoRoutes(app) {
 
 // Video Dashboard Routes
 // Video Dashboard Routes
-export default function videoDashboardRoutes(app) {
-
-    /* =====================================
-       DOCTOR VIDEO DASHBOARD
-    ===================================== */
+function videoDashboardRoutes(app) {
+    // Doctor Video Dashboard
     app.get(
         "/doc_video_dashboard",
         authenticate,
         authorize("doctor"),
         async (req, res) => {
-            const result = await db.query(
-                `
-        SELECT
-          a.id,
-          a.appointment_time,
-          up.full_name AS user_name
-        FROM appointments a
-        JOIN user_profile up ON up.user_id = a.user_id
-        WHERE a.doctor_id = $1
-          AND a.status IN ('scheduled','started')
-        ORDER BY a.appointment_date, a.appointment_time
-        LIMIT 1
-        `,
-                [req.user.id]
-            );
+            try {
+                const result = await db.query(
+                    `SELECT a.id, a.appointment_time, a.status, 
+                            a.appointment_date, a.room_id,
+                            up.full_name AS user_name
+                     FROM appointments a
+                     LEFT JOIN user_profile up ON up.user_id = a.user_id
+                     WHERE a.doctor_id = $1
+                       AND a.status IN ('scheduled','started')
+                     ORDER BY a.appointment_date, a.appointment_time
+                     LIMIT 1`,
+                    [req.user.id]
+                );
 
-            res.render("doc_video_dashboard", {
-                appointment: result.rows[0] || null
-            });
-        }
-    );
+                // Debug log
+                console.log("Doctor dashboard query result:", result.rows);
 
-    /* =====================================
-       START CALL (doctor)
-    ===================================== */
-    app.post(
-        "/appointments/:id/start",
-        authenticate,
-        authorize("doctor"),
-        async (req, res) => {
-            const roomId = crypto.randomUUID();
+                // Check if we got data
+                if (!result.rows.length) {
+                    console.log("No appointments found for doctor:", req.user.id);
+                    return res.render("doc_video_dashboard", {
+                        appointment: null,
+                        message: "No upcoming appointments"
+                    });
+                }
 
-            const result = await db.query(
-                `
-        UPDATE appointments
-        SET status = 'started',
-            room_id = $1
-        WHERE id = $2
-          AND doctor_id = $3
-          AND status = 'scheduled'
-        RETURNING room_id
-        `,
-                [roomId, req.params.id, req.user.id]
-            );
-
-            if (!result.rowCount) {
-                return res.status(400).json({
-                    error: "Call already started or completed"
+                res.render("doc_video_dashboard", {
+                    appointment: result.rows[0]
+                });
+            } catch (err) {
+                console.error("Doctor video dashboard error:", err);
+                // Send a proper error page or JSON
+                res.status(500).json({
+                    error: "Internal Server Error",
+                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
                 });
             }
-
-            res.json({ roomId });
         }
     );
 
-    /* =====================================
-       END CALL (doctor)
-    ===================================== */
-    app.post(
-        "/appointments/:id/complete",
-        authenticate,
-        authorize("doctor"),
-        async (req, res) => {
-            await db.query(
-                `
-        UPDATE appointments
-        SET status = 'completed'
-        WHERE id = $1
-          AND doctor_id = $2
-        `,
-                [req.params.id, req.user.id]
-            );
-
-            res.sendStatus(200);
-        }
-    );
-
-    /* =====================================
-       USER VIDEO DASHBOARD
-    ===================================== */
+    // User Video Dashboard
     app.get(
         "/user_video_dashboard",
         authenticate,
         authorize("user"),
         async (req, res) => {
-            const result = await db.query(
-                `
-        SELECT
-          a.id,
-          a.appointment_time,
-          a.status,
-          dp.full_name AS doctor_name
-        FROM appointments a
-        JOIN doc_profile dp ON dp.doc_id = a.doctor_id
-        WHERE a.user_id = $1
-          AND a.status IN ('scheduled','started')
-        ORDER BY a.appointment_date, a.appointment_time
-        LIMIT 1
-        `,
-                [req.user.id]
-            );
+            try {
+                const result = await db.query(
+                    `SELECT a.id, a.appointment_time, a.status,
+                            a.appointment_date, a.room_id,
+                            dp.full_name AS doctor_name
+                     FROM appointments a
+                     LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
+                     WHERE a.user_id = $1
+                       AND a.status IN ('scheduled','started')
+                     ORDER BY a.appointment_date, a.appointment_time
+                     LIMIT 1`,
+                    [req.user.id]
+                );
 
-            res.render("user_video_dashboard", {
-                appointment: result.rows[0] || null
-            });
+                console.log("User dashboard query result:", result.rows);
+
+                if (!result.rows.length) {
+                    console.log("No appointments found for user:", req.user.id);
+                    return res.render("user_video_dashboard", {
+                        appointment: null,
+                        message: "No active appointments"
+                    });
+                }
+
+                res.render("user_video_dashboard", {
+                    appointment: result.rows[0]
+                });
+            } catch (err) {
+                console.error("User video dashboard error:", err);
+                res.status(500).json({
+                    error: "Internal Server Error",
+                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                });
+            }
         }
     );
 }
@@ -1508,52 +1476,7 @@ app.get('/health', (req, res) => {
         uptime: process.uptime()
     });
 });
-// Debug endpoints for checking database
-app.get("/debug/tables", async (req, res) => {
-    try {
-        const tables = await db.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-            ORDER BY table_name
-        `);
-        res.json({ tables: tables.rows });
-    } catch (err) {
-        res.json({ error: err.message });
-    }
-});
 
-app.get("/debug/appointments", authenticate, async (req, res) => {
-    try {
-        const appointments = await db.query(
-            "SELECT * FROM appointments WHERE user_id = $1 OR doctor_id = $1",
-            [req.user.id]
-        );
-        res.json({ appointments: appointments.rows });
-    } catch (err) {
-        res.json({ error: err.message });
-    }
-});
-
-app.get("/debug/profile", authenticate, async (req, res) => {
-    try {
-        let profile;
-        if (req.user.role === 'user') {
-            profile = await db.query(
-                "SELECT * FROM user_profile WHERE user_id = $1",
-                [req.user.id]
-            );
-        } else {
-            profile = await db.query(
-                "SELECT * FROM doc_profile WHERE doc_id = $1",
-                [req.user.id]
-            );
-        }
-        res.json({ profile: profile.rows });
-    } catch (err) {
-        res.json({ error: err.message });
-    }
-});
 // Test endpoint for cookies
 // Enhanced cookie test endpoint
 app.get("/cookie-test", (req, res) => {
