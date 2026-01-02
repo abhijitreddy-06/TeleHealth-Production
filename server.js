@@ -1,40 +1,39 @@
 // ==============================================
-// IMPORTS & CONFIGURATION
+// IMPORTS & CONFIGURATION (COMMONJS)
 // ==============================================
-import 'dotenv/config';
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
-import http from "http";
-import { Server } from "socket.io";
-import bodyParser from "body-parser";
-import cookieParser from "cookie-parser";
-import pg from "pg";
-import jwt from "jsonwebtoken";
-import multer from "multer";
-import fs from "fs";
-import bcrypt from "bcrypt";
-import crypto from "crypto";
-import PDFDocument from "pdfkit";
-import cors from "cors";
-import helmet from "helmet";
-import rateLimit from 'express-rate-limit';
-import winston from 'winston';
-import expressWinston from 'express-winston';
-import { createClient } from '@supabase/supabase-js';
+require('dotenv').config();
+const express = require("express");
+const path = require("path");
+const http = require("http");
+const { Server } = require("socket.io");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const { Pool } = require("pg");
+const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+const PDFDocument = require("pdfkit");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require('express-rate-limit');
+const winston = require('winston');
+const expressWinston = require('express-winston');
+const { createClient } = require('@supabase/supabase-js');
 
 // ==============================================
-// CONSTANTS & INITIALIZATION
+// INITIALIZATION
 // ==============================================
 const app = express();
-const port = process.env.PORT || 3000;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = __dirname;
 
-// JWT Configuration
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this-in-production";
+// Get port from environment or default to 3000
+const port = process.env.PORT || 3000;
+
+// ==============================================
+// JWT CONFIGURATION
+// ==============================================
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const JWT_EXPIRES_IN = "7d";
 
 // ==============================================
