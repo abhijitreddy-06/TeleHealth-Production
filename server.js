@@ -943,7 +943,7 @@ function protectedRoutes(app, PROJECT_ROOT) {
     });
 
     app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => {
-        res.sendFile(path.join(PROJECT_ROOT, "public/pages/doc_video_dashboard.html"));
+        res.render("doc_video_dashboard");
     });
 
     app.get("/user_video/:roomId", authenticate, authorize("user"), (req, res) => {
@@ -1077,43 +1077,58 @@ function vaultRoutes(app) {
             if (!req.file) return res.status(400).send("No file uploaded");
 
             try {
+                console.log("Upload attempt for user:", req.user.id);
+
                 const fileName = `${Date.now()}-${req.file.originalname}`;
                 const filePath = `user_${req.user.id}/${fileName}`;
 
-                // UPLOAD TO CORRECT BUCKET - CHANGE 'medical-records' TO 'uploads'
-                const { data, error } = await supabase.storage
-                    .from('uploads')  // ← CHANGE THIS LINE
+                // 1. Upload to Supabase Storage
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('uploads')
                     .upload(filePath, req.file.buffer, {
                         contentType: req.file.mimetype,
                         upsert: false
                     });
 
-                if (error) {
-                    console.error("Supabase upload error:", error);
-                    return res.status(500).send(`Upload failed: ${error.message}`);
+                if (uploadError) {
+                    console.error("Storage upload error:", uploadError);
+                    return res.status(500).send(`Storage error: ${uploadError.message}`);
                 }
 
-                // Get public URL - USE SAME BUCKET NAME
+                console.log("File uploaded to storage:", uploadData);
+
+                // 2. Get public URL
                 const { data: urlData } = supabase.storage
-                    .from('uploads')  // ← CHANGE THIS LINE TOO
+                    .from('uploads')
                     .getPublicUrl(filePath);
 
-                await db.query(
-                    `INSERT INTO medical_records
-                     (user_id, file_name, file_path, record_type)
-                     VALUES ($1, $2, $3, $4)`,
-                    [
-                        req.user.id,
-                        req.file.originalname,
-                        urlData.publicUrl,
-                        req.body.recordType || "general"
-                    ]
-                );
+                console.log("Public URL:", urlData.publicUrl);
+
+                // 3. Insert into database using Supabase client (bypasses RLS with service key)
+                const { data: dbData, error: dbError } = await supabase
+                    .from('medical_records')
+                    .insert([
+                        {
+                            user_id: req.user.id,
+                            file_name: req.file.originalname,
+                            file_path: urlData.publicUrl,
+                            record_type: req.body.recordType || "general",
+                            uploaded_at: new Date().toISOString()
+                        }
+                    ]);
+
+                if (dbError) {
+                    console.error("Database insert error:", dbError);
+                    return res.status(500).send(`Database error: ${dbError.message}`);
+                }
+
+                console.log("Database record created:", dbData);
 
                 res.redirect("/records");
+
             } catch (err) {
                 console.error("Vault upload error:", err);
-                res.status(500).send("Upload failed");
+                res.status(500).send(`Server error: ${err.message}`);
             }
         }
     );
@@ -1539,6 +1554,36 @@ videoDashboardRoutes(app);
 // ==============================================
 
 // Add this to test Supabase connection
+app.get("/debug/supabase-test", authenticate, async (req, res) => {
+    try {
+        // Test storage
+        const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+
+        // Test database insert
+        const { data: testInsert, error: insertError } = await supabase
+            .from('medical_records')
+            .insert([{
+                user_id: req.user.id,
+                file_name: 'test.txt',
+                file_path: 'test/path.txt',
+                record_type: 'test',
+                uploaded_at: new Date().toISOString()
+            }])
+            .select();
+
+        res.json({
+            user_id: req.user.id,
+            buckets: buckets,
+            bucket_error: bucketError,
+            test_insert: testInsert,
+            insert_error: insertError,
+            service_key_used: !!process.env.SUPABASE_SERVICE_KEY
+        });
+    } catch (err) {
+        res.json({ error: err.message });
+    }
+});
+
 app.get("/test-supabase", authenticate, async (req, res) => {
     try {
         // Test bucket access
