@@ -372,22 +372,29 @@ function appointmentRoutes(app) {
         async (req, res) => {
             try {
                 const result = await db.query(
-                    `SELECT a.*, p.full_name AS doctor_name, p.specialization
-                     FROM appointments a
-                     JOIN doc_profile p ON p.doc_id = a.doctor_id
-                     WHERE a.user_id = $1
-                       AND a.status != 'completed'
-                     ORDER BY a.appointment_date, a.appointment_time
-                     LIMIT 1`,
+                    `SELECT a.*, 
+                        COALESCE(dp.full_name, 'Doctor') AS doctor_name,
+                        dp.specialization
+                 FROM appointments a
+                 LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
+                 WHERE a.user_id = $1
+                   AND a.status != 'completed'
+                 ORDER BY a.appointment_date, a.appointment_time
+                 LIMIT 1`,
                     [req.user.id]
                 );
+
+                console.log("API - User appointments:", result.rows);
                 res.json(result.rows);
             } catch (err) {
-                logger.error("Fetch user appointments error:", err);
-                res.status(500).json({ error: "Failed to load appointments" });
+                console.error("Fetch user appointments error:", err);
+                res.status(500).json({
+                    error: "Failed to load appointments",
+                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                });
             }
         }
-    );
+    )
 
     // Start Appointment (Doctor)
     app.post(
@@ -432,19 +439,25 @@ function appointmentRoutes(app) {
             try {
                 const result = await db.query(
                     `SELECT a.id, a.appointment_date, a.appointment_time,
-                            a.status, a.room_id, up.full_name AS user_name
-                     FROM appointments a
-                     JOIN user_profile up ON up.user_id = a.user_id
-                     WHERE a.doctor_id = $1
-                       AND a.status IN ('scheduled','started')
-                     ORDER BY a.appointment_date, a.appointment_time
-                     LIMIT 1`,
+                        a.status, a.room_id, 
+                        COALESCE(up.full_name, 'Patient') AS user_name
+                 FROM appointments a
+                 LEFT JOIN user_profile up ON up.user_id = a.user_id
+                 WHERE a.doctor_id = $1
+                   AND a.status IN ('scheduled','started')
+                 ORDER BY a.appointment_date, a.appointment_time
+                 LIMIT 1`,
                     [req.user.id]
                 );
+
+                console.log("API - Doctor appointments:", result.rows);
                 res.json(result.rows);
             } catch (err) {
-                logger.error("Fetch doctor appointments error:", err);
-                res.status(500).json({ error: "Failed to load appointment" });
+                console.error("Fetch doctor appointments error:", err);
+                res.status(500).json({
+                    error: "Failed to load appointment",
+                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                });
             }
         }
     );
@@ -1270,6 +1283,7 @@ function videoRoutes(app) {
 }
 
 // Video Dashboard Routes
+// Video Dashboard Routes
 function videoDashboardRoutes(app) {
     // Doctor Video Dashboard
     app.get(
@@ -1279,9 +1293,11 @@ function videoDashboardRoutes(app) {
         async (req, res) => {
             try {
                 const result = await db.query(
-                    `SELECT a.id, a.appointment_time, up.full_name AS user_name
+                    `SELECT a.id, a.appointment_time, a.status, 
+                            a.appointment_date, a.room_id,
+                            up.full_name AS user_name
                      FROM appointments a
-                     JOIN user_profile up ON up.user_id = a.user_id
+                     LEFT JOIN user_profile up ON up.user_id = a.user_id
                      WHERE a.doctor_id = $1
                        AND a.status IN ('scheduled','started')
                      ORDER BY a.appointment_date, a.appointment_time
@@ -1289,12 +1305,28 @@ function videoDashboardRoutes(app) {
                     [req.user.id]
                 );
 
+                // Debug log
+                console.log("Doctor dashboard query result:", result.rows);
+
+                // Check if we got data
+                if (!result.rows.length) {
+                    console.log("No appointments found for doctor:", req.user.id);
+                    return res.render("doc_video_dashboard", {
+                        appointment: null,
+                        message: "No upcoming appointments"
+                    });
+                }
+
                 res.render("doc_video_dashboard", {
-                    appointment: result.rows[0] || null
+                    appointment: result.rows[0]
                 });
             } catch (err) {
-                logger.error("Doctor video dashboard error:", err);
-                res.status(500).send("Internal Server Error");
+                console.error("Doctor video dashboard error:", err);
+                // Send a proper error page or JSON
+                res.status(500).json({
+                    error: "Internal Server Error",
+                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                });
             }
         }
     );
@@ -1308,9 +1340,10 @@ function videoDashboardRoutes(app) {
             try {
                 const result = await db.query(
                     `SELECT a.id, a.appointment_time, a.status,
+                            a.appointment_date, a.room_id,
                             dp.full_name AS doctor_name
                      FROM appointments a
-                     JOIN doc_profile dp ON dp.doc_id = a.doctor_id
+                     LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
                      WHERE a.user_id = $1
                        AND a.status IN ('scheduled','started')
                      ORDER BY a.appointment_date, a.appointment_time
@@ -1318,12 +1351,25 @@ function videoDashboardRoutes(app) {
                     [req.user.id]
                 );
 
+                console.log("User dashboard query result:", result.rows);
+
+                if (!result.rows.length) {
+                    console.log("No appointments found for user:", req.user.id);
+                    return res.render("user_video_dashboard", {
+                        appointment: null,
+                        message: "No active appointments"
+                    });
+                }
+
                 res.render("user_video_dashboard", {
-                    appointment: result.rows[0] || null
+                    appointment: result.rows[0]
                 });
             } catch (err) {
-                logger.error("User video dashboard error:", err);
-                res.status(500).send("Internal Server Error");
+                console.error("User video dashboard error:", err);
+                res.status(500).json({
+                    error: "Internal Server Error",
+                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                });
             }
         }
     );
@@ -1433,6 +1479,52 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime()
     });
+});
+// Debug endpoints for checking database
+app.get("/debug/tables", async (req, res) => {
+    try {
+        const tables = await db.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        `);
+        res.json({ tables: tables.rows });
+    } catch (err) {
+        res.json({ error: err.message });
+    }
+});
+
+app.get("/debug/appointments", authenticate, async (req, res) => {
+    try {
+        const appointments = await db.query(
+            "SELECT * FROM appointments WHERE user_id = $1 OR doctor_id = $1",
+            [req.user.id]
+        );
+        res.json({ appointments: appointments.rows });
+    } catch (err) {
+        res.json({ error: err.message });
+    }
+});
+
+app.get("/debug/profile", authenticate, async (req, res) => {
+    try {
+        let profile;
+        if (req.user.role === 'user') {
+            profile = await db.query(
+                "SELECT * FROM user_profile WHERE user_id = $1",
+                [req.user.id]
+            );
+        } else {
+            profile = await db.query(
+                "SELECT * FROM doc_profile WHERE doc_id = $1",
+                [req.user.id]
+            );
+        }
+        res.json({ profile: profile.rows });
+    } catch (err) {
+        res.json({ error: err.message });
+    }
 });
 // Test endpoint for cookies
 // Enhanced cookie test endpoint

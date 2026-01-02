@@ -1285,7 +1285,12 @@
 
 <script defer>
         document.addEventListener('DOMContentLoaded', function () {
-    
+            window.openUploadModal = openUploadModal;
+            window.closeUploadModal = closeUploadModal;
+            window.removeSelectedFile = removeSelectedFile;
+            window.openPreviewModal = openPreviewModal;
+            window.closePreviewModal = closePreviewModal;
+            
         const themeToggle = document.getElementById('themeToggle');
         const mobileThemeToggle = document.getElementById('mobileThemeToggle');
         const html = document.documentElement;
