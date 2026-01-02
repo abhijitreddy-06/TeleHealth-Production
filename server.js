@@ -177,10 +177,20 @@ const io = new Server(server, {
     }
 });
 
-// If in production, add domain for cross-origin
-if (process.env.NODE_ENV === 'production') {
-    cookieOptions.domain = '.onrender.com'; // For Render subdomains
+// CORS configuration for production
+const corsOptions = {
+    origin: 'https://telehealth-production.onrender.com',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie']
+};
+
+if (process.env.NODE_ENV !== 'production') {
+    corsOptions.origin = ['http://localhost:3000', 'http://localhost:8080'];
 }
+
+app.use(cors(corsOptions));
 
 // Update your authenticate middleware to DEBUG:
 function authenticate(req, res, next) {
@@ -1425,19 +1435,56 @@ app.get('/health', (req, res) => {
     });
 });
 // Test endpoint for cookies
-app.get("/test-cookie", (req, res) => {
-    console.log("DEBUG: Test cookie endpoint");
-    console.log("DEBUG: Cookies:", req.cookies);
-
-    // Set a test cookie
-    res.cookie("test_cookie", "test_value", cookieOptions);
-
-    res.json({
-        cookies_received: req.cookies,
-        cookie_options: cookieOptions,
-        node_env: process.env.NODE_ENV,
-        headers: req.headers
+// Enhanced cookie test endpoint
+app.get("/cookie-test", (req, res) => {
+    // Set multiple test cookies with different options
+    res.cookie("test1", "value1", {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        maxAge: 3600000,
+        path: '/'
     });
+
+    res.cookie("test2", "value2", {
+        httpOnly: false, // Accessible via JavaScript
+        secure: true,
+        sameSite: 'None',
+        maxAge: 3600000,
+        path: '/'
+    });
+
+    res.cookie("test3", "value3", {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Lax',
+        maxAge: 3600000,
+        path: '/'
+    });
+
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cookie Test</title>
+            <script>
+                console.log('All cookies visible to JS:', document.cookie);
+                console.log('Cookies with test2:', document.cookie.includes('test2'));
+                
+                // Try to set a cookie via JavaScript
+                document.cookie = "js_cookie=js_value; path=/; max-age=3600; secure; samesite=None";
+                
+                alert('Cookies set via server. Check console for details.\\n' + 
+                      'JS accessible cookies: ' + document.cookie);
+            </script>
+        </head>
+        <body>
+            <h1>Cookie Test Page</h1>
+            <p>Check browser console and Application > Cookies in DevTools</p>
+            <button onclick="location.reload()">Reload to see if cookies persist</button>
+        </body>
+        </html>
+    `);
 });
 // ==============================================
 // ERROR HANDLING MIDDLEWARE

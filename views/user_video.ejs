@@ -863,8 +863,10 @@
     </main>
 
     <!-- Original Scripts (Unchanged) -->
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js">});
+    </script>
     <script defer>
+        document.addEventListener('DOMContentLoaded', function () {
 
         const themeToggle = document.getElementById('themeToggle');
         const html = document.documentElement;
@@ -996,7 +998,8 @@
         socket.on('disconnect', () => {
             document.querySelector('.connection-status span').textContent = 'Disconnected - Reconnecting...';
         });
-    </script>
+    });
+</script>
 </body>
 
 </html>

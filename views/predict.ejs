@@ -1066,6 +1066,7 @@
     </footer>
 
     <script defer>
+        document.addEventListener('DOMContentLoaded', function () {
 
         const themeToggle = document.getElementById('themeToggle');
         const mobileThemeToggle = document.getElementById('mobileThemeToggle');
@@ -1279,7 +1280,8 @@
 
         // Initialize character count
         charCount.textContent = symptomsInput.value.length;
-    </script>
+    });
+</script>
 </body>
 
 </html>

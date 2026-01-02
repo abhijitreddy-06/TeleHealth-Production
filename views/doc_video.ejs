@@ -873,8 +873,10 @@
     </main>
 
     <!-- Original Scripts (Unchanged) -->
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js">});
+    </script>
     <script defer>
+        document.addEventListener('DOMContentLoaded', function () {
 
         const themeToggle = document.getElementById('themeToggle');
         const html = document.documentElement;
@@ -1020,7 +1022,8 @@
             socket.emit("call-ended", { roomId: ROOM_ID });
             location.href = "/doc_video_dashboard";
         };
-    </script>
+    });
+</script>
 </body>
 
 </html>

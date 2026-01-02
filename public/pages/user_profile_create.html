@@ -1120,6 +1120,7 @@
     </footer>
 
 <script defer>
+        document.addEventListener('DOMContentLoaded', function () {
     
         const themeToggle = document.getElementById('themeToggle');
         const mobileThemeToggle = document.getElementById('mobileThemeToggle');
@@ -1338,6 +1339,7 @@
         const defaultDob = new Date(today.getFullYear() - 30, today.getMonth(), today.getDate());
         dobInput.value = defaultDob.toISOString().split('T')[0];
 
+    });
 </script>
 </body>
 
