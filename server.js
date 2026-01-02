@@ -63,16 +63,17 @@ if (process.env.NODE_ENV !== 'production') {
 // ==============================================
 // SUPABASE CONFIGURATION
 // ==============================================
-const supabase = createClient(
+const supabaseService = createClient(
     process.env.SUPABASE_URL || "",
-    process.env.SUPABASE_ANON_KEY || "",
-    process.env.SUPABASE_SERVICE_KEY ? {
+    process.env.SUPABASE_SERVICE_KEY || "", // Use service key explicitly
+    {
         auth: {
             autoRefreshToken: false,
             persistSession: false
         }
-    } : undefined
+    }
 );
+
 
 // ==============================================
 // DATABASE CONFIGURATION (POOLING)
@@ -1083,9 +1084,9 @@ function vaultRoutes(app) {
                 const filePath = `user_${req.user.id}/${fileName}`;
 
                 // 1. Upload to Supabase Storage
-                const { data: uploadData, error: uploadError } = await supabase.storage
+                const { data: uploadData, error: uploadError } = await supabaseService.storage
                     .from('uploads')
-                    .upload(filePath, req.file.buffer, {
+                    .insert(filePath, req.file.buffer, {
                         contentType: req.file.mimetype,
                         upsert: false
                     });
@@ -1313,18 +1314,23 @@ function videoRoutes(app) {
 
 // Video Dashboard Routes
 // Video Dashboard Routes
+// Video Dashboard Routes - MPA Style
 function videoDashboardRoutes(app) {
-    // Doctor Video Dashboard
+    /* =====================================
+       DOCTOR VIDEO DASHBOARD (MPA)
+    ===================================== */
     app.get(
         "/doc_video_dashboard",
         authenticate,
         authorize("doctor"),
         async (req, res) => {
             try {
+                console.log("🔍 Fetching appointments for doctor ID:", req.user.id);
+
                 const result = await db.query(
-                    `SELECT a.id, a.appointment_time, a.status, 
-                            a.appointment_date, a.room_id,
-                            up.full_name AS user_name
+                    `SELECT a.id, a.appointment_date, a.appointment_time,
+                            a.status, a.room_id,
+                            COALESCE(up.full_name, 'Patient') AS user_name
                      FROM appointments a
                      LEFT JOIN user_profile up ON up.user_id = a.user_id
                      WHERE a.doctor_id = $1
@@ -1334,93 +1340,49 @@ function videoDashboardRoutes(app) {
                     [req.user.id]
                 );
 
-                // Debug log
-                console.log("Doctor dashboard query result:", result.rows);
+                console.log("📊 Found appointments:", result.rows.length);
 
-                // Check if we got data
-                if (!result.rows.length) {
-                    console.log("No appointments found for doctor:", req.user.id);
+                if (result.rows.length === 0) {
+                    console.log("⚠️ No appointments found for doctor");
                     return res.render("doc_video_dashboard", {
                         appointment: null,
-                        message: "No upcoming appointments"
+                        hasAppointment: false
                     });
                 }
 
+                const appointment = result.rows[0];
+                console.log("✅ Appointment data:", appointment);
+
                 res.render("doc_video_dashboard", {
-                    appointment: result.rows[0]
+                    appointment: appointment,
+                    hasAppointment: true
                 });
+
             } catch (err) {
-                console.error("Doctor video dashboard error:", err);
-                // Send a proper error page or JSON
-                res.status(500).json({
+                console.error("❌ Doctor video dashboard error:", err);
+                res.status(500).render("error", {
                     error: "Internal Server Error",
-                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                    message: err.message
                 });
             }
-        }
-    );
-    app.post(
-        "/appointments/:id/start",
-        authenticate,
-        authorize("doctor"),
-        async (req, res) => {
-            const roomId = crypto.randomUUID();
-
-            const result = await db.query(
-                `
-        UPDATE appointments
-        SET status = 'started',
-            room_id = $1
-        WHERE id = $2
-          AND doctor_id = $3
-          AND status = 'scheduled'
-        RETURNING room_id
-        `,
-                [roomId, req.params.id, req.user.id]
-            );
-
-            if (!result.rowCount) {
-                return res.status(400).json({
-                    error: "Call already started or completed"
-                });
-            }
-
-            res.json({ roomId });
         }
     );
 
     /* =====================================
-       END CALL (doctor)
+       USER VIDEO DASHBOARD (MPA)
     ===================================== */
-    app.post(
-        "/appointments/:id/complete",
-        authenticate,
-        authorize("doctor"),
-        async (req, res) => {
-            await db.query(
-                `
-        UPDATE appointments
-        SET status = 'completed'
-        WHERE id = $1
-          AND doctor_id = $2
-        `,
-                [req.params.id, req.user.id]
-            );
-
-            res.sendStatus(200);
-        }
-    );
-    // User Video Dashboard
     app.get(
         "/user_video_dashboard",
         authenticate,
         authorize("user"),
         async (req, res) => {
             try {
+                console.log("🔍 Fetching appointments for user ID:", req.user.id);
+
                 const result = await db.query(
-                    `SELECT a.id, a.appointment_time, a.status,
-                            a.appointment_date, a.room_id,
-                            dp.full_name AS doctor_name
+                    `SELECT a.id, a.appointment_date, a.appointment_time,
+                            a.status, a.room_id,
+                            COALESCE(dp.full_name, 'Doctor') AS doctor_name
                      FROM appointments a
                      LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
                      WHERE a.user_id = $1
@@ -1430,24 +1392,29 @@ function videoDashboardRoutes(app) {
                     [req.user.id]
                 );
 
-                console.log("User dashboard query result:", result.rows);
+                console.log("📊 Found appointments:", result.rows.length);
 
-                if (!result.rows.length) {
-                    console.log("No appointments found for user:", req.user.id);
+                if (result.rows.length === 0) {
+                    console.log("⚠️ No appointments found for user");
                     return res.render("user_video_dashboard", {
                         appointment: null,
-                        message: "No active appointments"
+                        hasAppointment: false
                     });
                 }
 
+                const appointment = result.rows[0];
+                console.log("✅ Appointment data:", appointment);
+
                 res.render("user_video_dashboard", {
-                    appointment: result.rows[0]
+                    appointment: appointment,
+                    hasAppointment: true
                 });
+
             } catch (err) {
-                console.error("User video dashboard error:", err);
-                res.status(500).json({
+                console.error("❌ User video dashboard error:", err);
+                res.status(500).render("error", {
                     error: "Internal Server Error",
-                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                    message: err.message
                 });
             }
         }
@@ -1548,7 +1515,7 @@ userVideoRoutes(app);
 vaultRoutes(app);
 prescriptionRoutes(app);
 protectedRoutes(app, PROJECT_ROOT);
-videoDashboardRoutes(app);
+
 // ==============================================
 // HEALTH CHECK ENDPOINT
 // ==============================================
