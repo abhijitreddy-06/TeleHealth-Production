@@ -102,18 +102,20 @@ db.connect()
 // ==============================================
 
 // Security middleware
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "http://127.0.0.1:8000", "ws://localhost:3000"]
-        }
-    },
-    crossOriginEmbedderPolicy: false
-}));
+// In server.js, update helmet configuration:
+// app.use(helmet({
+//     contentSecurityPolicy: {
+//         directives: {
+//             defaultSrc: ["'self'"],
+//             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+//             scriptSrc: ["'self'", "'unsafe-inline'"],
+//             imgSrc: ["'self'", "data:", "https:"],
+//             connectSrc: ["'self'", "http://127.0.0.1:8000", "ws://localhost:3000"],
+//             fontSrc: ["'self'", "https://fonts.gstatic.com"],
+//         }
+//     },
+//     crossOriginEmbedderPolicy: false
+// }));
 
 // CORS configuration for frontend-backend separation
 app.use(cors({
@@ -157,12 +159,11 @@ app.set("views", path.join(PROJECT_ROOT, "views"));
 // Cookie configuration
 const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    domain: process.env.NODE_ENV === 'production' ? 'onrender.com' : undefined
+    secure: process.env.NODE_ENV === 'production', // true for HTTPS
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // 'None' for cross-site
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/'
 };
-
 // ==============================================
 // SOCKET.IO SETUP
 // ==============================================
@@ -176,12 +177,21 @@ const io = new Server(server, {
     }
 });
 
-// ==============================================
-// AUTHENTICATION & AUTHORIZATION MIDDLEWARE
-// ==============================================
+// If in production, add domain for cross-origin
+if (process.env.NODE_ENV === 'production') {
+    cookieOptions.domain = '.onrender.com'; // For Render subdomains
+}
+
+// Update your authenticate middleware to DEBUG:
 function authenticate(req, res, next) {
+    console.log("DEBUG: Authenticate middleware called");
+    console.log("DEBUG: Cookies received:", req.cookies);
     const token = req.cookies.token;
-    if (!token) return res.redirect("/role");
+
+    if (!token) {
+        console.log("DEBUG: No token found, redirecting to /role");
+        return res.redirect("/role");
+    }
 
     try {
         const payload = jwt.verify(token, JWT_SECRET);
@@ -190,10 +200,11 @@ function authenticate(req, res, next) {
             role: payload.role,
             phone: payload.phone
         };
+        console.log("DEBUG: User authenticated:", req.user);
         next();
     } catch (err) {
-        logger.warn("JWT verification failed:", err.message);
-        res.clearCookie("token");
+        console.log("DEBUG: JWT verification failed:", err.message);
+        res.clearCookie("token", cookieOptions);
         return res.redirect("/role");
     }
 }
@@ -472,10 +483,12 @@ function appointmentRoutes(app) {
 }
 
 // Auth Routes
+// Auth Routes
 function authRoutes(app) {
     // User Signup
-    app.post("/user_signup", authLimiter, async (req, res) => {
+    app.post("/user_signup", async (req, res) => {
         const { phone, password, confirmpassword } = req.body;
+        console.log("DEBUG: User signup attempt:", { phone });
 
         if (!password || password.length < 6)
             return res.send(`<script>alert('Password must be at least 6 characters.');location='/user_signup'</script>`);
@@ -503,17 +516,23 @@ function authRoutes(app) {
                 { expiresIn: JWT_EXPIRES_IN }
             );
 
+            console.log("DEBUG: Setting cookie for user signup");
             res.cookie("token", token, cookieOptions);
+
+            // Test cookie is set
+            res.setHeader('Cache-Control', 'no-cache, no-store');
             res.redirect("/user_profile");
+
         } catch (err) {
-            logger.error("User signup error:", err);
+            console.error("User signup error:", err);
             res.status(500).send("Internal Server Error");
         }
     });
 
     // User Login
-    app.post("/user_login", authLimiter, async (req, res) => {
+    app.post("/user_login", async (req, res) => {
         const { phone, password } = req.body;
+        console.log("DEBUG: User login attempt:", { phone });
 
         try {
             const result = await db.query(
@@ -533,55 +552,35 @@ function authRoutes(app) {
                 { expiresIn: JWT_EXPIRES_IN }
             );
 
+            console.log("DEBUG: Setting cookie for user login");
             res.cookie("token", token, cookieOptions);
-            res.redirect("/user_home");
+
+            // Test: Add a meta refresh as fallback
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta http-equiv="refresh" content="0;url=/user_home">
+                </head>
+                <body>
+                    <script>
+                        console.log('Cookie set:', document.cookie);
+                        window.location.href = '/user_home';
+                    </script>
+                </body>
+                </html>
+            `);
+
         } catch (err) {
-            logger.error("User login error:", err);
-            res.status(500).send("Internal Server Error");
-        }
-    });
-
-    // Doctor Signup
-    app.post("/doc_signup", authLimiter, async (req, res) => {
-        const { phone, password, confirmpassword } = req.body;
-
-        if (!password || password.length < 6)
-            return res.send(`<script>alert('Password must be at least 6 characters.');location='/doc_signup'</script>`);
-
-        if (password !== confirmpassword)
-            return res.send(`<script>alert('Passwords must match.');location='/doc_signup'</script>`);
-
-        try {
-            const exists = await db.query(
-                "SELECT docid FROM doc_login WHERE phone=$1",
-                [phone]
-            );
-            if (exists.rows.length)
-                return res.send(`<script>alert('Account already exists');location='/doc_signup'</script>`);
-
-            const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-            const result = await db.query(
-                "INSERT INTO doc_login (phone,password) VALUES ($1,$2) RETURNING docid",
-                [phone, hash]
-            );
-
-            const token = jwt.sign(
-                { id: result.rows[0].docid, phone, role: "doctor" },
-                JWT_SECRET,
-                { expiresIn: JWT_EXPIRES_IN }
-            );
-
-            res.cookie("token", token, cookieOptions);
-            res.redirect("/doc_profile");
-        } catch (err) {
-            logger.error("Doctor signup error:", err);
+            console.error("User login error:", err);
             res.status(500).send("Internal Server Error");
         }
     });
 
     // Doctor Login
-    app.post("/doc_login", authLimiter, async (req, res) => {
+    app.post("/doc_login", async (req, res) => {
         const { phone, password } = req.body;
+        console.log("DEBUG: Doctor login attempt:", { phone });
 
         try {
             const result = await db.query(
@@ -601,16 +600,33 @@ function authRoutes(app) {
                 { expiresIn: JWT_EXPIRES_IN }
             );
 
+            console.log("DEBUG: Setting cookie for doctor login");
             res.cookie("token", token, cookieOptions);
-            res.redirect("/doc_home");
+
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta http-equiv="refresh" content="0;url=/doc_home">
+                </head>
+                <body>
+                    <script>
+                        console.log('Cookie set:', document.cookie);
+                        window.location.href = '/doc_home';
+                    </script>
+                </body>
+                </html>
+            `);
+
         } catch (err) {
-            logger.error("Doctor login error:", err);
+            console.error("Doctor login error:", err);
             res.status(500).send("Internal Server Error");
         }
     });
 
     // Logout
     app.get("/logout", (req, res) => {
+        console.log("DEBUG: Logging out");
         res.clearCookie("token", cookieOptions);
         res.redirect("/role");
     });
@@ -1408,7 +1424,21 @@ app.get('/health', (req, res) => {
         uptime: process.uptime()
     });
 });
+// Test endpoint for cookies
+app.get("/test-cookie", (req, res) => {
+    console.log("DEBUG: Test cookie endpoint");
+    console.log("DEBUG: Cookies:", req.cookies);
 
+    // Set a test cookie
+    res.cookie("test_cookie", "test_value", cookieOptions);
+
+    res.json({
+        cookies_received: req.cookies,
+        cookie_options: cookieOptions,
+        node_env: process.env.NODE_ENV,
+        headers: req.headers
+    });
+});
 // ==============================================
 // ERROR HANDLING MIDDLEWARE
 // ==============================================
