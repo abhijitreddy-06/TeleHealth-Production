@@ -1284,93 +1284,121 @@ function videoRoutes(app) {
 
 // Video Dashboard Routes
 // Video Dashboard Routes
-function videoDashboardRoutes(app) {
-    // Doctor Video Dashboard
+export default function videoDashboardRoutes(app) {
+
+    /* =====================================
+       DOCTOR VIDEO DASHBOARD
+    ===================================== */
     app.get(
         "/doc_video_dashboard",
         authenticate,
         authorize("doctor"),
         async (req, res) => {
-            try {
-                const result = await db.query(
-                    `SELECT a.id, a.appointment_time, a.status, 
-                            a.appointment_date, a.room_id,
-                            up.full_name AS user_name
-                     FROM appointments a
-                     LEFT JOIN user_profile up ON up.user_id = a.user_id
-                     WHERE a.doctor_id = $1
-                       AND a.status IN ('scheduled','started')
-                     ORDER BY a.appointment_date, a.appointment_time
-                     LIMIT 1`,
-                    [req.user.id]
-                );
+            const result = await db.query(
+                `
+        SELECT
+          a.id,
+          a.appointment_time,
+          up.full_name AS user_name
+        FROM appointments a
+        JOIN user_profile up ON up.user_id = a.user_id
+        WHERE a.doctor_id = $1
+          AND a.status IN ('scheduled','started')
+        ORDER BY a.appointment_date, a.appointment_time
+        LIMIT 1
+        `,
+                [req.user.id]
+            );
 
-                // Debug log
-                console.log("Doctor dashboard query result:", result.rows);
-
-                // Check if we got data
-                if (!result.rows.length) {
-                    console.log("No appointments found for doctor:", req.user.id);
-                    return res.render("doc_video_dashboard", {
-                        appointment: null,
-                        message: "No upcoming appointments"
-                    });
-                }
-
-                res.render("doc_video_dashboard", {
-                    appointment: result.rows[0]
-                });
-            } catch (err) {
-                console.error("Doctor video dashboard error:", err);
-                // Send a proper error page or JSON
-                res.status(500).json({
-                    error: "Internal Server Error",
-                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
-                });
-            }
+            res.render("doc_video_dashboard", {
+                appointment: result.rows[0] || null
+            });
         }
     );
 
-    // User Video Dashboard
+    /* =====================================
+       START CALL (doctor)
+    ===================================== */
+    app.post(
+        "/appointments/:id/start",
+        authenticate,
+        authorize("doctor"),
+        async (req, res) => {
+            const roomId = crypto.randomUUID();
+
+            const result = await db.query(
+                `
+        UPDATE appointments
+        SET status = 'started',
+            room_id = $1
+        WHERE id = $2
+          AND doctor_id = $3
+          AND status = 'scheduled'
+        RETURNING room_id
+        `,
+                [roomId, req.params.id, req.user.id]
+            );
+
+            if (!result.rowCount) {
+                return res.status(400).json({
+                    error: "Call already started or completed"
+                });
+            }
+
+            res.json({ roomId });
+        }
+    );
+
+    /* =====================================
+       END CALL (doctor)
+    ===================================== */
+    app.post(
+        "/appointments/:id/complete",
+        authenticate,
+        authorize("doctor"),
+        async (req, res) => {
+            await db.query(
+                `
+        UPDATE appointments
+        SET status = 'completed'
+        WHERE id = $1
+          AND doctor_id = $2
+        `,
+                [req.params.id, req.user.id]
+            );
+
+            res.sendStatus(200);
+        }
+    );
+
+    /* =====================================
+       USER VIDEO DASHBOARD
+    ===================================== */
     app.get(
         "/user_video_dashboard",
         authenticate,
         authorize("user"),
         async (req, res) => {
-            try {
-                const result = await db.query(
-                    `SELECT a.id, a.appointment_time, a.status,
-                            a.appointment_date, a.room_id,
-                            dp.full_name AS doctor_name
-                     FROM appointments a
-                     LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
-                     WHERE a.user_id = $1
-                       AND a.status IN ('scheduled','started')
-                     ORDER BY a.appointment_date, a.appointment_time
-                     LIMIT 1`,
-                    [req.user.id]
-                );
+            const result = await db.query(
+                `
+        SELECT
+          a.id,
+          a.appointment_time,
+          a.status,
+          dp.full_name AS doctor_name
+        FROM appointments a
+        JOIN doc_profile dp ON dp.doc_id = a.doctor_id
+        WHERE a.user_id = $1
+          AND a.status IN ('scheduled','started')
+        ORDER BY a.appointment_date, a.appointment_time
+        LIMIT 1
+        `,
+                [req.user.id]
+            );
 
-                console.log("User dashboard query result:", result.rows);
-
-                if (!result.rows.length) {
-                    console.log("No appointments found for user:", req.user.id);
-                    return res.render("user_video_dashboard", {
-                        appointment: null,
-                        message: "No active appointments"
-                    });
-                }
-
-                res.render("user_video_dashboard", {
-                    appointment: result.rows[0]
-                });
-            } catch (err) {
-                console.error("User video dashboard error:", err);
-                res.status(500).json({
-                    error: "Internal Server Error",
-                    details: process.env.NODE_ENV === 'development' ? err.message : undefined
-                });
-            }
+            res.render("user_video_dashboard", {
+                appointment: result.rows[0] || null
+            });
         }
     );
 }
