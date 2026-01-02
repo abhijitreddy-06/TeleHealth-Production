@@ -1290,7 +1290,7 @@
             window.removeSelectedFile = removeSelectedFile;
             window.openPreviewModal = openPreviewModal;
             window.closePreviewModal = closePreviewModal;
-            
+
         const themeToggle = document.getElementById('themeToggle');
         const mobileThemeToggle = document.getElementById('mobileThemeToggle');
         const html = document.documentElement;
@@ -1627,7 +1627,7 @@
                 // Store records for preview modal access
                 localStorage.setItem('telehealth_records', JSON.stringify(data));
             } catch (error) {
-                console.error("Error loading records:", error);
+         
                 const recordsGrid = document.getElementById("recordsGrid");
                 recordsGrid.innerHTML = `
     <div class="empty-state">

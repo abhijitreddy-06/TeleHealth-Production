@@ -934,20 +934,20 @@
                 socket = io();
 
                 socket.on('connect', () => {
-                    console.log('Connected to signaling server');
+
                     updateStatus('Connecting to patient...', 'warning');
                     socket.emit('join-room', { roomId: ROOM_ID, role: 'doctor' });
                 });
 
                 socket.on('user-ready', async () => {
-                    console.log('Patient is ready, creating offer...');
+                   
                     updateStatus('Patient connected, establishing call...', 'warning');
                     await createPeerConnection();
                     await createOffer();
                 });
 
                 socket.on('signal', async (data) => {
-                    console.log('Received signal:', data.type || 'candidate');
+       
 
                     if (!peerConnection) {
                         await createPeerConnection();
@@ -961,13 +961,13 @@
                         try {
                             await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
                         } catch (e) {
-                            console.error('Error adding ICE candidate:', e);
+             
                         }
                     }
                 });
 
                 socket.on('call-ended', () => {
-                    console.log('Patient ended the call');
+           
                     endCallHandler();
                 });
 
@@ -1004,10 +1004,10 @@
                     });
 
                     localVideo.srcObject = localStream;
-                    console.log('Local stream obtained');
+      
 
                 } catch (error) {
-                    console.error('Error accessing media devices:', error);
+  
                     alert('Unable to access camera and microphone. Please check permissions.');
                 }
             }
@@ -1031,7 +1031,7 @@
 
                 // Handle remote stream
                 peerConnection.ontrack = (event) => {
-                    console.log('Received remote track');
+          
                     if (!remoteVideo.srcObject) {
                         remoteVideo.srcObject = event.streams[0];
                         remoteStream = event.streams[0];
@@ -1050,7 +1050,7 @@
 
                 // Handle connection state changes
                 peerConnection.oniceconnectionstatechange = () => {
-                    console.log('ICE connection state:', peerConnection.iceConnectionState);
+            
                     if (peerConnection.iceConnectionState === 'disconnected' ||
                         peerConnection.iceConnectionState === 'failed') {
                         updateStatus('Connection lost', 'disconnected');
@@ -1076,10 +1076,10 @@
                         offer: offer
                     });
 
-                    console.log('Offer created and sent');
+              
 
                 } catch (error) {
-                    console.error('Error creating offer:', error);
+
                 }
             }
 
@@ -1156,7 +1156,7 @@
                             })
                         });
                     } catch (error) {
-                        console.error('Error saving notes:', error);
+                
                     }
                 }
 
@@ -1187,7 +1187,7 @@
                         method: "POST"
                     });
                 } catch (error) {
-                    console.error('Error completing appointment:', error);
+         
                 }
 
                 // Disconnect socket
@@ -1223,7 +1223,7 @@
                         });
                         alert('Notes saved successfully!');
                     } catch (error) {
-                        console.error('Error saving notes:', error);
+                 
                         alert('Error saving notes');
                     }
                 } else {
@@ -1243,9 +1243,9 @@
                                 notes: notesText.value
                             })
                         });
-                        console.log('Notes auto-saved');
+          
                     } catch (error) {
-                        console.error('Error auto-saving notes:', error);
+                    
                     }
                 }
             }, 30000);

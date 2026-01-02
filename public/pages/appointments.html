@@ -1362,7 +1362,7 @@
                         updateSubmitButton();
                     });
                 } catch (err) {
-                    console.error("Failed to load doctors", err);
+      
                     const select = document.getElementById("doctorSelect");
                     select.innerHTML = '<option value="">Failed to load doctors. Please try again.</option>';
                 }

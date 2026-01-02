@@ -896,7 +896,7 @@
         // Function to download prescription
         // Updated downloadPrescription function with better error handling
         function downloadPrescription(roomId) {
-            console.log('📥 Downloading prescription for room:', roomId);
+            
 
             const downloadUrl = `/api/prescription/download/${roomId}`;
 
@@ -912,7 +912,7 @@
             iframe.src = downloadUrl;
 
             iframe.onload = function () {
-                console.log('Iframe loaded, checking status...');
+          
 
                 // Re-enable button after 3 seconds
                 setTimeout(() => {
@@ -924,7 +924,7 @@
                     const iframeText = iframeDoc.body ? iframeDoc.body.innerText : '';
 
                     if (iframeText.includes('Error') || iframeText.includes('Not Found')) {
-                        console.error('❌ Download failed:', iframeText);
+      
 
                         // Show error message to user
                         overlayMessage.textContent = 'Prescription download failed. Please try again or contact support.';
@@ -934,15 +934,15 @@
                             .then(response => {
                                 if (!response.ok) {
                                     return response.text().then(text => {
-                                        console.error('Server response:', text);
+                   
                                     });
                                 }
                             })
                             .catch(fetchError => {
-                                console.error('Fetch error:', fetchError);
+        
                             });
                     } else {
-                        console.log('✅ Download initiated successfully');
+                        console.log('✅ Prescription download initiated successfully');
                     }
 
                     // Remove iframe after processing
@@ -951,7 +951,7 @@
             };
 
             iframe.onerror = function () {
-                console.error('❌ Iframe error loading prescription');
+          
                 downloadBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Try Again';
                 downloadBtn.disabled = false;
                 document.body.removeChild(iframe);
@@ -967,7 +967,7 @@
 
         // Function to cleanup and end call
         function cleanupCall() {
-            console.log('Cleaning up call resources...');
+          
 
             // Clear timer interval
             if (timerInterval) {
@@ -1048,24 +1048,24 @@
 
         // Initialize Socket.io
         function initSocket() {
-            console.log('Initializing socket connection...');
+       
             socket = io();
 
             socket.on('connect', () => {
-                console.log('✅ Connected to signaling server');
+             
                 updateStatus('Connecting to doctor...', 'warning');
                 socket.emit('join-room', { roomId: ROOM_ID, role: 'user' });
             });
 
             socket.on('signal', async (data) => {
-                console.log('Received signal:', data.type || 'candidate');
+             
 
                 if (!peerConnection) {
                     await createPeerConnection();
                 }
 
                 if (data.offer) {
-                    console.log('📞 Received offer from doctor');
+                   
                     updateStatus('Doctor connected, establishing call...', 'warning');
 
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
@@ -1089,7 +1089,7 @@
 
             // When doctor ends the call with prescription
             socket.on('call-ended-with-prescription', (data) => {
-                console.log('👨‍⚕️ Doctor ended call with prescription');
+         
                 participantName.textContent = 'Call Ended';
                 callStatus.textContent = 'Prescription ready for download';
                 showCallEndedOverlay(true);
@@ -1097,7 +1097,7 @@
 
             // When doctor ends the call without prescription
             socket.on('call-ended', (data) => {
-                console.log('👨‍⚕️ Doctor ended the call');
+            
                 participantName.textContent = 'Call Ended';
                 callStatus.textContent = 'Consultation completed';
                 showCallEndedOverlay(false);
@@ -1116,7 +1116,7 @@
             });
 
             socket.on('connect_error', (error) => {
-                console.error('Socket connection error:', error);
+             
                 updateStatus('Connection error', 'disconnected');
             });
 
@@ -1162,10 +1162,10 @@
                 });
 
                 localVideo.srcObject = localStream;
-                console.log('✅ Local stream obtained');
+           
 
             } catch (error) {
-                console.error('❌ Error accessing media devices:', error);
+     
                 updateStatus('Camera/mic permission required', 'disconnected');
                 alert('Unable to access camera and microphone. Please check permissions and try again.');
             }
@@ -1185,23 +1185,23 @@
             };
 
             peerConnection = new RTCPeerConnection(configuration);
-            console.log('✅ Peer connection created');
+
 
             // Add local stream tracks
             if (localStream) {
                 localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, localStream);
-                    console.log(`✅ Added ${track.kind} track to peer connection`);
+                 
                 });
             }
 
             // Handle remote stream
             peerConnection.ontrack = (event) => {
-                console.log('📹 Received remote track:', event.track.kind);
+          
                 if (!remoteVideo.srcObject) {
                     remoteVideo.srcObject = event.streams[0];
                     remoteStream = event.streams[0];
-                    console.log('✅ Remote stream set');
+            
 
                     // Update UI
                     participantName.textContent = 'Dr. Connected';
@@ -1224,7 +1224,7 @@
             // Handle connection state changes
             peerConnection.oniceconnectionstatechange = () => {
                 const state = peerConnection.iceConnectionState;
-                console.log('ICE connection state:', state);
+
 
                 switch (state) {
                     case 'connected':
@@ -1264,7 +1264,7 @@
         function startTimer() {
             if (!callStartTime) {
                 callStartTime = Date.now();
-                console.log('⏱️ Call timer started');
+              
 
                 timerInterval = setInterval(() => {
                     const elapsed = Date.now() - callStartTime;
@@ -1302,7 +1302,7 @@
                     document.querySelector('.control-group:nth-child(1) .control-label').textContent =
                         isAudioMuted ? 'Mic Off' : 'Mic On';
 
-                    console.log('Microphone', isAudioMuted ? 'muted' : 'unmuted');
+                  
                 }
             }
         });
@@ -1337,7 +1337,7 @@
 
         // Initialize
         async function init() {
-            console.log('🚀 Initializing video call for room:', ROOM_ID);
+    
             updateStatus('Initializing call...', 'warning');
             await getLocalStream();
             initSocket();

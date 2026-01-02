@@ -1472,12 +1472,12 @@ function videoSocket(io) {
                 );
 
                 if (appointmentCheck.rows.length === 0) {
-                    console.log(`❌ Invalid appointment: ${appointmentId} in room ${roomId}`);
+                  
                     socket.emit('prescription-error', { message: 'Invalid appointment' });
                     return;
                 }
 
-                console.log('📝 Saving prescription notes...');
+               
 
                 // Save the prescription to database
                 if (notes && notes.trim()) {
@@ -1493,7 +1493,7 @@ function videoSocket(io) {
                         [roomId, appointmentId, notes]
                     );
 
-                    console.log(`✅ Prescription saved with ID: ${saveResult.rows[0]?.id}`);
+                   
                 } else {
                     // Save empty notes if doctor didn't write anything
                     await db.query(
@@ -1506,7 +1506,7 @@ function videoSocket(io) {
                     created_at = NOW()`,
                         [roomId, appointmentId, "No prescription notes provided."]
                     );
-                    console.log('✅ Empty prescription saved');
+                 
                 }
 
                 // Update appointment status to completed
@@ -1517,7 +1517,7 @@ function videoSocket(io) {
                     [roomId, appointmentId]
                 );
 
-                console.log(`✅ Appointment ${appointmentId} marked as completed`);
+               
 
                 // Notify user that prescription is ready and call is ending
                 setTimeout(() => {
@@ -1525,13 +1525,11 @@ function videoSocket(io) {
                         roomId,
                         message: "Doctor ended the consultation. Prescription is ready."
                     });
-                    console.log(`📢 Notification sent to user in room ${roomId}`);
+               
                 }, 500);
 
             } catch (error) {
-                console.error("❌ Error ending call:", error);
-                console.error("❌ Error stack:", error.stack);
-
+                
                 // Notify doctor about the error
                 socket.emit('prescription-error', {
                     message: 'Failed to save prescription',
@@ -1561,9 +1559,7 @@ function prescriptionRoutes(app) {
             try {
                 const { roomId } = req.params;
 
-                console.log('🔍 Generating prescription for room:', roomId);
-                console.log('👤 User ID:', req.user.id);
-                console.log('👤 User Role:', req.user.role);
+
 
                 // First, let's check if the user has access to this room
                 let appointmentQuery;
@@ -1593,10 +1589,10 @@ function prescriptionRoutes(app) {
                     );
                 }
 
-                console.log('📋 Appointment query result:', appointmentQuery.rows);
+      
 
                 if (!appointmentQuery.rows.length) {
-                    console.log('❌ No appointment found for room:', roomId);
+                  
                     return res.status(404).send(`
                         <h2>Prescription Not Found</h2>
                         <p>No appointment found for this consultation.</p>
@@ -1618,7 +1614,7 @@ function prescriptionRoutes(app) {
                     [roomId]
                 );
 
-                console.log('📝 Notes query result:', notesQuery.rows);
+    
 
                 let notes = "No prescription notes provided by the doctor.";
                 let prescriptionDate = new Date();
@@ -1706,14 +1702,7 @@ function prescriptionRoutes(app) {
                     minute: '2-digit'
                 });
 
-                console.log('📄 Generating PDF with data:', {
-                    doctorName,
-                    specialization,
-                    patientName,
-                    appointmentDate,
-                    prescriptionDateStr,
-                    notesLength: notes.length
-                });
+
 
                 // Set headers for PDF
                 res.setHeader("Content-Type", "application/pdf");
@@ -1840,10 +1829,10 @@ function prescriptionRoutes(app) {
                     // End the document
                     doc.end();
 
-                    console.log('✅ PDF generated successfully for room:', roomId);
+                
 
                 } catch (pdfError) {
-                    console.error('❌ PDF generation error:', pdfError);
+                
                     // Fallback to simple text response
                     res.setHeader("Content-Type", "text/html");
                     res.send(`
@@ -1862,8 +1851,7 @@ function prescriptionRoutes(app) {
                 }
 
             } catch (err) {
-                console.error('❌ Prescription route error:', err);
-                console.error('❌ Error stack:', err.stack);
+      
 
                 // Send a user-friendly error message
                 res.setHeader("Content-Type", "text/html");
