@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleHealth - Medical Records</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+<style>
+    
+        :root {
+            /* Color Variables */
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --secondary: #10b981;
+            --background: #f9fafb;
+            --dark-bg: #1e293b;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-light: #f1f5f9;
+            --text-medium: #475569;
+            --border: #e2e8f0;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #60a5fa;
+            --disabled: #9ca3af;
+            --footer-bg: #1e293b;
+
+            /* Other Variables */
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --background: #1e293b;
+            --card-bg: #334155;
+            --text-dark: #f1f5f9;
+            --text-light: #0f172a;
+            --text-medium: #cbd5e1;
+            --border: #475569;
+            --footer-bg: #0f172a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", "Inter", "Roboto", sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-dark);
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-family: "Poppins", sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo i {
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links a.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+
+        .nav-links a:hover:not(.active) {
+            color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        /* Mobile Menu */
+        .mobile-controls {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-btn:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 280px;
+            height: 100vh;
+            background-color: var(--card-bg);
+            z-index: 1000;
+            padding: 2rem;
+            transition: var(--transition);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .mobile-menu.active {
+            right: 0;
+        }
+
+        .close-menu {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-menu:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .mobile-menu a {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .mobile-menu a:hover,
+        .mobile-menu a.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 5%;
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-medium);
+            font-size: 1.1rem;
+        }
+
+        /* Records Section */
+        .records-section {
+            margin-top: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.8rem;
+            color: var(--text-dark);
+        }
+
+        /* Records Grid - 3 per row */
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .record-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .record-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .record-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .record-info h3 {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            min-height: 3em;
+        }
+
+        .record-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .record-date {
+            color: var(--text-medium);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .record-date i {
+            font-size: 0.8rem;
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: auto;
+        }
+
+        .record-actions .btn {
+            flex: 1;
+            padding: 0.5rem;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        /* Upload Modal - Large for Web View */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 950px;
+            height: auto;
+            min-height: 550px;
+            max-height: 90vh;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+            animation: modalSlideIn 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 1.8rem;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modal-header h3 i {
+            color: var(--primary);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-medium);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+
+        /* Upload Options - Side by Side */
+        .upload-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .upload-options {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+            flex: 1;
+        }
+
+        .upload-option {
+            flex: 1;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+            background-color: rgba(56, 189, 248, 0.02);
+        }
+
+        .upload-option:hover {
+            border-color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.05);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(56, 189, 248, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-option h4 {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+        }
+
+        .upload-option p {
+            color: var(--text-medium);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* File Preview */
+        .file-preview-section {
+            margin-bottom: 2rem;
+        }
+
+        .file-preview {
+            display: none;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 1.5rem;
+            background-color: rgba(56, 189, 248, 0.05);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .file-preview.active {
+            display: flex;
+        }
+
+        .file-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            min-width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            word-break: break-word;
+        }
+
+        .file-details {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .file-size,
+        .file-type {
+            font-size: 0.9rem;
+            color: var(--text-medium);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-size i,
+        .file-type i {
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+
+        .remove-file {
+            background: none;
+            border: none;
+            color: var(--error);
+            cursor: pointer;
+            font-size: 1.3rem;
+            padding: 0.75rem;
+            border-radius: 50%;
+            transition: var(--transition);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-file:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Form Elements */
+        .form-section {
+            background-color: rgba(56, 189, 248, 0.02);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 1.75rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            color: var(--text-dark);
+            font-size: 1rem;
+            transition: var(--transition);
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23475569' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .form-actions .btn {
+            min-width: 120px;
+            padding: 0.9rem 1.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* Drag & Drop Area */
+        .drop-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+            background-color: rgba(56, 189, 248, 0.02);
+        }
+
+        .drop-area.active {
+            display: flex;
+        }
+
+        .drop-area.drag-over {
+            border-color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        /* File Input */
+        #fileInput {
+            display: none;
+        }
+
+        /* View/Preview Modal */
+        .preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 2rem;
+        }
+
+        .preview-modal.active {
+            display: flex;
+        }
+
+        .preview-content {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 2rem;
+            width: 100%;
+            max-width: 900px;
+            max-height: 80vh;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.4s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preview-header h3 {
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .preview-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+
+        .preview-document {
+            background-color: var(--background);
+            border-radius: var(--radius);
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .preview-icon {
+            font-size: 5rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-document h4 {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .preview-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            color: var(--text-medium);
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Simple Footer */
+        .simple-footer {
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 5%;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .footer-logo i {
+            color: var(--secondary);
+            font-size: 1.2rem;
+        }
+
+        .copyright {
+            color: var(--text-medium);
+            font-size: 0.9rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .footer-links a {
+            color: var(--text-medium);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-links .separator {
+            color: var(--border);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            border: 2px dashed var(--border);
+            grid-column: 1 / -1;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--text-medium);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .records-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .modal-card {
+                max-width: 850px;
+                min-height: 500px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .upload-options {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .upload-option {
+                min-height: 200px;
+            }
+
+            .modal-card {
+                max-width: 700px;
+                min-height: 600px;
+                padding: 2rem;
+            }
+
+            .preview-content {
+                max-width: 700px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-controls {
+                display: flex;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .mobile-menu {
+                display: flex;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .section-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .records-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 0.8rem;
+                text-align: center;
+            }
+
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1rem;
+            }
+
+            .separator {
+                display: none;
+            }
+
+            .footer-links a {
+                font-size: 0.85rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .form-actions .btn {
+                width: 100%;
+            }
+
+            .modal-card {
+                padding: 1.5rem;
+                max-width: 95%;
+                min-height: auto;
+                max-height: 85vh;
+            }
+
+            .modal-header h3 {
+                font-size: 1.5rem;
+            }
+
+            .upload-option {
+                padding: 1.5rem;
+                min-height: 180px;
+            }
+
+            .preview-content {
+                padding: 1.5rem;
+                max-width: 95%;
+            }
+
+            .preview-info {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar {
+                padding: 1rem 5%;
+            }
+
+            .record-card {
+                padding: 1.25rem;
+            }
+
+            .modal-card {
+                padding: 1.25rem;
+            }
+
+            .file-preview {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .file-details {
+                justify-content: center;
+            }
+        }
+
+        [data-theme="dark"] footer {
+            color: var(--text-dark);
+        }
+
+        [data-theme="dark"] .footer-links a,
+        [data-theme="dark"] .footer-bottom-links a {
+            color: var(--text-dark);
+            opacity: 0.9;
+        }
+</style>
+</head>
+
+<body>
+    
+    <header>
+        <nav class="navbar">
+            <a href="/user_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user_home"><i class="fas fa-home"></i> Home</a>
+                <a href="/predict"><i class="fas fa-robot"></i> AI Pre Advice</a>
+                <a href="/user_video_dashboard"><i class="fas fa-video"></i> Video</a>
+                <a href="/appointments"><i class="fas fa-user-md"></i> Appointments</a>
+                <a href="/records" class="active"><i class="fas fa-folder"></i> My Records</a>
+                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="/user_home"><i class="fas fa-home"></i> Home</a>
+        <a href="/predict"><i class="fas fa-robot"></i> AI Pre Advice</a>
+        <a href="/user_video_dashboard"><i class="fas fa-video"></i> Video</a>
+        <a href="/appointments"><i class="fas fa-user-md"></i> Appointments</a>
+        <a href="/records" class="active"><i class="fas fa-folder"></i> My Records</a>
+        <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+    </div>
+
+    
+    <div class="container">
+        <div class="page-header">
+            <h1>My Medical Records</h1>
+            <p>Securely store and access your medical documents in one place</p>
+        </div>
+
+        <div class="section-header">
+            <h2>Your Documents</h2>
+            <button class="btn btn-primary" onclick="openUploadModal()">
+                <i class="fas fa-cloud-upload-alt"></i> Upload Record
+            </button>
+        </div>
+
+        <div class="records-section">
+            <div class="records-grid" id="recordsGrid">
+                <!-- Records will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal - Large for Web View -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fas fa-cloud-upload-alt"></i> Upload Medical Record</h3>
+                <button class="close-modal" onclick="closeUploadModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="upload-content">
+                <form id="uploadForm" action="/vault/upload" method="POST" enctype="multipart/form-data">
+                    <div class="upload-options">
+                        <!-- Choose File Option -->
+                        <div class="upload-option" onclick="document.getElementById('fileInput').click()"
+                            id="chooseFileOption">
+                            <div class="upload-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <h4>Browse Files</h4>
+                            <p>Select a file from your computer or device storage</p>
+                            <input type="file" name="file" id="fileInput" required style="display: none;" />
+                        </div>
+
+                        <!-- Drag & Drop Option -->
+                        <div class="upload-option drop-area" id="dropArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <h4>Drag & Drop</h4>
+                            <p>Drag your file here or click to browse</p>
+                        </div>
+                    </div>
+
+                    <!-- File Preview Section -->
+                    <div class="file-preview-section">
+                        <div class="file-preview" id="filePreview">
+                            <div class="file-icon" id="fileIcon">
+                                <i class="fas fa-file"></i>
+                            </div>
+                            <div class="file-info">
+                                <div class="file-name" id="fileName">No file selected</div>
+                                <div class="file-details">
+                                    <div class="file-size" id="fileSize">
+                                        <i class="fas fa-weight-hanging"></i> 0 KB
+                                    </div>
+                                    <div class="file-type" id="fileType">
+                                        <i class="fas fa-file-alt"></i> No file type
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="remove-file" onclick="removeSelectedFile()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="recordType"><i class="fas fa-tag"></i> Record Type</label>
+                            <select name="recordType" id="recordType" required>
+                                <option value="general">General Document</option>
+                                <option value="prescription">Prescription</option>
+                                <option value="report">Medical Report</option>
+                                <option value="lab">Lab Results</option>
+                                <option value="imaging">Imaging (X-Ray, MRI, etc.)</option>
+                                <option value="insurance">Insurance Document</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeUploadModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload File
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View/Preview Modal -->
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-content">
+            <div class="preview-header">
+                <h3><i class="fas fa-eye"></i> Document Preview</h3>
+                <button class="close-modal" onclick="closePreviewModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="preview-body" id="previewBody">
+                <!-- Preview content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Footer -->
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+<script>
+    
+        const themeToggle = document.getElementById('themeToggle');
+        const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+        const html = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+        mobileThemeToggle.addEventListener('click', toggleTheme);
+
+
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenu');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mobileMenu.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (mobileMenu.classList.contains('active') &&
+                !mobileMenu.contains(e.target) &&
+                e.target !== mobileMenuBtn) {
+                mobileMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Upload Modal
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            // Reset form when opening
+            resetUploadForm();
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+            document.body.style.overflow = '';
+            resetUploadForm();
+        }
+
+        function resetUploadForm() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreview').classList.remove('active');
+            document.getElementById('fileName').textContent = 'No file selected';
+            document.getElementById('fileSize').innerHTML = '<i class="fas fa-weight-hanging"></i> 0 KB';
+            document.getElementById('fileType').innerHTML = '<i class="fas fa-file-alt"></i> No file type';
+
+            // Reset icon
+            const fileIcon = document.getElementById('fileIcon');
+            fileIcon.innerHTML = '<i class="fas fa-file"></i>';
+            fileIcon.style.color = 'var(--primary)';
+        }
+
+        function removeSelectedFile() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreview').classList.remove('active');
+            document.getElementById('fileName').textContent = 'No file selected';
+            document.getElementById('fileSize').innerHTML = '<i class="fas fa-weight-hanging"></i> 0 KB';
+            document.getElementById('fileType').innerHTML = '<i class="fas fa-file-alt"></i> No file type';
+
+            // Reset icon
+            const fileIcon = document.getElementById('fileIcon');
+            fileIcon.innerHTML = '<i class="fas fa-file"></i>';
+            fileIcon.style.color = 'var(--primary)';
+        }
+
+        // View/Preview Modal
+        function openPreviewModal(recordId) {
+            // Find the record data
+            const record = getRecordById(recordId);
+            if (!record) {
+                alert('Record not found!');
+                return;
+            }
+
+            const previewBody = document.getElementById('previewBody');
+            const icon = getRecordIcon(record.record_type);
+            const fileType = getFileTypeFromName(record.file_name);
+
+            previewBody.innerHTML = `
+    <div class="preview-document">
+        <div class="preview-icon">
+            <i class="fas ${icon}"></i>
+        </div>
+        <h4>${record.file_name}</h4>
+        <p>This is a preview of your medical document. In a real application, this would display the actual document content.</p>
+
+        <div class="preview-info">
+            <div class="info-item">
+                <span class="info-label">Document Type:</span>
+                <span class="info-value">${formatRecordType(record.record_type)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">File Type:</span>
+                <span class="info-value">${fileType.toUpperCase()}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Upload Date:</span>
+                <span class="info-value">${formatDate(new Date(record.uploaded_at || new Date()))}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Document ID:</span>
+                <span class="info-value">${record.id}</span>
+            </div>
+        </div>
+
+        <div class="preview-actions">
+            <a href="/vault/file/${record.id}" class="btn btn-primary" download>
+                <i class="fas fa-download"></i> Download
+            </a>
+            <button class="btn btn-outline" onclick="closePreviewModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+    `;
+
+            document.getElementById('previewModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function getRecordById(recordId) {
+            // This would normally come from the API, but for demo we'll use session data
+            // In a real app, you would fetch this from the server
+            const storedRecords = localStorage.getItem('telehealth_records');
+            if (storedRecords) {
+                const records = JSON.parse(storedRecords);
+                return records.find(r => r.id === recordId);
+            }
+            return null;
+        }
+
+        function getFileTypeFromName(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            return extension || 'unknown';
+        }
+
+        // Drag and Drop functionality
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileType = document.getElementById('fileType');
+        const fileIcon = document.getElementById('fileIcon');
+
+        // Make drop area always visible
+        dropArea.classList.add('active');
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop area when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('drag-over');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('drag-over');
+        }
+
+        // Handle dropped files
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFilePreview(files[0]);
+            }
+        }
+
+        // Handle file input change
+        fileInput.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                updateFilePreview(this.files[0]);
+            }
+        });
+
+        function updateFilePreview(file) {
+            filePreview.classList.add('active');
+            fileName.textContent = file.name;
+
+            // Format file size
+            const sizeInKB = Math.round(file.size / 1024);
+            const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+
+            if (sizeInMB > 1) {
+                fileSize.innerHTML = `<i class="fas fa-weight-hanging"></i> ${sizeInMB} MB`;
+            } else {
+                fileSize.innerHTML = `<i class="fas fa-weight-hanging"></i> ${sizeInKB} KB`;
+            }
+
+            // Get file type and extension
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            fileType.innerHTML = `<i class="fas fa-file-alt"></i> ${fileExtension.toUpperCase()} File`;
+
+            // Update icon based on file type
+            const iconElement = fileIcon.querySelector('i');
+            let iconClass = 'fa-file';
+            let iconColor = 'var(--primary)';
+
+            if (fileExtension.match(/(pdf)$/)) {
+                iconClass = 'fa-file-pdf';
+                iconColor = '#f40f02';
+            } else if (fileExtension.match(/(doc|docx)$/)) {
+                iconClass = 'fa-file-word';
+                iconColor = '#2b579a';
+            } else if (fileExtension.match(/(xls|xlsx)$/)) {
+                iconClass = 'fa-file-excel';
+                iconColor = '#217346';
+            } else if (fileExtension.match(/(jpg|jpeg|png|gif|bmp)$/)) {
+                iconClass = 'fa-file-image';
+                iconColor = '#e74c3c';
+            } else if (fileExtension.match(/(txt)$/)) {
+                iconClass = 'fa-file-alt';
+                iconColor = '#666';
+            } else {
+                iconClass = 'fa-file';
+                iconColor = 'var(--primary)';
+            }
+
+            iconElement.className = `fas ${iconClass}`;
+            fileIcon.style.color = iconColor;
+        }
+
+        // Load Records
+        async function loadRecords() {
+            try {
+                const res = await fetch("/api/vault/user");
+                const data = await res.json();
+
+                const recordsGrid = document.getElementById("recordsGrid");
+
+                if (data.length === 0) {
+                    recordsGrid.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                            <h3>No Records Found</h3>
+                            <p>You haven't uploaded any medical records yet.</p>
+                            <button class="btn btn-primary" onclick="openUploadModal()">
+                                <i class="fas fa-cloud-upload-alt"></i> Upload Your First Record
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                recordsGrid.innerHTML = "";
+
+                data.forEach(r => {
+                    const icon = getRecordIcon(r.record_type);
+                    const typeClass = getRecordTypeClass(r.record_type);
+                    const date = r.uploaded_at ? new Date(r.uploaded_at) : new Date();
+
+                    const recordCard = document.createElement("div");
+                    recordCard.className = "record-card";
+                    recordCard.innerHTML = `
+    <div class="record-icon">
+        <i class="fas ${icon}"></i>
+    </div>
+    <div class="record-info">
+        <h3>${r.file_name}</h3>
+        <span class="record-type ${typeClass}">${formatRecordType(r.record_type)}</span>
+        <div class="record-date">
+            <i class="far fa-calendar"></i>
+            ${formatDate(date)}
+        </div>
+        <div class="record-actions">
+            <a href="/vault/file/${r.id}" class="btn btn-primary" title="Download">
+                <i class="fas fa-download"></i> Download
+            </a>
+            <button class="btn btn-outline" onclick="openPreviewModal('${r.id}')" title="Preview">
+                <i class="fas fa-eye"></i> View
+            </button>
+        </div>
+    </div>
+    `;
+                    recordsGrid.appendChild(recordCard);
+                });
+
+                // Store records for preview modal access
+                localStorage.setItem('telehealth_records', JSON.stringify(data));
+            } catch (error) {
+                console.error("Error loading records:", error);
+                const recordsGrid = document.getElementById("recordsGrid");
+                recordsGrid.innerHTML = `
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3>Unable to Load Records</h3>
+        <p>Please try again later.</p>
+        <button class="btn btn-primary" onclick="loadRecords()">
+            <i class="fas fa-redo"></i> Retry
+        </button>
+    </div>
+    `;
+            }
+        }
+
+        function getRecordIcon(recordType) {
+            const icons = {
+                'prescription': 'fa-prescription-bottle-alt',
+                'report': 'fa-file-medical-alt',
+                'lab': 'fa-flask',
+                'imaging': 'fa-x-ray',
+                'insurance': 'fa-file-invoice-dollar',
+                'general': 'fa-file-medical'
+            };
+            return icons[recordType] || 'fa-file-medical';
+        }
+
+        function getRecordTypeClass(recordType) {
+            const classes = {
+                'prescription': 'prescription',
+                'report': 'report',
+                'lab': 'lab',
+                'imaging': 'imaging',
+                'insurance': 'insurance',
+                'general': 'general'
+            };
+            return classes[recordType] || 'general';
+        }
+
+        function formatRecordType(type) {
+            return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Form submission feedback
+        const uploadForm = document.getElementById('uploadForm');
+        uploadForm.addEventListener('submit', function (e) {
+            const fileInput = document.querySelector('input[type="file"]');
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = uploadForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            submitBtn.disabled = true;
+
+            // Reset button after submission (in real app, this would be after successful upload)
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                closeUploadModal();
+                loadRecords(); // Refresh records list
+
+                // Show success message
+                alert('File uploaded successfully!');
+            }, 2000);
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeUploadModal();
+                closePreviewModal();
+            }
+        });
+
+        // Initialize
+        loadRecords();
+
+</script>
+</body>
+
+</html>

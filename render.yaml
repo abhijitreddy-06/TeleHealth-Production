@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: telehealth-production
+    env: node
+    region: oregon  # or singapore, frankfurt, etc
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postgresql-silhouetted-12345
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+    buildCommand: npm install
+    startCommand: npm start

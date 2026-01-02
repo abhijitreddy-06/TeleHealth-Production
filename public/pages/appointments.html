@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment | TeleHealth</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+<style>
+    
+        :root {
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --secondary: #10b981;
+            --background: #f9fafb;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-light: #f1f5f9;
+            --text-medium: #475569;
+            --border: #e2e8f0;
+            --error: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --disabled: #9ca3af;
+            --footer-bg: #1e293b;
+            --calendar-bg: #ffffff;
+            --calendar-hover: #f1f5f9;
+            --calendar-selected: #38bdf8;
+            --calendar-today: #dbeafe;
+
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+
+        [data-theme="dark"] {
+            --background: #1e293b;
+            --card-bg: #334155;
+            --text-dark: #f1f5f9;
+            --text-light: #0f172a;
+            --text-medium: #cbd5e1;
+            --border: #475569;
+            --footer-bg: #0f172a;
+            --calendar-bg: #334155;
+            --calendar-hover: #475569;
+            --calendar-selected: #0ea5e9;
+            --calendar-today: #1e40af;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-dark);
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links a.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+
+        .nav-links a:hover:not(.active) {
+            color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        /* Mobile Controls */
+        .mobile-controls {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-btn:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 280px;
+            height: 100vh;
+            background-color: var(--card-bg);
+            z-index: 1000;
+            padding: 2rem;
+            transition: var(--transition);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .mobile-menu.active {
+            right: 0;
+        }
+
+        .close-menu {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-menu:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .mobile-menu a {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .mobile-menu a:hover,
+        .mobile-menu a.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 3rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .page-header p {
+            color: var(--text-medium);
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+
+        .booking-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Calendar Styling */
+        .calendar-card {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .calendar-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .calendar-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .month-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .month-nav button {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .month-nav button:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .day-header {
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-medium);
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            border: 2px solid transparent;
+        }
+
+        .calendar-day:hover:not(.empty):not(.disabled) {
+            background-color: var(--calendar-hover);
+        }
+
+        .calendar-day.selected {
+            background-color: var(--calendar-selected);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .calendar-day.today {
+            background-color: var(--calendar-today);
+            border-color: var(--primary);
+        }
+
+        .calendar-day.disabled {
+            color: var(--disabled);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .calendar-day.empty {
+            visibility: hidden;
+        }
+
+        .calendar-day.weekend {
+            color: var(--warning);
+        }
+
+        .calendar-day.past {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Time Slots */
+        .time-slots-container {
+            margin-top: 1.5rem;
+        }
+
+        .time-slots-container h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .time-slot {
+            padding: 0.6rem 0.5rem;
+            text-align: center;
+            border-radius: 8px;
+            background-color: var(--background);
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .time-slot:hover:not(.disabled) {
+            border-color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .time-slot.selected {
+            background-color: var(--calendar-selected);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .time-slot.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: var(--disabled);
+        }
+
+        /* Form Styling */
+        .form-card {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .form-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .form-header h2 {
+            font-size: 1.8rem;
+            color: var(--text-dark);
+        }
+
+        .appointment-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group label i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .form-control {
+            padding: 0.9rem 1.2rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: var(--card-bg);
+            color: var(--text-dark);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2rem;
+            padding-right: 3rem;
+        }
+
+        .selected-info {
+            background-color: rgba(56, 189, 248, 0.1);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            margin-top: 1rem;
+        }
+
+        .selected-info h4 {
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .selected-info p {
+            color: var(--text-medium);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .selected-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-label {
+            color: var(--text-medium);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .submit-btn {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
+        }
+
+        .submit-btn:disabled {
+            background: var(--disabled);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--footer-bg);
+            color: var(--text-light);
+            padding: 3rem 5% 1.5rem;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2.5rem;
+        }
+
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-about p {
+            margin: 1rem 0;
+            line-height: 1.6;
+            color: var(--text-light);
+            opacity: 0.9;
+        }
+
+        .footer-links h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            display: inline-block;
+            color: var(--text-light);
+        }
+
+        .footer-links h3::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            transition: var(--transition);
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+            opacity: 1;
+            padding-left: 5px;
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 2.5rem auto 0;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .copyright {
+            opacity: 0.8;
+            color: var(--text-light);
+        }
+
+        .footer-bottom-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .footer-bottom-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            opacity: 0.8;
+            transition: var(--transition);
+        }
+
+        .footer-bottom-links a:hover {
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .page-header h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-controls {
+                display: flex;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .mobile-menu {
+                display: flex;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .booking-container {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-card,
+            .form-card {
+                padding: 1.5rem;
+            }
+
+            .calendar-grid {
+                gap: 0.3rem;
+            }
+
+            .calendar-day {
+                font-size: 0.9rem;
+            }
+
+            .time-slots-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+        }
+
+        @media (max-width: 576px) {
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .calendar-header h2 {
+                font-size: 1.3rem;
+            }
+
+            .form-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .navbar {
+                padding: 1rem 5%;
+            }
+
+            main {
+                padding: 2rem 5%;
+            }
+        }
+
+        /* Dark theme adjustments */
+        [data-theme="dark"] footer {
+            color: var(--text-dark);
+        }
+
+        [data-theme="dark"] .footer-links a,
+        [data-theme="dark"] .footer-bottom-links a {
+            color: var(--text-dark);
+            opacity: 0.9;
+        }
+
+        /* Simple Footer */
+        .simple-footer {
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 5%;
+            text-align: center;
+            margin-top: auto;
+        }
+    
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+    
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+    
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+    
+        .footer-logo i {
+            color: var(--secondary);
+            font-size: 1.2rem;
+        }
+    
+        .copyright {
+            color: var(--text-medium);
+            font-size: 0.9rem;
+        }
+    
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+    
+        .footer-links a {
+            color: var(--text-medium);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+    
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+    
+        .footer-links .separator {
+            color: var(--border);
+        }
+    
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .simple-footer {
+                padding: 1rem 5%;
+            }
+    
+            .footer-content {
+                flex-direction: column;
+                gap: 0.8rem;
+                text-align: center;
+            }
+    
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1rem;
+            }
+    
+            .separator {
+                display: none;
+            }
+    
+            .footer-links a {
+                font-size: 0.85rem;
+            }
+        }
+
+</style>
+</head>
+
+<body>
+    
+    <header>
+        <nav class="navbar">
+            <a href="/user_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user_home" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/predict"><i class="fas fa-robot"></i>AI Pre Advice</a>
+                <a href="/user_video_dashboard"><i class="fas fa-video"></i>video</a>
+                <a href="/appointments"><i class="fas fa-user-md"></i>Appointments</a>
+                <a href="/records"><i class="fas fa-folder"></i> My Records</a>
+                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+                <a href="/user_home" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/predict"><i class="fas fa-robot"></i>AI Pre Advice</a>
+                <a href="/user_video_dashboard"><i class="fas fa-video"></i>video</a>
+                <a href="/appointments"><i class="fas fa-user-md"></i>Appointments</a>
+                <a href="/records"><i class="fas fa-folder"></i> My Records</a>
+                <a href="/user_profile"><i class="fas fa-user-circle"></i> Profile</a>
+    </div>
+
+    
+    <main>
+        <div class="page-header">
+            <h1>Book Appointment</h1>
+            <p>Select your preferred doctor, date, and time for your virtual consultation</p>
+        </div>
+
+        <div class="booking-container">
+            <!-- Calendar Card -->
+            <div class="calendar-card">
+                <div class="calendar-header">
+                    <h2><i class="fas fa-calendar-alt"></i> Select Date</h2>
+                    <div class="month-nav">
+                        <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                        <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar headers -->
+                    <div class="day-header">Sun</div>
+                    <div class="day-header">Mon</div>
+                    <div class="day-header">Tue</div>
+                    <div class="day-header">Wed</div>
+                    <div class="day-header">Thu</div>
+                    <div class="day-header">Fri</div>
+                    <div class="day-header">Sat</div>
+                    <!-- Days will be populated by JavaScript -->
+                </div>
+
+                <div class="time-slots-container">
+                    <h3><i class="fas fa-clock"></i> Available Times</h3>
+                    <div class="time-slots-grid" id="timeSlots">
+                        <!-- Time slots will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Form Card -->
+            <div class="form-card">
+                <div class="form-header">
+                    <div class="form-icon">
+                        <i class="fas fa-calendar-plus"></i>
+                    </div>
+                    <h2>Appointment Details</h2>
+                </div>
+
+                <form action="/appointments/book" method="POST" class="appointment-form" id="appointmentForm">
+<input type="hidden" name="appointment_date" id="selectedDate">
+<input type="hidden" name="appointment_time" id="selectedTime">
+
+
+                    <div class="form-group">
+                        <label for="doctorSelect">
+                            <i class="fas fa-user-md"></i>
+                            Select Doctor
+                        </label>
+                        <select name="doctorId" id="doctorSelect" class="form-control" required>
+                            <option value="">Loading doctors...</option>
+                        </select>
+                    </div>
+
+                    <div class="selected-info">
+                        <h4><i class="fas fa-calendar-check"></i> Selected Appointment</h4>
+                        <p>Your appointment details will appear here after selection</p>
+
+                        <div class="selected-details" id="selectedDetails">
+                            <div class="detail-item">
+                                <span class="detail-label">Date:</span>
+                                <span class="detail-value" id="displayDate">Not selected</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Time:</span>
+                                <span class="detail-value" id="displayTime">Not selected</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Doctor:</span>
+                                <span class="detail-value" id="displayDoctor">Not selected</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                        <i class="fas fa-calendar-check"></i>
+                        Book Appointment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/user_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+    
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+<script>
+    
+        const themeToggle = document.getElementById('themeToggle');
+        const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+        const html = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+        mobileThemeToggle.addEventListener('click', toggleTheme);
+
+
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenu');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mobileMenu.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (mobileMenu.classList.contains('active') &&
+                !mobileMenu.contains(e.target) &&
+                e.target !== mobileMenuBtn) {
+                mobileMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Calendar and Time Picker Logic
+        let currentDate = new Date();
+        let selectedDate = null;
+        let selectedTime = null;
+
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        // Business hours based on your requirements
+        const businessHours = {
+            0: { start: 10, end: 16 }, // Sunday: 10 AM - 4 PM
+            1: { start: 8, end: 20 },  // Monday: 8 AM - 8 PM
+            2: { start: 8, end: 20 },  // Tuesday: 8 AM - 8 PM
+            3: { start: 8, end: 20 },  // Wednesday: 8 AM - 8 PM
+            4: { start: 8, end: 20 },  // Thursday: 8 AM - 8 PM
+            5: { start: 8, end: 20 },  // Friday: 8 AM - 8 PM
+            6: { start: 9, end: 17 }   // Saturday: 9 AM - 5 PM
+        };
+
+        function generateCalendar() {
+            const calendarGrid = document.getElementById('calendarGrid');
+            const calendarHeader = document.querySelector('.calendar-header h2');
+
+            // Clear existing days (keeping headers)
+            const existingDays = Array.from(calendarGrid.children).slice(7);
+            existingDays.forEach(day => day.remove());
+
+            // Update header
+            calendarHeader.innerHTML = `<i class="fas fa-calendar-alt"></i> ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // Get first day of month and total days
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const totalDays = lastDay.getDate();
+
+            // Get day of week for first day (0 = Sunday, 6 = Saturday)
+            const firstDayIndex = firstDay.getDay();
+
+            // Add empty cells for days before first day of month
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                calendarGrid.appendChild(emptyDay);
+            }
+
+            // Add days of month
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (let day = 1; day <= totalDays; day++) {
+                const date = new Date(year, month, day);
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+
+                // Check if it's a weekend
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    dayElement.classList.add('weekend');
+                }
+
+                // Check if it's today
+                if (date.getTime() === today.getTime()) {
+                    dayElement.classList.add('today');
+                }
+
+                // Check if it's in the past
+                if (date < today) {
+                    dayElement.classList.add('past');
+                    dayElement.classList.add('disabled');
+                } else {
+                    // Add click event for selectable days
+                    dayElement.addEventListener('click', () => selectDate(date));
+
+                    // Check if it's currently selected
+                    if (selectedDate &&
+                        date.getDate() === selectedDate.getDate() &&
+                        date.getMonth() === selectedDate.getMonth() &&
+                        date.getFullYear() === selectedDate.getFullYear()) {
+                        dayElement.classList.add('selected');
+                    }
+                }
+
+                calendarGrid.appendChild(dayElement);
+            }
+
+            // Generate time slots for selected date
+            if (selectedDate && !isDatePast(selectedDate)) {
+                generateTimeSlots(selectedDate);
+            }
+        }
+
+        function isDatePast(date) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return date < today;
+        }
+
+        function generateTimeSlots(date) {
+            const timeSlotsGrid = document.getElementById('timeSlots');
+            timeSlotsGrid.innerHTML = '';
+
+            const dayOfWeek = date.getDay();
+            const hours = businessHours[dayOfWeek];
+
+            if (!hours) return;
+
+            // Generate 30-minute intervals
+            for (let hour = hours.start; hour < hours.end; hour++) {
+                for (let minute = 0; minute < 60; minute += 30) {
+                    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    const timeSlot = document.createElement('div');
+                    timeSlot.className = 'time-slot';
+                    timeSlot.textContent = formatTime(hour, minute);
+                    timeSlot.dataset.time = timeString;
+
+                    // Check if this time is in the past for today
+                    const now = new Date();
+                    if (isToday(date)) {
+                        const slotTime = new Date();
+                        slotTime.setHours(hour, minute, 0, 0);
+                        if (slotTime < now) {
+                            timeSlot.classList.add('disabled');
+                        } else {
+                            timeSlot.addEventListener('click', () => selectTime(timeString));
+                        }
+                    } else {
+                        timeSlot.addEventListener('click', () => selectTime(timeString));
+                    }
+
+                    // Check if this time is currently selected
+                    if (selectedTime === timeString) {
+                        timeSlot.classList.add('selected');
+                    }
+
+                    timeSlotsGrid.appendChild(timeSlot);
+                }
+            }
+        }
+
+        function formatTime(hour, minute) {
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+        }
+
+        function isToday(date) {
+            const today = new Date();
+            return date.getDate() === today.getDate() &&
+                date.getMonth() === today.getMonth() &&
+                date.getFullYear() === today.getFullYear();
+        }
+
+        function selectDate(date) {
+            if (isDatePast(date)) return;
+
+            selectedDate = date;
+            selectedTime = null;
+
+            // Update hidden inputs
+            document.getElementById('selectedDate').value = formatDateForInput(date);
+            document.getElementById('selectedTime').value = '';
+
+            // Update display
+            document.getElementById('displayDate').textContent = formatDate(date);
+            document.getElementById('displayTime').textContent = 'Not selected';
+
+            // Regenerate calendar with new selection
+            generateCalendar();
+            generateTimeSlots(date);
+
+            updateSubmitButton();
+        }
+
+        function selectTime(time) {
+            if (!selectedDate) return;
+
+            selectedTime = time;
+
+            // Update hidden input
+            document.getElementById('selectedTime').value = time;
+
+            // Update display
+            const [hour, minute] = time.split(':').map(Number);
+            document.getElementById('displayTime').textContent = formatTime(hour, minute);
+
+            // Update time slots UI
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('selected');
+                if (slot.dataset.time === time) {
+                    slot.classList.add('selected');
+                }
+            });
+
+            updateSubmitButton();
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function formatDateForInput(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // Navigation between months
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            generateCalendar();
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            generateCalendar();
+        });
+
+        // Update submit button state
+        function updateSubmitButton() {
+            const submitBtn = document.getElementById('submitBtn');
+            const doctorSelect = document.getElementById('doctorSelect');
+
+            if (selectedDate && selectedTime && doctorSelect.value) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+
+        // Your original loadDoctors function
+        async function loadDoctors() {
+            try {
+                const res = await fetch("/api/doctors");
+                const doctors = await res.json();
+
+                const select = document.getElementById("doctorSelect");
+                select.innerHTML = '<option value="">Select Doctor</option>';
+
+                doctors.forEach(doc => {
+                    const opt = document.createElement("option");
+                    opt.value = doc.id;
+                    opt.textContent = `${doc.full_name} (${doc.specialization})`;
+                    select.appendChild(opt);
+                });
+
+                // Add event listener for doctor selection
+                select.addEventListener('change', () => {
+                    updateDoctorDisplay();
+                    updateSubmitButton();
+                });
+            } catch (err) {
+                console.error("Failed to load doctors", err);
+                const select = document.getElementById("doctorSelect");
+                select.innerHTML = '<option value="">Failed to load doctors. Please try again.</option>';
+            }
+        }
+
+        function updateDoctorDisplay() {
+            const doctorSelect = document.getElementById('doctorSelect');
+            const selectedOption = doctorSelect.options[doctorSelect.selectedIndex];
+            document.getElementById('displayDoctor').textContent = selectedOption.textContent || 'Not selected';
+        }
+
+        // Form submission
+        document.getElementById('appointmentForm').addEventListener('submit', function (e) {
+            if (!selectedDate || !selectedTime) {
+                e.preventDefault();
+                alert('Please select both date and time before booking.');
+                return;
+            }
+
+            const submitBtn = this.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
+        });
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            // Set initial date to today
+            selectDate(new Date());
+
+            // Generate calendar
+            generateCalendar();
+
+            // Load doctors
+            loadDoctors();
+        });
+    
+</script>
+</body>
+
+</html>

@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Doctor Profile | TeleHealth</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        
+        :root {
+            /* Color Variables */
+            --primary: #38BDF8;
+            --primary-hover: #0EA5E9;
+            --secondary: #10B981;
+            --background: #F9FAFB;
+            --dark-bg: #1E293B;
+            --card-bg: #FFFFFF;
+            --text-dark: #0F172A;
+            --text-light: #F1F5F9;
+            --text-medium: #475569;
+            --border: #E2E8F0;
+            --error: #EF4444;
+            --warning: #F59E0B;
+            --info: #60A5FA;
+            --disabled: #9CA3AF;
+            --footer-bg: #1E293B;
+    
+            /* Other Variables */
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+    
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --background: #1E293B;
+            --card-bg: #334155;
+            --text-dark: #F1F5F9;
+            --text-light: #0F172A;
+            --text-medium: #CBD5E1;
+            --border: #475569;
+            --footer-bg: #0F172A;
+        }
+    
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Inter', 'Roboto', sans-serif;
+        }
+    
+        body {
+            background-color: var(--background);
+            color: var(--text-dark);
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+        }
+    
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+    
+        /* Header & Navigation */
+        header {
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+    
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+    
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+    
+        .logo i {
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+    
+        .logo-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+    
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+    
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .nav-links a.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+    
+        .nav-links a:hover:not(.active) {
+            color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        .btn {
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+    
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+    
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(56, 189, 248, 0.3);
+        }
+    
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+    
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+    
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+    
+        .theme-toggle:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        /* Mobile Menu - Added from Home Page */
+        .mobile-controls {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+        }
+    
+        .mobile-menu-btn:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 280px;
+            height: 100vh;
+            background-color: var(--card-bg);
+            z-index: 1000;
+            padding: 2rem;
+            transition: var(--transition);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+    
+        .mobile-menu.active {
+            right: 0;
+        }
+    
+        .close-menu {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    
+        .close-menu:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        .mobile-menu a {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+    
+        .mobile-menu a:hover,
+        .mobile-menu a.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+    
+        .mobile-menu .btn-outline {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+    
+        /* Profile Creation Section */
+        .profile-section {
+            padding: 3rem 5%;
+            max-width: 700px;
+            margin: 0 auto;
+            width: 100%;
+        }
+    
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+    
+        .profile-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            position: relative;
+            display: inline-block;
+        }
+    
+        .profile-header h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+    
+        .profile-header p {
+            color: var(--text-medium);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 1rem auto 0;
+        }
+    
+        .profile-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 2.5rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+    
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+    
+        .profile-progress {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+            padding: 0 15px;
+        }
+    
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            min-width: 80px;
+        }
+    
+        .progress-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 100%;
+            height: 3px;
+            background-color: var(--border);
+            z-index: 1;
+        }
+    
+        [data-theme="dark"] .progress-step:not(:last-child)::after {
+            background-color: var(--text-medium);
+        }
+    
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--background);
+            border: 3px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.8rem;
+            z-index: 2;
+            transition: var(--transition);
+        }
+    
+        .step-icon.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: transparent;
+        }
+    
+        .step-text {
+            font-size: 0.9rem;
+            color: var(--text-medium);
+            text-align: center;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+    
+        .step-text.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+    
+        .profile-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+    
+        .form-group {
+            position: relative;
+        }
+    
+        .form-group label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .form-group label i {
+            color: var(--primary);
+        }
+    
+        .form-control {
+            width: 100%;
+            padding: 0.85rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            color: var(--text-dark);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+    
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+    
+        .form-control:hover {
+            border-color: var(--primary);
+        }
+    
+        .gender-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+    
+        .gender-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.8rem 1.2rem;
+            background-color: var(--background);
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            transition: var(--transition);
+        }
+    
+        .gender-option:hover {
+            border-color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+    
+        .gender-option.selected {
+            background-color: rgba(56, 189, 248, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+    
+        .gender-option.selected i {
+            color: var(--primary);
+        }
+    
+        .other-gender {
+            margin-top: 1rem;
+            display: none;
+        }
+    
+        .other-gender.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+    
+        .form-row {
+            display: flex;
+            gap: 1.5rem;
+        }
+    
+        .form-row .form-group {
+            flex: 1;
+        }
+    
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+    
+        .btn-large {
+            padding: 0.9rem 1.8rem;
+            font-size: 1.1rem;
+        }
+    
+        .btn-prev {
+            background-color: transparent;
+            color: var(--text-medium);
+            border: 2px solid var(--border);
+        }
+    
+        .btn-prev:hover {
+            background-color: var(--background);
+        }
+    
+        .calendar-icon {
+            position: absolute;
+            right: 15px;
+            top: 42px;
+            color: var(--text-medium);
+            pointer-events: none;
+        }
+    
+        /* Success Section */
+        .success-container {
+            text-align: center;
+            padding: 3rem;
+            display: none;
+        }
+    
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            color: white;
+            font-size: 3rem;
+            animation: pulse 1.5s infinite;
+        }
+    
+        .success-container h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+        }
+    
+        .success-container p {
+            color: var(--text-medium);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            font-size: 1.1rem;
+        }
+    
+        /* Footer */
+        footer {
+            background-color: var(--footer-bg);
+            color: var(--text-light);
+            padding: 3rem 5% 1.5rem;
+            margin-top: auto;
+        }
+    
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2.5rem;
+        }
+    
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+    
+        .footer-about p {
+            margin: 1rem 0;
+            line-height: 1.6;
+            color: var(--text-light);
+            opacity: 0.9;
+        }
+    
+        .footer-links h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            display: inline-block;
+            color: var(--text-light);
+        }
+    
+        .footer-links h3::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+    
+        .footer-links ul {
+            list-style: none;
+        }
+    
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+    
+        .footer-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            transition: var(--transition);
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .footer-links a:hover {
+            color: var(--primary);
+            opacity: 1;
+            padding-left: 5px;
+        }
+    
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 2.5rem auto 0;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+    
+        .copyright {
+            opacity: 0.8;
+            color: var(--text-light);
+        }
+    
+        .footer-bottom-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+    
+        .footer-bottom-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            opacity: 0.8;
+            transition: var(--transition);
+        }
+    
+        .footer-bottom-links a:hover {
+            opacity: 1;
+            color: var(--primary);
+        }
+    
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+    
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+    
+            50% {
+                transform: scale(1.05);
+            }
+    
+            100% {
+                transform: scale(1);
+            }
+        }
+    
+        /* Responsive Design - Enhanced */
+        @media (max-width: 992px) {
+            .profile-header h1 {
+                font-size: 2.3rem;
+            }
+        }
+    
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+    
+            .mobile-controls {
+                display: flex;
+            }
+    
+            .mobile-menu-btn {
+                display: flex;
+            }
+    
+            .profile-progress {
+                gap: 10px;
+                padding: 0;
+            }
+    
+            .progress-step {
+                min-width: auto;
+            }
+    
+            .step-text {
+                font-size: 0.8rem;
+            }
+    
+            .profile-card {
+                padding: 1.5rem;
+            }
+    
+            .form-row {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+    
+            .profile-header h1 {
+                font-size: 2rem;
+            }
+    
+            .mobile-menu {
+                display: flex;
+            }
+        }
+    
+        @media (max-width: 576px) {
+            .profile-header h1 {
+                font-size: 1.8rem;
+            }
+    
+            .step-text {
+                font-size: 0.7rem;
+            }
+    
+            .progress-step:not(:last-child)::after {
+                top: 15px;
+            }
+    
+            .gender-container {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+    
+            .form-actions {
+                flex-direction: column;
+                gap: 1rem;
+            }
+    
+            .btn-large {
+                width: 100%;
+            }
+    
+            .step-icon {
+                width: 30px;
+                height: 30px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Simple Footer */
+        .simple-footer {
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 5%;
+            text-align: center;
+            margin-top: auto;
+        }
+    
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+    
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+    
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+    
+        .footer-logo i {
+            color: var(--secondary);
+            font-size: 1.2rem;
+        }
+    
+        .copyright {
+            color: var(--text-medium);
+            font-size: 0.9rem;
+        }
+    
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+    
+        .footer-links a {
+            color: var(--text-medium);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+    
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+    
+        .footer-links .separator {
+            color: var(--border);
+        }
+    
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .simple-footer {
+                padding: 1rem 5%;
+            }
+    
+            .footer-content {
+                flex-direction: column;
+                gap: 0.8rem;
+                text-align: center;
+            }
+    
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1rem;
+            }
+    
+            .separator {
+                display: none;
+            }
+    
+            .footer-links a {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <nav class="navbar">
+            <a href="/doc_home" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/doc_home" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/doc_video_dashboard"><i class="fas fa-video"></i>Video</a>
+                <a href="/doc_profile"><i class="fas fa-user-circle"></i> Profile</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="mobile-controls">
+                <button class="theme-toggle" id="mobileThemeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-menu" id="closeMenu">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="/doc_home" class="active"><i class="fas fa-home"></i> Home</a>
+        <a href="/doc_video_dashboard"><i class="fas fa-video"></i>Video</a>
+        <a href="/doc_profile"><i class="fas fa-user-circle"></i> Profile</a>
+    </div>
+
+    <!-- Profile Creation Section -->
+    <main class="profile-section">
+        <div class="profile-header">
+            <h1>Create Doctor Profile</h1>
+            <p>Complete your professional profile to start consulting patients</p>
+        </div>
+
+        <div class="profile-card">
+            <div class="profile-progress">
+                <div class="progress-step">
+                    <div class="step-icon active">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="step-text active">Personal</span>
+                </div>
+                <div class="progress-step">
+                    <div class="step-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <span class="step-text">Professional</span>
+                </div>
+                <div class="progress-step">
+                    <div class="step-icon">
+                        <i class="fas fa-hospital"></i>
+                    </div>
+                    <span class="step-text">Practice</span>
+                </div>
+                <div class="progress-step">
+                    <div class="step-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <span class="step-text">Complete</span>
+                </div>
+            </div>
+
+            <form class="profile-form" id="profileForm" action="/doc_profile" method="post">
+                <!-- Personal Info Step -->
+                <div class="form-step" id="step1">
+                    <div class="form-group">
+                        <label for="fullName"><i class="fas fa-signature"></i> Full Name</label>
+                        <input type="text" id="fullName" name="fullName" class="form-control"
+                            placeholder="Enter your full name" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <div></div>
+                        <button type="button" class="btn btn-primary btn-large" id="nextBtn1">Next <i
+                                class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Professional Info Step -->
+                <div class="form-step" id="step2" style="display: none;">
+                    <div class="form-group">
+                        <label for="specialization"><i class="fas fa-user-md"></i> Specialization</label>
+                        <input type="text" id="specialization" name="specialization" class="form-control"
+                            placeholder="e.g., Cardiologist, Pediatrician" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="experience"><i class="fas fa-briefcase"></i> Experience (Years)</label>
+                        <input type="number" id="experience" name="experience" class="form-control"
+                            placeholder="Years of experience" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qualification"><i class="fas fa-graduation-cap"></i> Qualification</label>
+                        <input type="text" id="qualification" name="qualification" class="form-control"
+                            placeholder="e.g., MBBS, MD, MS">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-prev btn-large" id="prevBtn1"><i
+                                class="fas fa-arrow-left"></i> Back</button>
+                        <button type="button" class="btn btn-primary btn-large" id="nextBtn2">Next <i
+                                class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Practice Info Step -->
+                <div class="form-step" id="step3" style="display: none;">
+                    <div class="form-group">
+                        <label for="hospital"><i class="fas fa-hospital"></i> Hospital / Clinic Name</label>
+                        <input type="text" id="hospital" name="hospital" class="form-control"
+                            placeholder="Where you practice">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bio"><i class="fas fa-notes-medical"></i> Bio</label>
+                        <textarea id="bio" name="bio" rows="4" class="form-control"
+                            placeholder="Tell patients about your expertise and approach"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-prev btn-large" id="prevBtn2"><i
+                                class="fas fa-arrow-left"></i> Back</button>
+                        <button type="submit" class="btn btn-primary btn-large">Complete Profile <i
+                                class="fas fa-check"></i></button>
+                    </div>
+                </div>
+
+                <!-- Success Step -->
+                <div class="success-container" id="successStep" style="display: none;">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2>Profile Complete!</h2>
+                    <p>Your professional profile has been successfully saved.</p>
+                    <a href="/doc_home" class="btn btn-primary btn-large">Go to Dashboard</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="simple-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/doc_home" class="footer-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>TeleHealth</span>
+                </a>
+                <div class="copyright">
+                    © 2025 TeleHealth. All rights reserved.
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <span class="separator">|</span>
+                <a href="/terms">Terms of Service</a>
+                <span class="separator">|</span>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ===============================
+// THEME TOGGLE
+// ===============================
+const themeToggle = document.getElementById("themeToggle");
+const mobileThemeToggle = document.getElementById("mobileThemeToggle");
+const html = document.documentElement;
+
+const savedTheme =
+    localStorage.getItem("theme") ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+html.setAttribute("data-theme", savedTheme);
+updateThemeIcon(savedTheme);
+
+function toggleTheme() {
+    const current = html.getAttribute("data-theme");
+    const next = current === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+    updateThemeIcon(next);
+}
+
+function updateThemeIcon(theme) {
+    const icon = theme === "dark" ? "fa-sun" : "fa-moon";
+    themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    if (mobileThemeToggle) {
+        mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
+}
+
+themeToggle?.addEventListener("click", toggleTheme);
+mobileThemeToggle?.addEventListener("click", toggleTheme);
+
+// ===============================
+// MULTI STEP FORM
+// ===============================
+const step1 = document.getElementById("step1");
+const step2 = document.getElementById("step2");
+const step3 = document.getElementById("step3");
+
+const nextBtn1 = document.getElementById("nextBtn1");
+const nextBtn2 = document.getElementById("nextBtn2");
+const prevBtn1 = document.getElementById("prevBtn1");
+const prevBtn2 = document.getElementById("prevBtn2");
+
+const fullNameInput = document.getElementById("fullName");
+const specializationInput = document.getElementById("specialization");
+const experienceInput = document.getElementById("experience");
+
+// STEP 1 → STEP 2
+nextBtn1.addEventListener("click", () => {
+    if (!fullNameInput.value.trim()) {
+        alert("Please enter your full name");
+        return;
+    }
+    step1.style.display = "none";
+    step2.style.display = "block";
+    updateProgress(2);
+});
+
+// STEP 2 → STEP 3
+nextBtn2.addEventListener("click", () => {
+    if (!specializationInput.value.trim()) {
+        alert("Please enter specialization");
+        return;
+    }
+    if (!experienceInput.value.trim()) {
+        alert("Please enter experience");
+        return;
+    }
+    step2.style.display = "none";
+    step3.style.display = "block";
+    updateProgress(3);
+});
+
+// BACK BUTTONS
+prevBtn1.addEventListener("click", () => {
+    step2.style.display = "none";
+    step1.style.display = "block";
+    updateProgress(1);
+});
+
+prevBtn2.addEventListener("click", () => {
+    step3.style.display = "none";
+    step2.style.display = "block";
+    updateProgress(2);
+});
+
+// ===============================
+// PROGRESS BAR
+// ===============================
+function updateProgress(step) {
+    const icons = document.querySelectorAll(".step-icon");
+    const texts = document.querySelectorAll(".step-text");
+
+    icons.forEach((icon, i) => {
+        icon.classList.toggle("active", i < step);
+    });
+
+    texts.forEach((text, i) => {
+        text.classList.toggle("active", i < step);
+    });
+}
+// ===============================
+// MOBILE MENU TOGGLE
+// ===============================
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const mobileMenu = document.getElementById("mobileMenu");
+const closeMenu = document.getElementById("closeMenu");
+
+// Open mobile menu
+if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener("click", () => {
+        mobileMenu.classList.add("active");
+        // Prevent body scroll when menu is open
+        document.body.style.overflow = "hidden";
+    });
+}
+
+// Close mobile menu
+if (closeMenu) {
+    closeMenu.addEventListener("click", () => {
+        mobileMenu.classList.remove("active");
+        // Restore body scroll
+        document.body.style.overflow = "auto";
+    });
+}
+
+// Close menu when clicking on a link
+const mobileMenuLinks = document.querySelectorAll(".mobile-menu a");
+mobileMenuLinks.forEach(link => {
+    link.addEventListener("click", () => {
+        mobileMenu.classList.remove("active");
+        document.body.style.overflow = "auto";
+    });
+});
+
+// Close menu when clicking outside
+if (mobileMenu) {
+    mobileMenu.addEventListener("click", (e) => {
+        if (e.target === mobileMenu) {
+            mobileMenu.classList.remove("active");
+            document.body.style.overflow = "auto";
+        }
+    });
+}
+
+
+    </script>
+</body>
+
+</html>

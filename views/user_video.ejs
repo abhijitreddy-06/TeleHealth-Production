@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>User Consultation | TeleHealth</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Color Variables */
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --secondary: #10b981;
+            --background: #0f172a;
+            --dark-bg: #1e293b;
+            --card-bg: #1e293b;
+            --text-dark: #f1f5f9;
+            --text-light: #0f172a;
+            --text-medium: #cbd5e1;
+            --border: #475569;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #60a5fa;
+            --disabled: #9ca3af;
+            --footer-bg: #0f172a;
+
+            /* Other Variables */
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+
+        /* Light Theme Variables */
+        [data-theme="light"] {
+            --background: #f9fafb;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-light: #f1f5f9;
+            --text-medium: #475569;
+            --border: #e2e8f0;
+            --footer-bg: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", "Inter", "Roboto", sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-dark);
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 70px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .call-info {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .doctor-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-medium);
+        }
+
+        .doctor-info i {
+            color: var(--primary);
+        }
+
+        .timer-container {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 0.5rem 1.25rem;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .timer-container i {
+            margin-right: 0.5rem;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        /* Main Video Container */
+        .video-container {
+            position: relative;
+            height: calc(100vh - 70px);
+            background: #020617;
+            display: flex;
+            overflow: hidden;
+        }
+
+        [data-theme="light"] .video-container {
+            background: #1e293b;
+        }
+
+        /* Remote Video (Doctor) */
+        #remoteVideo {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #020617;
+        }
+
+        [data-theme="light"] #remoteVideo {
+            background: #1e293b;
+        }
+
+        /* Local Video (User) - Bottom Left */
+        #localVideo {
+            position: absolute;
+            bottom: 140px;
+            left: 20px;
+            width: 280px;
+            height: 210px;
+            border: 3px solid var(--primary);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            background: #000;
+            z-index: 10;
+            transition: var(--transition);
+        }
+
+        #localVideo:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+        }
+
+        .local-video-label {
+            position: absolute;
+            bottom: 125px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 11;
+            backdrop-filter: blur(10px);
+        }
+
+        .local-video-label i {
+            color: var(--primary);
+        }
+
+        /* Controls Bar */
+        .controls-bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            z-index: 50;
+        }
+
+        [data-theme="light"] .controls-bar {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(30, 41, 59, 1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .control-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .control-label {
+            position: absolute;
+            bottom: -25px;
+            color: white;
+            font-size: 0.8rem;
+            opacity: 0.9;
+            white-space: nowrap;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        [data-theme="light"] .control-label {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .control-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            z-index: 20;
+        }
+
+        [data-theme="light"] .connection-status {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-dark);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--secondary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Doctor Info Overlay */
+        .doctor-info-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            z-index: 20;
+        }
+
+        [data-theme="light"] .doctor-info-overlay {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-dark);
+        }
+
+        .doctor-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        [data-theme="light"] .loading-overlay {
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .loading-content {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(56, 189, 248, 0.3);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            margin: 0 auto 2rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-overlay h2 {
+            font-size: 2rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .loading-overlay p {
+            color: var(--text-medium);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .loading-details {
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .loading-details h4 {
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .loading-details ul {
+            list-style: none;
+            padding-left: 1.5rem;
+        }
+
+        .loading-details li {
+            color: var(--text-medium);
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .loading-details li:before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: -1rem;
+        }
+
+        /* Permission Prompt */
+        .permission-prompt {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-top: 2rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .permission-prompt h3 {
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-medium);
+        }
+
+        .permission-item i {
+            color: var(--secondary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .doctor-info-overlay {
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            #localVideo {
+                width: 240px;
+                height: 180px;
+                left: 15px;
+                bottom: 130px;
+            }
+
+            .local-video-label {
+                left: 15px;
+                bottom: 115px;
+            }
+
+            .loading-overlay h2 {
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .video-container {
+                flex-direction: column;
+            }
+
+            #localVideo {
+                bottom: 160px;
+                left: 10px;
+                width: 180px;
+                height: 135px;
+            }
+
+            .local-video-label {
+                left: 10px;
+                bottom: 145px;
+            }
+
+            .doctor-info-overlay {
+                right: 10px;
+                top: 10px;
+            }
+
+            .controls-bar {
+                height: 120px;
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+
+            .control-label {
+                font-size: 0.7rem;
+                bottom: -20px;
+            }
+
+            .call-info {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+
+            .timer-container {
+                font-size: 0.9rem;
+                padding: 0.4rem 1rem;
+            }
+
+            .loading-content {
+                padding: 1.5rem;
+            }
+
+            .loading-overlay h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar {
+                padding: 0 1rem;
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .logo i {
+                font-size: 1.2rem;
+            }
+
+            .doctor-info-overlay {
+                display: none;
+            }
+
+            #localVideo {
+                width: 150px;
+                height: 113px;
+                bottom: 140px;
+                left: 10px;
+            }
+
+            .local-video-label {
+                left: 10px;
+                bottom: 125px;
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .controls-bar {
+                gap: 0.75rem;
+            }
+
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+
+            .loading-overlay {
+                padding: 1rem;
+            }
+
+            .loading-overlay h2 {
+                font-size: 1.3rem;
+            }
+
+            .loading-spinner {
+                width: 60px;
+                height: 60px;
+            }
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .visible {
+            display: flex;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-dark {
+            color: var(--text-dark) !important;
+        }
+
+        .text-medium {
+            color: var(--text-medium) !important;
+        }
+
+        /* Light Mode Text Fixes */
+        [data-theme="light"] .doctor-info,
+        [data-theme="light"] .connection-status span,
+        [data-theme="light"] .doctor-info-overlay div,
+        [data-theme="light"] .loading-overlay p,
+        [data-theme="light"] .loading-details h4,
+        [data-theme="light"] .permission-prompt h3 {
+            color: var(--text-dark);
+        }
+
+        [data-theme="light"] .loading-details li,
+        [data-theme="light"] .permission-item {
+            color: var(--text-medium);
+        }
+
+        /* Call Ended Styles */
+        .call-ended-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .call-ended-content {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: var(--radius);
+            border: 2px solid var(--border);
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .call-ended-icon {
+            font-size: 4rem;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .call-ended-content h2 {
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .call-ended-content p {
+            color: var(--text-medium);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .prescription-download-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0 auto;
+            transition: var(--transition);
+        }
+
+        .prescription-download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(56, 189, 248, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="navbar">
+            <a href="/user_video_dashboard" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span class="logo-text">TeleHealth</span>
+            </a>
+
+            <div class="call-info">
+                <div class="doctor-info">
+                    <i class="fas fa-user-md"></i>
+                    <span class="text-dark">Doctor Consultation</span>
+                </div>
+                <div class="timer-container" id="timer">
+                    <i class="fas fa-clock"></i>
+                    <span>00:00:00</span>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Video Container -->
+    <main class="video-container">
+        <!-- Connection Status -->
+        <div class="connection-status">
+            <div class="status-indicator"></div>
+            <span class="text-dark">Connecting to doctor...</span>
+        </div>
+
+        <!-- Doctor Info Overlay -->
+        <div class="doctor-info-overlay">
+            <div class="doctor-avatar">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <div>
+                <div class="text-dark">Doctor</div>
+                <div class="text-medium" style="font-size: 0.8rem;">Video consultation</div>
+            </div>
+        </div>
+
+        <!-- Local Video Label -->
+        <div class="local-video-label">
+            <i class="fas fa-user"></i>
+            <span>You (Patient)</span>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay visible" id="loading">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <h2>Connecting to Doctor…</h2>
+                <p class="text-medium">Please wait while we connect you with your healthcare provider.</p>
+
+                <div class="loading-details">
+                    <h4><i class="fas fa-info-circle"></i> Connection in progress:</h4>
+                    <ul>
+                        <li>Establishing secure connection</li>
+                        <li>Requesting camera and microphone access</li>
+                        <li>Connecting to doctor's device</li>
+                    </ul>
+                </div>
+
+                <div class="permission-prompt">
+                    <h3><i class="fas fa-shield-alt"></i> Permission Required</h3>
+                    <div class="permission-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Allow camera access for video consultation</span>
+                    </div>
+                    <div class="permission-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Allow microphone access for audio communication</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Remote Video (Doctor) -->
+        <video id="remoteVideo" autoplay playsinline></video>
+
+        <!-- Local Video (User) - Bottom Left -->
+        <video id="localVideo" autoplay muted playsinline></video>
+
+        <!-- Controls Bar -->
+        <div class="controls-bar">
+            <div class="control-group">
+                <button class="control-btn" id="micBtn">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <span class="control-label">Microphone</span>
+            </div>
+
+            <div class="control-group">
+                <button class="control-btn" id="camBtn">
+                    <i class="fas fa-video"></i>
+                </button>
+                <span class="control-label">Camera</span>
+            </div>
+        </div>
+
+        <!-- Call Ended Overlay -->
+        <div class="call-ended-overlay" id="callEndedOverlay">
+            <div class="call-ended-content">
+                <div class="call-ended-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2>Consultation Completed</h2>
+                <p class="text-medium">Your video consultation has ended. Your prescription is being downloaded
+                    automatically.</p>
+                <button class="prescription-download-btn" id="manualDownloadBtn">
+                    <i class="fas fa-download"></i>
+                    Download Prescription
+                </button>
+                <p class="text-medium" style="margin-top: 1.5rem; font-size: 0.9rem;">
+                    You will be redirected to your dashboard shortly...
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Original Scripts (Unchanged) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Original JavaScript Logic (Unchanged with some enhancements)
+        const socket = io();
+        const ROOM_ID = "<%= roomId %>";
+        let pc, localStream, mic = true, cam = true;
+        const start = Date.now();
+        console.log("ROOM_ID =", ROOM_ID);
+
+        setInterval(() => {
+            const t = Date.now() - start;
+            timer.innerText = `${String(t / 3600000 | 0).padStart(2, '0')}:${String(t / 60000 % 60 | 0).padStart(2, '0')}:${String(t / 1000 % 60 | 0).padStart(2, '0')}`;
+        }, 1000);
+
+        async function init() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                socket.emit("join-room", { roomId: ROOM_ID, role: "user" });
+
+                // Update connection status
+                document.querySelector('.connection-status span').textContent = 'Waiting for doctor...';
+            } catch (error) {
+                console.error("Error accessing media devices:", error);
+                document.querySelector('.loading-overlay h2').textContent = "Permission Required";
+                document.querySelector('.loading-overlay p').textContent = "Please allow camera and microphone access to continue.";
+            }
+        }
+        init();
+
+        function createPeer() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+            localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+            pc.ontrack = e => {
+                remoteVideo.srcObject = e.streams[0];
+                loading.style.display = "none";
+                document.querySelector('.connection-status span').textContent = 'Connected';
+                document.querySelector('.connection-status .status-indicator').style.background = '#10b981';
+            };
+            pc.onicecandidate = e => e.candidate && socket.emit("signal", { roomId: ROOM_ID, payload: { candidate: e.candidate } });
+        }
+
+        socket.on("signal", async p => {
+            if (!pc) createPeer();
+            if (p.offer) {
+                await pc.setRemoteDescription(p.offer);
+                const ans = await pc.createAnswer();
+                await pc.setLocalDescription(ans);
+                socket.emit("signal", { roomId: ROOM_ID, payload: { answer: ans } });
+            }
+            if (p.candidate) await pc.addIceCandidate(p.candidate);
+        });
+
+        micBtn.onclick = () => {
+            mic = !mic;
+            localStream.getAudioTracks()[0].enabled = mic;
+            micBtn.innerHTML = mic ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
+            micBtn.classList.toggle('active', mic);
+        };
+
+        camBtn.onclick = () => {
+            cam = !cam;
+            localStream.getVideoTracks()[0].enabled = cam;
+            camBtn.innerHTML = cam ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
+            camBtn.classList.toggle('active', cam);
+        };
+
+        socket.on("call-ended", () => {
+            // Show call ended overlay
+            const callEndedOverlay = document.getElementById('callEndedOverlay');
+            callEndedOverlay.style.display = 'flex';
+
+            // Auto-download prescription
+            setTimeout(() => {
+                const a = document.createElement("a");
+                a.href = `/api/prescription/${ROOM_ID}`;
+                a.download = "prescription.pdf";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }, 1000);
+
+            // Redirect after 5 seconds
+            setTimeout(() => {
+                location.href = "/user_video_dashboard";
+            }, 5000);
+        });
+
+        // Manual download button
+        document.getElementById('manualDownloadBtn').addEventListener('click', function () {
+            const a = document.createElement("a");
+            a.href = `/api/prescription/${ROOM_ID}`;
+            a.download = "prescription.pdf";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            alert("Prescription downloaded");
+        });
+
+        // Update loading status based on connection state
+        socket.on('connect', () => {
+            console.log('Connected to signaling server');
+        });
+
+        socket.on('disconnect', () => {
+            document.querySelector('.connection-status span').textContent = 'Disconnected - Reconnecting...';
+        });
+    </script>
+</body>
+
+</html>
