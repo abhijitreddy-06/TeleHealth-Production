@@ -1333,7 +1333,57 @@ function videoDashboardRoutes(app) {
             }
         }
     );
+    app.post(
+        "/appointments/:id/start",
+        authenticate,
+        authorize("doctor"),
+        async (req, res) => {
+            const roomId = crypto.randomUUID();
 
+            const result = await db.query(
+                `
+        UPDATE appointments
+        SET status = 'started',
+            room_id = $1
+        WHERE id = $2
+          AND doctor_id = $3
+          AND status = 'scheduled'
+        RETURNING room_id
+        `,
+                [roomId, req.params.id, req.user.id]
+            );
+
+            if (!result.rowCount) {
+                return res.status(400).json({
+                    error: "Call already started or completed"
+                });
+            }
+
+            res.json({ roomId });
+        }
+    );
+
+    /* =====================================
+       END CALL (doctor)
+    ===================================== */
+    app.post(
+        "/appointments/:id/complete",
+        authenticate,
+        authorize("doctor"),
+        async (req, res) => {
+            await db.query(
+                `
+        UPDATE appointments
+        SET status = 'completed'
+        WHERE id = $1
+          AND doctor_id = $2
+        `,
+                [req.params.id, req.user.id]
+            );
+
+            res.sendStatus(200);
+        }
+    );
     // User Video Dashboard
     app.get(
         "/user_video_dashboard",
