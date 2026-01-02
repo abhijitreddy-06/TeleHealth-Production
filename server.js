@@ -926,7 +926,14 @@ function protectedRoutes(app, PROJECT_ROOT) {
         res.sendFile(path.join(PROJECT_ROOT, "public/pages/appointments.html"));
     });
 
+    // In protectedRoutes function, CHANGE TO:
+    app.get("/user_video_dashboard", authenticate, authorize("user"), (req, res) => {
+        res.render("user_video_dashboard");
+    });
 
+    app.get("/doc_video_dashboard", authenticate, authorize("doctor"), (req, res) => {
+        res.render("doc_video_dashboard");
+    });
 
     app.get("/user_video/:roomId", authenticate, authorize("user"), (req, res) => {
         res.render("user_video", { roomId: req.params.roomId });
@@ -1062,22 +1069,22 @@ function vaultRoutes(app) {
                 const fileName = `${Date.now()}-${req.file.originalname}`;
                 const filePath = `user_${req.user.id}/${fileName}`;
 
-                // Upload to Supabase Storage
+                // UPLOAD TO CORRECT BUCKET - CHANGE 'medical-records' TO 'uploads'
                 const { data, error } = await supabase.storage
-                    .from('medical-records')
+                    .from('uploads')  // ← CHANGE THIS LINE
                     .upload(filePath, req.file.buffer, {
                         contentType: req.file.mimetype,
                         upsert: false
                     });
 
                 if (error) {
-                    logger.error("Supabase upload error:", error);
-                    return res.status(500).send("Upload failed to storage");
+                    console.error("Supabase upload error:", error);
+                    return res.status(500).send(`Upload failed: ${error.message}`);
                 }
 
-                // Get public URL
+                // Get public URL - USE SAME BUCKET NAME
                 const { data: urlData } = supabase.storage
-                    .from('medical-records')
+                    .from('uploads')  // ← CHANGE THIS LINE TOO
                     .getPublicUrl(filePath);
 
                 await db.query(
@@ -1094,7 +1101,7 @@ function vaultRoutes(app) {
 
                 res.redirect("/records");
             } catch (err) {
-                logger.error("Vault upload error:", err);
+                console.error("Vault upload error:", err);
                 res.status(500).send("Upload failed");
             }
         }
@@ -1465,70 +1472,53 @@ userVideoRoutes(app);
 vaultRoutes(app);
 prescriptionRoutes(app);
 protectedRoutes(app, PROJECT_ROOT);
-
+videoDashboardRoutes(app);
 // ==============================================
 // HEALTH CHECK ENDPOINT
 // ==============================================
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
+
+// Add this to test Supabase connection
+app.get("/test-supabase", authenticate, async (req, res) => {
+    try {
+        // Test bucket access
+        const { data: buckets, error: bucketsError } = await supabase.storage
+            .listBuckets();
+
+        console.log("Available buckets:", buckets);
+
+        // Test upload to 'uploads' bucket
+        const testFile = Buffer.from("test content");
+        const testPath = `test_${req.user.id}/test.txt`;
+
+        const { data, error } = await supabase.storage
+            .from('uploads')
+            .upload(testPath, testFile, {
+                contentType: 'text/plain'
+            });
+
+        if (error) {
+            return res.json({
+                success: false,
+                error: error.message,
+                buckets: buckets
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Supabase upload test successful",
+            data: data,
+            buckets: buckets
+        });
+
+    } catch (err) {
+        res.json({
+            success: false,
+            error: err.message
+        });
+    }
 });
 
-// Test endpoint for cookies
-// Enhanced cookie test endpoint
-app.get("/cookie-test", (req, res) => {
-    // Set multiple test cookies with different options
-    res.cookie("test1", "value1", {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'None',
-        maxAge: 3600000,
-        path: '/'
-    });
-
-    res.cookie("test2", "value2", {
-        httpOnly: false, // Accessible via JavaScript
-        secure: true,
-        sameSite: 'None',
-        maxAge: 3600000,
-        path: '/'
-    });
-
-    res.cookie("test3", "value3", {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'Lax',
-        maxAge: 3600000,
-        path: '/'
-    });
-
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Cookie Test</title>
-            <script>
-                console.log('All cookies visible to JS:', document.cookie);
-                console.log('Cookies with test2:', document.cookie.includes('test2'));
-                
-                // Try to set a cookie via JavaScript
-                document.cookie = "js_cookie=js_value; path=/; max-age=3600; secure; samesite=None";
-                
-                alert('Cookies set via server. Check console for details.\\n' + 
-                      'JS accessible cookies: ' + document.cookie);
-            </script>
-        </head>
-        <body>
-            <h1>Cookie Test Page</h1>
-            <p>Check browser console and Application > Cookies in DevTools</p>
-            <button onclick="location.reload()">Reload to see if cookies persist</button>
-        </body>
-        </html>
-    `);
-});
 // ==============================================
 // ERROR HANDLING MIDDLEWARE
 // ==============================================
