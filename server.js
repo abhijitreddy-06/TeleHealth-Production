@@ -366,37 +366,49 @@ function appointmentRoutes(app) {
     );
 
     // User Appointments (API)
+    // User Appointments (API)
     app.get(
         "/api/appointments/user",
         authenticate,
         authorize("user"),
         async (req, res) => {
             try {
+                console.log("🔍 Fetching appointments for user:", req.user.id);
+
                 const result = await db.query(
-                    `SELECT a.*, 
+                    `SELECT a.id, a.appointment_date, a.appointment_time,
+                        a.status, a.room_id, 
                         COALESCE(dp.full_name, 'Doctor') AS doctor_name,
-                        dp.specialization
+                        COALESCE(dp.specialization, 'General') AS specialization
                  FROM appointments a
                  LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
                  WHERE a.user_id = $1
-                   AND a.status != 'completed'
+                   AND a.status IN ('scheduled','started')
                  ORDER BY a.appointment_date, a.appointment_time
                  LIMIT 1`,
                     [req.user.id]
                 );
 
-                console.log("API - User appointments:", result.rows);
+                console.log("✅ User appointments found:", result.rows.length);
+
+                // Make sure we return JSON
+                res.setHeader('Content-Type', 'application/json');
+
+                if (result.rows.length === 0) {
+                    return res.json([]); // Return empty array
+                }
+
                 res.json(result.rows);
             } catch (err) {
-                console.error("Fetch user appointments error:", err);
+                console.error("❌ Fetch user appointments error:", err);
+                res.setHeader('Content-Type', 'application/json');
                 res.status(500).json({
                     error: "Failed to load appointments",
                     details: process.env.NODE_ENV === 'development' ? err.message : undefined
                 });
             }
         }
-    )
-
+    );
     // Start Appointment (Doctor)
     app.post(
         "/appointments/:id/start",
@@ -432,39 +444,40 @@ function appointmentRoutes(app) {
     );
 
     // Doctor Appointments (API)
+    // Doctor Appointments (API)
     app.get(
         "/api/appointments/doctor",
         authenticate,
         authorize("doctor"),
         async (req, res) => {
             try {
-                console.log("Fetching appointments for doctor:", req.user.id);
+                console.log("🔍 Fetching appointments for doctor:", req.user.id);
 
                 const result = await db.query(
                     `SELECT a.id, a.appointment_date, a.appointment_time,
-                            a.status, a.room_id, 
-                            COALESCE(up.full_name, 'Patient') AS user_name
-                     FROM appointments a
-                     LEFT JOIN user_profile up ON up.user_id = a.user_id
-                     WHERE a.doctor_id = $1
-                       AND a.status IN ('scheduled','started')
-                     ORDER BY a.appointment_date, a.appointment_time
-                     LIMIT 1`,
+                        a.status, a.room_id, 
+                        COALESCE(up.full_name, 'Patient') AS user_name
+                 FROM appointments a
+                 LEFT JOIN user_profile up ON up.user_id = a.user_id
+                 WHERE a.doctor_id = $1
+                   AND a.status IN ('scheduled','started')
+                 ORDER BY a.appointment_date, a.appointment_time
+                 LIMIT 1`,
                     [req.user.id]
                 );
 
-                console.log("API - Doctor appointments found:", result.rows.length);
+                console.log("✅ Doctor appointments found:", result.rows.length);
 
-                // Make sure we return JSON, not HTML
+                // Make sure we return JSON
                 res.setHeader('Content-Type', 'application/json');
 
                 if (result.rows.length === 0) {
-                    return res.json([]); // Return empty array, not error
+                    return res.json([]); // Return empty array
                 }
 
                 res.json(result.rows);
             } catch (err) {
-                console.error("Fetch doctor appointments error:", err);
+                console.error("❌ Fetch doctor appointments error:", err);
                 res.setHeader('Content-Type', 'application/json');
                 res.status(500).json({
                     error: "Failed to load appointment",
@@ -1315,6 +1328,7 @@ function videoRoutes(app) {
 // Video Dashboard Routes
 // Video Dashboard Routes
 // Video Dashboard Routes - MPA Style
+// Video Dashboard Routes - MPA Style
 function videoDashboardRoutes(app) {
     /* =====================================
        DOCTOR VIDEO DASHBOARD (MPA)
@@ -1342,28 +1356,38 @@ function videoDashboardRoutes(app) {
 
                 console.log("📊 Found appointments:", result.rows.length);
 
-                if (result.rows.length === 0) {
-                    console.log("⚠️ No appointments found for doctor");
-                    return res.render("doc_video_dashboard", {
-                        appointment: null,
-                        hasAppointment: false
-                    });
-                }
+                // Always pass hasAppointment as boolean
+                const hasAppointment = result.rows.length > 0;
+                const appointment = hasAppointment ? result.rows[0] : null;
 
-                const appointment = result.rows[0];
-                console.log("✅ Appointment data:", appointment);
+                console.log("📦 Sending to EJS:", {
+                    hasAppointment,
+                    appointment: appointment ? {
+                        id: appointment.id,
+                        status: appointment.status,
+                        user_name: appointment.user_name,
+                        appointment_date: appointment.appointment_date,
+                        appointment_time: appointment.appointment_time,
+                        room_id: appointment.room_id
+                    } : null
+                });
 
                 res.render("doc_video_dashboard", {
                     appointment: appointment,
-                    hasAppointment: true
+                    hasAppointment: hasAppointment
                 });
 
             } catch (err) {
                 console.error("❌ Doctor video dashboard error:", err);
-                res.status(500).render("error", {
-                    error: "Internal Server Error",
-                    message: err.message
-                });
+                res.status(500).send(`
+                    <html>
+                        <body>
+                            <h1>Internal Server Error</h1>
+                            <p>${err.message}</p>
+                            <a href="/doc_home">Go back to home</a>
+                        </body>
+                    </html>
+                `);
             }
         }
     );
@@ -1382,7 +1406,8 @@ function videoDashboardRoutes(app) {
                 const result = await db.query(
                     `SELECT a.id, a.appointment_date, a.appointment_time,
                             a.status, a.room_id,
-                            COALESCE(dp.full_name, 'Doctor') AS doctor_name
+                            COALESCE(dp.full_name, 'Doctor') AS doctor_name,
+                            COALESCE(dp.specialization, 'General') AS specialization
                      FROM appointments a
                      LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
                      WHERE a.user_id = $1
@@ -1394,28 +1419,39 @@ function videoDashboardRoutes(app) {
 
                 console.log("📊 Found appointments:", result.rows.length);
 
-                if (result.rows.length === 0) {
-                    console.log("⚠️ No appointments found for user");
-                    return res.render("user_video_dashboard", {
-                        appointment: null,
-                        hasAppointment: false
-                    });
-                }
+                // Always pass hasAppointment as boolean
+                const hasAppointment = result.rows.length > 0;
+                const appointment = hasAppointment ? result.rows[0] : null;
 
-                const appointment = result.rows[0];
-                console.log("✅ Appointment data:", appointment);
+                console.log("📦 Sending to EJS:", {
+                    hasAppointment,
+                    appointment: appointment ? {
+                        id: appointment.id,
+                        status: appointment.status,
+                        doctor_name: appointment.doctor_name,
+                        specialization: appointment.specialization,
+                        appointment_date: appointment.appointment_date,
+                        appointment_time: appointment.appointment_time,
+                        room_id: appointment.room_id
+                    } : null
+                });
 
                 res.render("user_video_dashboard", {
                     appointment: appointment,
-                    hasAppointment: true
+                    hasAppointment: hasAppointment
                 });
 
             } catch (err) {
                 console.error("❌ User video dashboard error:", err);
-                res.status(500).render("error", {
-                    error: "Internal Server Error",
-                    message: err.message
-                });
+                res.status(500).send(`
+                    <html>
+                        <body>
+                            <h1>Internal Server Error</h1>
+                            <p>${err.message}</p>
+                            <a href="/user_home">Go back to home</a>
+                        </body>
+                    </html>
+                `);
             }
         }
     );
@@ -1521,77 +1557,69 @@ protectedRoutes(app, PROJECT_ROOT);
 // ==============================================
 
 // Add this to test Supabase connection
-app.get("/debug/supabase-test", authenticate, async (req, res) => {
+app.get("/debug/appointments", authenticate, async (req, res) => {
     try {
-        // Test storage
-        const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+        console.log("🔍 Testing appointments for user:", req.user.id, "role:", req.user.role);
 
-        // Test database insert
-        const { data: testInsert, error: insertError } = await supabase
-            .from('medical_records')
-            .insert([{
-                user_id: req.user.id,
-                file_name: 'test.txt',
-                file_path: 'test/path.txt',
-                record_type: 'test',
-                uploaded_at: new Date().toISOString()
-            }])
-            .select();
+        // Test doctor query
+        const doctorResult = await db.query(
+            `SELECT a.id, a.appointment_date, a.appointment_time,
+                    a.status, a.room_id,
+                    COALESCE(up.full_name, 'Patient') AS user_name
+             FROM appointments a
+             LEFT JOIN user_profile up ON up.user_id = a.user_id
+             WHERE a.doctor_id = $1
+               AND a.status IN ('scheduled','started')
+             ORDER BY a.appointment_date, a.appointment_time
+             LIMIT 1`,
+            [req.user.id]
+        );
+
+        // Test user query
+        const userResult = await db.query(
+            `SELECT a.id, a.appointment_date, a.appointment_time,
+                    a.status, a.room_id,
+                    COALESCE(dp.full_name, 'Doctor') AS doctor_name,
+                    COALESCE(dp.specialization, 'General') AS specialization
+             FROM appointments a
+             LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
+             WHERE a.user_id = $1
+               AND a.status IN ('scheduled','started')
+             ORDER BY a.appointment_date, a.appointment_time
+             LIMIT 1`,
+            [req.user.id]
+        );
 
         res.json({
-            user_id: req.user.id,
-            buckets: buckets,
-            bucket_error: bucketError,
-            test_insert: testInsert,
-            insert_error: insertError,
-            service_key_used: !!process.env.SUPABASE_SERVICE_KEY
-        });
-    } catch (err) {
-        res.json({ error: err.message });
-    }
-});
-
-app.get("/test-supabase", authenticate, async (req, res) => {
-    try {
-        // Test bucket access
-        const { data: buckets, error: bucketsError } = await supabase.storage
-            .listBuckets();
-
-        console.log("Available buckets:", buckets);
-
-        // Test upload to 'uploads' bucket
-        const testFile = Buffer.from("test content");
-        const testPath = `test_${req.user.id}/test.txt`;
-
-        const { data, error } = await supabase.storage
-            .from('uploads')
-            .upload(testPath, testFile, {
-                contentType: 'text/plain'
-            });
-
-        if (error) {
-            return res.json({
-                success: false,
-                error: error.message,
-                buckets: buckets
-            });
-        }
-
-        res.json({
-            success: true,
-            message: "Supabase upload test successful",
-            data: data,
-            buckets: buckets
+            role: req.user.role,
+            doctorQueryResults: doctorResult.rows,
+            userQueryResults: userResult.rows,
+            tablesExist: {
+                appointments: await tableExists('appointments'),
+                user_profile: await tableExists('user_profile'),
+                doc_profile: await tableExists('doc_profile')
+            }
         });
 
     } catch (err) {
-        res.json({
-            success: false,
-            error: err.message
-        });
+        res.json({ error: err.message, stack: err.stack });
     }
 });
 
+async function tableExists(tableName) {
+    try {
+        const result = await db.query(
+            `SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = $1
+            )`,
+            [tableName]
+        );
+        return result.rows[0].exists;
+    } catch {
+        return false;
+    }
+}
 // ==============================================
 // ERROR HANDLING MIDDLEWARE
 // ==============================================

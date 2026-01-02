@@ -781,10 +781,10 @@
                     </p>
                 </div>
 
-                <button id="joinBtn" class="btn btn-primary btn-full" disabled onclick="joinCall()">
-                    <i class="fas fa-video"></i>
-                    Join Video Call
-                </button>
+<button id="joinBtn" class="btn btn-primary btn-full" disabled>
+    <i class="fas fa-video"></i>
+    Join Video Call
+</button>
             </div>
 
             <!-- Instructions Card -->
@@ -860,90 +860,89 @@
     </div>
 
     <!-- ================= SCRIPTS ================= -->
-    <script defer>
-        document.addEventListener('DOMContentLoaded', function () {
+<script defer>
+    document.addEventListener('DOMContentLoaded', function () {
+        let roomId = null;
+        let polling = null;
 
-            // Original video dashboard logic (unchanged)
-            let roomId = null;
-            let polling = null;
+        async function loadAppointment() {
+            try {
+                const res = await fetch("/api/appointments/user");
+                const appointments = await res.json();
 
+                // No active appointments
+                if (!appointments.length) {
+                    clearInterval(polling);
+                    document.getElementById("doctorName").innerText = "—";
+                    document.getElementById("apptDate").innerText = "—";
+                    document.getElementById("apptTime").innerText = "—";
+                    document.getElementById("statusText").innerHTML = `
+                        <i class="fas fa-calendar-times"></i>
+                        No active appointments.
+                    `;
+                    document.getElementById("statusText").className = "status completed";
+                    document.getElementById("joinBtn").disabled = true;
+                    return;
+                }
 
-            async function loadAppointment() {
-                try {
-                    const res = await fetch("/api/appointments/user");
-                    const appointments = await res.json();
+                const appt = appointments[0];
 
-                    // No active appointments
-                    if (!appointments.length) {
-                        clearInterval(polling);
-                        document.getElementById("doctorName").innerText = "—";
-                        document.getElementById("apptDate").innerText = "—";
-                        document.getElementById("apptTime").innerText = "—";
-                        document.getElementById("statusText").innerHTML = `
-    <i class="fas fa-calendar-times"></i>
-    No active appointments.
-    `;
-                        document.getElementById("statusText").className = "status completed";
-                        document.getElementById("joinBtn").disabled = true;
-                        return;
-                    }
+                document.getElementById("doctorName").innerText =
+                    `${appt.doctor_name} (${appt.specialization})`;
 
-                    const appt = appointments[0];
+                document.getElementById("apptDate").innerText =
+                    appt.appointment_date;
 
-                    document.getElementById("doctorName").innerText =
-                        `${appt.doctor_name} (${appt.specialization})`;
+                document.getElementById("apptTime").innerText =
+                    appt.appointment_time;
 
-                    document.getElementById("apptDate").innerText =
-                        appt.appointment_date;
+                const joinBtn = document.getElementById("joinBtn");
 
-                    document.getElementById("apptTime").innerText =
-                        appt.appointment_time;
-
-                    // Scheduled
-                    if (appt.status === "scheduled") {
-                        document.getElementById("statusText").innerHTML = `
+                // Scheduled
+                if (appt.status === "scheduled") {
+                    document.getElementById("statusText").innerHTML = `
                         <i class="fas fa-clock"></i>
                         Waiting for doctor to start the call...
                     `;
-                        document.getElementById("statusText").className = "status waiting";
-                        document.getElementById("joinBtn").disabled = true;
-                    }
-
-                    // Started
-                    if (appt.status === "started" && appt.room_id) {
-                        roomId = appt.room_id;
-                        document.getElementById("statusText").innerHTML = `
-    <i class="fas fa-check-circle"></i>
-    Doctor has started the call
-    `;
-                        document.getElementById("statusText").className = "status ready";
-                        document.getElementById("joinBtn").disabled = false;
-                    }
-
-                    // Completed
-                    if (appt.status === "completed") {
-                        clearInterval(polling);
-                        document.getElementById("statusText").innerHTML = `
-    <i class="fas fa-check-circle"></i>
-    Appointment completed
-    `;
-                        document.getElementById("statusText").className = "status completed";
-                        document.getElementById("joinBtn").disabled = true;
-                    }
-
-                } catch (err) {
-                    console.error(err);
-                    document.getElementById("statusText").innerHTML = `
-    <i class="fas fa-exclamation-triangle"></i>
-    Failed to load appointment
-    `;
+                    document.getElementById("statusText").className = "status waiting";
+                    joinBtn.disabled = true;
+                    joinBtn.onclick = null;
                 }
-            }
 
-            function joinCall() {
-                if (!roomId) return;
-                window.location.href = `/user_video/${roomId}`;
+                // Started
+                if (appt.status === "started" && appt.room_id) {
+                    roomId = appt.room_id;
+                    document.getElementById("statusText").innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        Doctor has started the call
+                    `;
+                    document.getElementById("statusText").className = "status ready";
+                    joinBtn.disabled = false;
+                    joinBtn.onclick = function () {
+                        window.location.href = `/user_video/${roomId}`;
+                    };
+                }
+
+                // Completed
+                if (appt.status === "completed") {
+                    clearInterval(polling);
+                    document.getElementById("statusText").innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        Appointment completed
+                    `;
+                    document.getElementById("statusText").className = "status completed";
+                    joinBtn.disabled = true;
+                    joinBtn.onclick = null;
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById("statusText").innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Failed to load appointment
+                `;
             }
+        }
 
             // Theme Toggle (from user_home)
             const themeToggle = document.getElementById('themeToggle');
