@@ -1139,16 +1139,19 @@
             });
 
             // End call handler
+           // End call handler - UPDATED
             async function endCallHandler() {
-                // Save notes
-                if (notesText.value.trim()) {
+                const notes = notesText.value.trim();
+
+                // Save notes first (for doctor's own records)
+                if (notes) {
                     try {
                         await fetch("/api/notes/save", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
                                 roomId: ROOM_ID,
-                                notes: notesText.value
+                                notes: notes
                             })
                         });
                     } catch (error) {
@@ -1177,9 +1180,13 @@
                     localStream = null;
                 }
 
-                // Notify other participant
+                // Notify other participant WITH PRESCRIPTION DATA
                 if (socket) {
-                    socket.emit('call-ended', { roomId: ROOM_ID });
+                    socket.emit('call-ended-with-prescription', {
+                        roomId: ROOM_ID,
+                        appointmentId: APPOINTMENT_ID,
+                        notes: notes
+                    });
                     socket.disconnect();
                 }
 

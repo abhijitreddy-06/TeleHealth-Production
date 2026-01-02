@@ -839,303 +839,389 @@
 
 
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Variables
-            const ROOM_ID = "<%= roomId %>";
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Variables
+        const ROOM_ID = "<%= roomId %>";
 
-            let localStream = null;
-            let remoteStream = null;
-            let peerConnection = null;
-            let socket = null;
-            let callStartTime = null;
-            let isAudioMuted = false;
-            let isVideoOff = false;
+        let localStream = null;
+        let remoteStream = null;
+        let peerConnection = null;
+        let socket = null;
+        let callStartTime = null;
+        let isAudioMuted = false;
+        let isVideoOff = false;
+        let timerInterval = null;
 
-            // DOM Elements
-            const localVideo = document.getElementById('localVideo');
-            const remoteVideo = document.getElementById('remoteVideo');
-            const toggleMic = document.getElementById('toggleMic');
-            const toggleCam = document.getElementById('toggleCam');
-            const callTimer = document.getElementById('callTimer');
-            const statusText = document.getElementById('statusText');
-            const statusIndicator = document.getElementById('statusIndicator');
-            const callEndedOverlay = document.getElementById('callEndedOverlay');
+        // DOM Elements
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const toggleMic = document.getElementById('toggleMic');
+        const toggleCam = document.getElementById('toggleCam');
+        const callTimer = document.getElementById('callTimer');
+        const statusText = document.getElementById('statusText');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const callEndedOverlay = document.getElementById('callEndedOverlay');
+        const overlayTitle = document.querySelector('.call-ended-content h2');
+        const overlayMessage = document.querySelector('.call-ended-content p');
+        const downloadBtn = document.getElementById('manualDownloadBtn');
 
-            // Theme Toggle
-            const themeToggle = document.getElementById('themeToggle');
-            const html = document.documentElement;
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
 
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            html.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
 
-            function toggleTheme() {
-                const currentTheme = html.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                html.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateThemeIcon(newTheme);
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // NEW: Function to download prescription
+        function downloadPrescription(roomId) {
+            console.log('Downloading prescription for room:', roomId);
+
+            const downloadUrl = `/api/prescription/download/${roomId}`;
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = 'prescription.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // Also open in new tab as backup
+            window.open(downloadUrl, '_blank');
+        }
+
+        // UPDATED: Show call ended overlay
+        function showCallEndedOverlay(prescriptionReady = false) {
+            // Clear timer interval
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
             }
 
-            function updateThemeIcon(theme) {
-                const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-                themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            // Close peer connection
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
             }
 
-            themeToggle.addEventListener('click', toggleTheme);
-
-            // Initialize Socket.io
-            function initSocket() {
-                socket = io();
-
-                socket.on('connect', () => {
-                    console.log('Connected to signaling server');
-                    updateStatus('Connecting to doctor...', 'warning');
-                    socket.emit('join-room', { roomId: ROOM_ID, role: 'user' });
-                });
-
-                socket.on('signal', async (data) => {
-                    console.log('Received signal:', data.type || 'candidate');
-
-                    if (!peerConnection) {
-                        await createPeerConnection();
-                    }
-
-                    if (data.offer) {
-                        console.log('Received offer from doctor');
-                        updateStatus('Doctor connected, establishing call...', 'warning');
-
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-
-                        const answer = await peerConnection.createAnswer();
-                        await peerConnection.setLocalDescription(answer);
-
-                        socket.emit('signal', {
-                            roomId: ROOM_ID,
-                            answer: answer
-                        });
-
-                    } else if (data.candidate) {
-                        try {
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-                        } catch (e) {
-                            console.error('Error adding ICE candidate:', e);
-                        }
-                    }
-                });
-
-                socket.on('call-ended', () => {
-                    console.log('Doctor ended the call');
-                    showCallEndedOverlay();
-                });
-
-                socket.on('disconnect', () => {
-                    updateStatus('Disconnected from server', 'disconnected');
-                });
+            // Stop local stream
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
             }
 
-            // Update status display
-            function updateStatus(message, type) {
-                statusText.textContent = message;
-                statusIndicator.className = 'status-indicator';
-                if (type === 'connected') {
-                    statusIndicator.classList.add('connected');
-                } else if (type === 'disconnected') {
-                    statusIndicator.classList.add('disconnected');
+            // Disconnect socket
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+
+            // Update overlay message based on prescription status
+            if (prescriptionReady) {
+                overlayTitle.textContent = 'Consultation Completed ✓';
+                overlayMessage.textContent = 'Your video consultation has ended. Your prescription is being downloaded...';
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Prescription Again';
+
+                // Automatically download prescription
+                setTimeout(() => {
+                    downloadPrescription(ROOM_ID);
+                }, 500);
+            } else {
+                overlayTitle.textContent = 'Consultation Ended';
+                overlayMessage.textContent = 'Your video consultation has ended.';
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i> Check for Prescription';
+            }
+
+            // Show overlay
+            callEndedOverlay.style.display = 'flex';
+
+            // Auto-redirect after 10 seconds (or 15 if prescription was downloaded)
+            const redirectDelay = prescriptionReady ? 15000 : 10000;
+            setTimeout(() => {
+                window.location.href = "/user_video_dashboard";
+            }, redirectDelay);
+        }
+
+        // Initialize Socket.io - UPDATED
+        function initSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                console.log('Connected to signaling server');
+                updateStatus('Connecting to doctor...', 'warning');
+                socket.emit('join-room', { roomId: ROOM_ID, role: 'user' });
+            });
+
+            socket.on('signal', async (data) => {
+                console.log('Received signal:', data.type || 'candidate');
+
+                if (!peerConnection) {
+                    await createPeerConnection();
                 }
-            }
 
-            // Get user media
-            async function getLocalStream() {
-                try {
-                    localStream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            width: { ideal: 1280 },
-                            height: { ideal: 720 },
-                            frameRate: { ideal: 30 }
-                        },
-                        audio: {
-                            echoCancellation: true,
-                            noiseSuppression: true,
-                            autoGainControl: true
-                        }
+                if (data.offer) {
+                    console.log('Received offer from doctor');
+                    updateStatus('Doctor connected, establishing call...', 'warning');
+
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+
+                    socket.emit('signal', {
+                        roomId: ROOM_ID,
+                        answer: answer
                     });
 
-                    localVideo.srcObject = localStream;
-                    console.log('Local stream obtained');
-
-                } catch (error) {
-                    console.error('Error accessing media devices:', error);
-                    alert('Unable to access camera and microphone. Please check permissions.');
+                } else if (data.candidate) {
+                    try {
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    } catch (e) {
+                        console.error('Error adding ICE candidate:', e);
+                    }
                 }
+            });
+
+            // NEW: Handle call ended with prescription ready
+            socket.on('call-ended-prescription-ready', (data) => {
+                console.log('Doctor ended call with prescription ready');
+                updateStatus('Prescription ready, ending call...', 'connected');
+                setTimeout(() => {
+                    showCallEndedOverlay(true);
+                }, 1000);
+            });
+
+            // Handle regular call ended (backward compatibility)
+            socket.on('call-ended', (data) => {
+                console.log('Doctor ended the call');
+                updateStatus('Call ended by doctor', 'disconnected');
+                setTimeout(() => {
+                    showCallEndedOverlay(false);
+                }, 1000);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                updateStatus('Disconnected from server', 'disconnected');
+            });
+
+            socket.on('error', (error) => {
+                console.error('Socket error:', error);
+                updateStatus('Connection error', 'disconnected');
+            });
+        }
+
+        // Update status display
+        function updateStatus(message, type) {
+            statusText.textContent = message;
+            statusIndicator.className = 'status-indicator';
+
+            // Remove all existing classes
+            statusIndicator.classList.remove('connected', 'disconnected', 'warning');
+
+            // Add appropriate class
+            if (type === 'connected') {
+                statusIndicator.classList.add('connected');
+            } else if (type === 'disconnected') {
+                statusIndicator.classList.add('disconnected');
+            } else if (type === 'warning') {
+                statusIndicator.classList.add('warning');
             }
+        }
 
-            // Create peer connection
-            async function createPeerConnection() {
-                const configuration = {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' }
-                    ]
-                };
+        // Get user media
+        async function getLocalStream() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
 
-                peerConnection = new RTCPeerConnection(configuration);
+                localVideo.srcObject = localStream;
+                console.log('Local stream obtained');
 
-                // Add local stream tracks
+            } catch (error) {
+                console.error('Error accessing media devices:', error);
+                updateStatus('Camera/mic permission required', 'disconnected');
+                alert('Unable to access camera and microphone. Please check permissions.');
+            }
+        }
+
+        // Create peer connection
+        async function createPeerConnection() {
+            const configuration = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' }
+                ]
+            };
+
+            peerConnection = new RTCPeerConnection(configuration);
+
+            // Add local stream tracks
+            if (localStream) {
                 localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, localStream);
                 });
+            }
 
-                // Handle remote stream
-                peerConnection.ontrack = (event) => {
-                    console.log('Received remote track');
-                    if (!remoteVideo.srcObject) {
-                        remoteVideo.srcObject = event.streams[0];
-                        remoteStream = event.streams[0];
+            // Handle remote stream
+            peerConnection.ontrack = (event) => {
+                console.log('Received remote track');
+                if (!remoteVideo.srcObject) {
+                    remoteVideo.srcObject = event.streams[0];
+                    remoteStream = event.streams[0];
+                    updateStatus('Call connected', 'connected');
+                    startTimer();
+                }
+            };
+
+            // Handle ICE candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('signal', {
+                        roomId: ROOM_ID,
+                        candidate: event.candidate
+                    });
+                }
+            };
+
+            // Handle connection state changes
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('ICE connection state:', peerConnection.iceConnectionState);
+
+                switch (peerConnection.iceConnectionState) {
+                    case 'connected':
                         updateStatus('Call connected', 'connected');
                         startTimer();
-                    }
-                };
-
-                // Handle ICE candidates
-                peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emit('signal', {
-                            roomId: ROOM_ID,
-                            candidate: event.candidate
-                        });
-                    }
-                };
-
-                // Handle connection state changes
-                peerConnection.oniceconnectionstatechange = () => {
-                    console.log('ICE connection state:', peerConnection.iceConnectionState);
-                    if (peerConnection.iceConnectionState === 'disconnected' ||
-                        peerConnection.iceConnectionState === 'failed') {
+                        break;
+                    case 'disconnected':
+                    case 'failed':
                         updateStatus('Connection lost', 'disconnected');
-                    } else if (peerConnection.iceConnectionState === 'connected') {
-                        updateStatus('Call connected', 'connected');
-                        startTimer();
-                    }
-                };
+                        break;
+                    case 'closed':
+                        console.log('Peer connection closed');
+                        break;
+                }
+            };
+
+            // Handle signaling state changes
+            peerConnection.onsignalingstatechange = () => {
+                console.log('Signaling state:', peerConnection.signalingState);
+            };
+        }
+
+        // Start call timer
+        function startTimer() {
+            if (!callStartTime) {
+                callStartTime = Date.now();
+
+                timerInterval = setInterval(() => {
+                    const elapsed = Date.now() - callStartTime;
+                    const hours = Math.floor(elapsed / 3600000);
+                    const minutes = Math.floor((elapsed % 3600000) / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+
+                    callTimer.innerHTML = `
+                        <i class="fas fa-clock"></i>
+                        <span>${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</span>
+                    `;
+                }, 1000);
             }
+        }
 
-            // Start call timer
-            function startTimer() {
-                if (!callStartTime) {
-                    callStartTime = Date.now();
+        // Toggle microphone
+        toggleMic.addEventListener('click', () => {
+            if (localStream) {
+                localStream.getAudioTracks().forEach(track => {
+                    track.enabled = !track.enabled;
+                });
 
-                    setInterval(() => {
-                        const elapsed = Date.now() - callStartTime;
-                        const hours = Math.floor(elapsed / 3600000);
-                        const minutes = Math.floor((elapsed % 3600000) / 60000);
-                        const seconds = Math.floor((elapsed % 60000) / 1000);
+                isAudioMuted = !localStream.getAudioTracks()[0].enabled;
+                toggleMic.classList.toggle('active', !isAudioMuted);
+                toggleMic.innerHTML = isAudioMuted ?
+                    '<i class="fas fa-microphone-slash"></i>' :
+                    '<i class="fas fa-microphone"></i>';
 
-                        callTimer.innerHTML = `
-                            <i class="fas fa-clock"></i>
-                            <span>${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</span>
-                        `;
-                    }, 1000);
-                }
+                document.querySelector('.control-group:nth-child(1) .control-label').textContent =
+                    isAudioMuted ? 'Mic Off' : 'Mic On';
             }
-
-            // Toggle microphone
-            toggleMic.addEventListener('click', () => {
-                if (localStream) {
-                    localStream.getAudioTracks().forEach(track => {
-                        track.enabled = !track.enabled;
-                    });
-
-                    isAudioMuted = !localStream.getAudioTracks()[0].enabled;
-                    toggleMic.classList.toggle('active', !isAudioMuted);
-                    toggleMic.innerHTML = isAudioMuted ?
-                        '<i class="fas fa-microphone-slash"></i>' :
-                        '<i class="fas fa-microphone"></i>';
-
-                    document.querySelector('.control-group:nth-child(1) .control-label').textContent =
-                        isAudioMuted ? 'Mic Off' : 'Mic On';
-                }
-            });
-
-            // Toggle camera
-            toggleCam.addEventListener('click', () => {
-                if (localStream) {
-                    localStream.getVideoTracks().forEach(track => {
-                        track.enabled = !track.enabled;
-                    });
-
-                    isVideoOff = !localStream.getVideoTracks()[0].enabled;
-                    toggleCam.classList.toggle('active', !isVideoOff);
-                    toggleCam.innerHTML = isVideoOff ?
-                        '<i class="fas fa-video-slash"></i>' :
-                        '<i class="fas fa-video"></i>';
-
-                    document.querySelector('.control-group:nth-child(2) .control-label').textContent =
-                        isVideoOff ? 'Camera Off' : 'Camera On';
-                }
-            });
-
-            // Show call ended overlay
-            function showCallEndedOverlay() {
-                // Close peer connection
-                if (peerConnection) {
-                    peerConnection.close();
-                    peerConnection = null;
-                }
-
-                // Stop local stream
-                if (localStream) {
-                    localStream.getTracks().forEach(track => track.stop());
-                    localStream = null;
-                }
-
-                // Disconnect socket
-                if (socket) {
-                    socket.disconnect();
-                }
-
-                // Show overlay
-                callEndedOverlay.style.display = 'flex';
-
-                // Auto-redirect after 10 seconds
-                setTimeout(() => {
-                    window.location.href = "/user_video_dashboard";
-                }, 10000);
-            }
-
-            // Manual download prescription
-            document.getElementById('manualDownloadBtn').addEventListener('click', function () {
-                const downloadUrl = `/api/prescription/download/${ROOM_ID}`;
-                const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = 'prescription.pdf';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            });
-
-            // Initialize
-            async function init() {
-                updateStatus('Initializing call...', 'warning');
-                await getLocalStream();
-                initSocket();
-            }
-
-            init();
-
-            // Handle page unload
-            window.addEventListener('beforeunload', (e) => {
-                if (peerConnection || socket?.connected) {
-                    e.preventDefault();
-                    e.returnValue = 'Are you sure you want to leave the call?';
-                    return e.returnValue;
-                }
-            });
         });
-    </script>
+
+        // Toggle camera
+        toggleCam.addEventListener('click', () => {
+            if (localStream) {
+                localStream.getVideoTracks().forEach(track => {
+                    track.enabled = !track.enabled;
+                });
+
+                isVideoOff = !localStream.getVideoTracks()[0].enabled;
+                toggleCam.classList.toggle('active', !isVideoOff);
+                toggleCam.innerHTML = isVideoOff ?
+                    '<i class="fas fa-video-slash"></i>' :
+                    '<i class="fas fa-video"></i>';
+
+                document.querySelector('.control-group:nth-child(2) .control-label').textContent =
+                    isVideoOff ? 'Camera Off' : 'Camera On';
+            }
+        });
+
+        // Manual download prescription button
+        downloadBtn.addEventListener('click', function () {
+            downloadPrescription(ROOM_ID);
+        });
+
+        // Initialize
+        async function init() {
+            updateStatus('Initializing call...', 'warning');
+            await getLocalStream();
+            initSocket();
+        }
+
+        init();
+
+        // Handle page unload
+        window.addEventListener('beforeunload', (e) => {
+            if (peerConnection || (socket && socket.connected)) {
+                e.preventDefault();
+                e.returnValue = 'Are you sure you want to leave the call?';
+                return e.returnValue;
+            }
+        });
+
+        // Handle page visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && peerConnection) {
+                console.log('Page hidden, connection may be affected');
+            }
+        });
+    });
+</script>
 </body>
 
 </html>

@@ -197,12 +197,10 @@ app.use(cors(corsOptions));
 
 // Update your authenticate middleware to DEBUG:
 function authenticate(req, res, next) {
-    console.log("DEBUG: Authenticate middleware called");
-    console.log("DEBUG: Cookies received:", req.cookies);
+
     const token = req.cookies.token;
 
     if (!token) {
-        console.log("DEBUG: No token found, redirecting to /role");
         return res.redirect("/role");
     }
 
@@ -213,10 +211,10 @@ function authenticate(req, res, next) {
             role: payload.role,
             phone: payload.phone
         };
-        console.log("DEBUG: User authenticated:", req.user);
+  
         next();
     } catch (err) {
-        console.log("DEBUG: JWT verification failed:", err.message);
+
         res.clearCookie("token", cookieOptions);
         return res.redirect("/role");
     }
@@ -375,7 +373,7 @@ function appointmentRoutes(app) {
         authorize("user"),
         async (req, res) => {
             try {
-                console.log("🔍 Fetching appointments for user:", req.user.id);
+               
 
                 const result = await db.query(
                     `SELECT a.id, a.appointment_date, a.appointment_time,
@@ -391,7 +389,7 @@ function appointmentRoutes(app) {
                     [req.user.id]
                 );
 
-                console.log("✅ User appointments found:", result.rows.length);
+               
 
                 // Make sure we return JSON
                 res.setHeader('Content-Type', 'application/json');
@@ -402,7 +400,7 @@ function appointmentRoutes(app) {
 
                 res.json(result.rows);
             } catch (err) {
-                console.error("❌ Fetch user appointments error:", err);
+                
                 res.setHeader('Content-Type', 'application/json');
                 res.status(500).json({
                     error: "Failed to load appointments",
@@ -453,7 +451,7 @@ function appointmentRoutes(app) {
         authorize("doctor"),
         async (req, res) => {
             try {
-                console.log("🔍 Fetching appointments for doctor:", req.user.id);
+               
 
                 const result = await db.query(
                     `SELECT a.id, a.appointment_date, a.appointment_time,
@@ -468,7 +466,7 @@ function appointmentRoutes(app) {
                     [req.user.id]
                 );
 
-                console.log("✅ Doctor appointments found:", result.rows.length);
+         
 
                 // Make sure we return JSON
                 res.setHeader('Content-Type', 'application/json');
@@ -479,7 +477,7 @@ function appointmentRoutes(app) {
 
                 res.json(result.rows);
             } catch (err) {
-                console.error("❌ Fetch doctor appointments error:", err);
+                
                 res.setHeader('Content-Type', 'application/json');
                 res.status(500).json({
                     error: "Failed to load appointment",
@@ -538,7 +536,7 @@ function authRoutes(app) {
     // User Signup
     app.post("/user_signup", async (req, res) => {
         const { phone, password, confirmpassword } = req.body;
-        console.log("DEBUG: User signup attempt:", { phone });
+  
 
         if (!password || password.length < 6)
             return res.send(`<script>alert('Password must be at least 6 characters.');location='/user_signup'</script>`);
@@ -566,7 +564,7 @@ function authRoutes(app) {
                 { expiresIn: JWT_EXPIRES_IN }
             );
 
-            console.log("DEBUG: Setting cookie for user signup");
+      
             res.cookie("token", token, cookieOptions);
 
             // Test cookie is set
@@ -574,7 +572,7 @@ function authRoutes(app) {
             res.redirect("/user_profile");
 
         } catch (err) {
-            console.error("User signup error:", err);
+     
             res.status(500).send("Internal Server Error");
         }
     });
@@ -582,7 +580,7 @@ function authRoutes(app) {
     // User Login
     app.post("/user_login", async (req, res) => {
         const { phone, password } = req.body;
-        console.log("DEBUG: User login attempt:", { phone });
+
 
         try {
             const result = await db.query(
@@ -602,7 +600,7 @@ function authRoutes(app) {
                 { expiresIn: JWT_EXPIRES_IN }
             );
 
-            console.log("DEBUG: Setting cookie for user login");
+  
             res.cookie("token", token, cookieOptions);
 
             // Test: Add a meta refresh as fallback
@@ -614,7 +612,7 @@ function authRoutes(app) {
                 </head>
                 <body>
                     <script>
-                        console.log('Cookie set:', document.cookie);
+                     
                         window.location.href = '/user_home';
                     </script>
                 </body>
@@ -622,7 +620,7 @@ function authRoutes(app) {
             `);
 
         } catch (err) {
-            console.error("User login error:", err);
+    
             res.status(500).send("Internal Server Error");
         }
     });
@@ -630,7 +628,7 @@ function authRoutes(app) {
     // Doctor Login
     app.post("/doc_login", async (req, res) => {
         const { phone, password } = req.body;
-        console.log("DEBUG: Doctor login attempt:", { phone });
+    
 
         try {
             const result = await db.query(
@@ -650,9 +648,8 @@ function authRoutes(app) {
                 { expiresIn: JWT_EXPIRES_IN }
             );
 
-            console.log("DEBUG: Setting cookie for doctor login");
             res.cookie("token", token, cookieOptions);
-
+ 
             res.send(`
                 <!DOCTYPE html>
                 <html>
@@ -661,7 +658,7 @@ function authRoutes(app) {
                 </head>
                 <body>
                     <script>
-                        console.log('Cookie set:', document.cookie);
+                       
                         window.location.href = '/doc_home';
                     </script>
                 </body>
@@ -669,14 +666,14 @@ function authRoutes(app) {
             `);
 
         } catch (err) {
-            console.error("Doctor login error:", err);
+            
             res.status(500).send("Internal Server Error");
         }
     });
 
     // Logout
     app.get("/logout", (req, res) => {
-        console.log("DEBUG: Logging out");
+     
         res.clearCookie("token", cookieOptions);
         res.redirect("/role");
     });
@@ -1093,7 +1090,7 @@ function vaultRoutes(app) {
             if (!req.file) return res.status(400).send("No file uploaded");
 
             try {
-                console.log("Upload attempt for user:", req.user.id);
+               
 
                 const fileName = `${Date.now()}-${req.file.originalname}`;
                 const filePath = `user_${req.user.id}/${fileName}`;
@@ -1134,7 +1131,7 @@ function vaultRoutes(app) {
                     ]);
 
                 if (dbError) {
-                    console.error("Database insert error:", dbError);
+        
                     return res.status(500).send(`Database error: ${dbError.message}`);
                 }
 
@@ -1341,7 +1338,7 @@ function videoDashboardRoutes(app) {
         authorize("doctor"),
         async (req, res) => {
             try {
-                console.log("🔍 Fetching appointments for doctor ID:", req.user.id);
+                
 
                 const result = await db.query(
                     `SELECT a.id, a.appointment_date, a.appointment_time,
@@ -1356,23 +1353,13 @@ function videoDashboardRoutes(app) {
                     [req.user.id]
                 );
 
-                console.log("📊 Found appointments:", result.rows.length);
+
 
                 // Always pass hasAppointment as boolean
                 const hasAppointment = result.rows.length > 0;
                 const appointment = hasAppointment ? result.rows[0] : null;
 
-                console.log("📦 Sending to EJS:", {
-                    hasAppointment,
-                    appointment: appointment ? {
-                        id: appointment.id,
-                        status: appointment.status,
-                        user_name: appointment.user_name,
-                        appointment_date: appointment.appointment_date,
-                        appointment_time: appointment.appointment_time,
-                        room_id: appointment.room_id
-                    } : null
-                });
+
 
                 res.render("doc_video_dashboard", {
                     appointment: appointment,
@@ -1380,7 +1367,7 @@ function videoDashboardRoutes(app) {
                 });
 
             } catch (err) {
-                console.error("❌ Doctor video dashboard error:", err);
+               
                 res.status(500).send(`
                     <html>
                         <body>
@@ -1403,7 +1390,7 @@ function videoDashboardRoutes(app) {
         authorize("user"),
         async (req, res) => {
             try {
-                console.log("🔍 Fetching appointments for user ID:", req.user.id);
+                
 
                 const result = await db.query(
                     `SELECT a.id, a.appointment_date, a.appointment_time,
@@ -1419,24 +1406,12 @@ function videoDashboardRoutes(app) {
                     [req.user.id]
                 );
 
-                console.log("📊 Found appointments:", result.rows.length);
+
 
                 // Always pass hasAppointment as boolean
                 const hasAppointment = result.rows.length > 0;
                 const appointment = hasAppointment ? result.rows[0] : null;
 
-                console.log("📦 Sending to EJS:", {
-                    hasAppointment,
-                    appointment: appointment ? {
-                        id: appointment.id,
-                        status: appointment.status,
-                        doctor_name: appointment.doctor_name,
-                        specialization: appointment.specialization,
-                        appointment_date: appointment.appointment_date,
-                        appointment_time: appointment.appointment_time,
-                        room_id: appointment.room_id
-                    } : null
-                });
 
                 res.render("user_video_dashboard", {
                     appointment: appointment,
@@ -1444,7 +1419,7 @@ function videoDashboardRoutes(app) {
                 });
 
             } catch (err) {
-                console.error("❌ User video dashboard error:", err);
+               
                 res.status(500).send(`
                     <html>
                         <body>
@@ -1460,6 +1435,7 @@ function videoDashboardRoutes(app) {
 }
 
 // Video Socket Function
+// Video Socket Function - UPDATED
 function videoSocket(io) {
     io.on("connection", socket => {
         console.log(`Socket connected: ${socket.id}`);
@@ -1481,10 +1457,33 @@ function videoSocket(io) {
             socket.to(roomId).emit("signal", payload);
         });
 
-        socket.on("call-ended", ({ roomId }) => {
-            console.log(`Call ended in room ${roomId}`);
-            socket.to(roomId).emit("call-ended", { roomId });
-            socket.leave(roomId);
+        // Add this new event handler for call ending with prescription
+        socket.on("call-ended-with-prescription", async ({ roomId, appointmentId, notes }) => {
+            console.log(`Call ended in room ${roomId} with prescription`);
+
+            try {
+                // Save the prescription to database first
+                if (notes && notes.trim()) {
+                    await db.query(
+                        `INSERT INTO doctor_notes (room_id, appointment_id, notes, sent)
+                         VALUES ($1, $2, $3, TRUE)
+                         ON CONFLICT (room_id) 
+                         DO UPDATE SET notes = EXCLUDED.notes, sent = TRUE`,
+                        [roomId, appointmentId, notes]
+                    );
+                }
+
+                // Notify user to download prescription
+                socket.to(roomId).emit("call-ended-prescription-ready", { roomId });
+
+                // Also send regular call-ended for disconnection
+                socket.to(roomId).emit("call-ended", { roomId });
+
+            } catch (error) {
+                console.error("Error saving prescription:", error);
+                // Still notify user but without prescription
+                socket.to(roomId).emit("call-ended", { roomId });
+            }
         });
 
         socket.on("disconnect", () => {
@@ -1492,8 +1491,8 @@ function videoSocket(io) {
         });
     });
 }
-
 // Prescription PDF Routes
+// Prescription PDF Routes - ENSURE THIS EXISTS
 function prescriptionRoutes(app) {
     app.get("/api/prescription/download/:roomId",
         authenticate,
@@ -1501,18 +1500,29 @@ function prescriptionRoutes(app) {
             try {
                 const { roomId } = req.params;
 
+                console.log('Generating prescription for room:', roomId);
+
                 const result = await db.query(
-                    `SELECT dn.notes
+                    `SELECT dn.notes, a.appointment_date,
+                            dp.full_name as doctor_name,
+                            dp.specialization,
+                            dp.qualification
                      FROM doctor_notes dn
-                     WHERE dn.room_id = $1`,
+                     JOIN appointments a ON a.room_id = dn.room_id
+                     LEFT JOIN doc_profile dp ON dp.doc_id = a.doctor_id
+                     WHERE dn.room_id = $1 AND dn.sent = TRUE`,
                     [roomId]
                 );
 
                 if (!result.rows.length) {
-                    return res.status(404).send("Prescription not found");
+                    return res.status(404).send("Prescription not found or not yet sent by doctor");
                 }
 
-                const notes = result.rows[0].notes || "No notes provided";
+                const notes = result.rows[0].notes || "No prescription notes provided.";
+                const doctorName = result.rows[0].doctor_name || "Doctor";
+                const specialization = result.rows[0].specialization || "";
+                const qualification = result.rows[0].qualification || "";
+                const appointmentDate = new Date(result.rows[0].appointment_date).toLocaleDateString();
 
                 res.setHeader("Content-Type", "application/pdf");
                 res.setHeader(
@@ -1523,13 +1533,35 @@ function prescriptionRoutes(app) {
                 const doc = new PDFDocument({ margin: 50 });
                 doc.pipe(res);
 
-                doc.fontSize(20).text("Medical Prescription", { align: "center" });
-                doc.moveDown();
-                doc.fontSize(12).text(`Date: ${new Date().toLocaleString()}`);
-                doc.moveDown();
-                doc.text("Doctor Notes:");
-                doc.moveDown();
+                // Header
+                doc.fontSize(25).text("MEDICAL PRESCRIPTION", { align: "center" });
+                doc.moveDown(0.5);
+                doc.fontSize(10).text("TeleHealth Consultation", { align: "center" });
+                doc.moveDown(1);
+
+                // Doctor Information
+                doc.fontSize(12).text("Prescribing Doctor:", { underline: true });
+                doc.moveDown(0.3);
+                doc.fontSize(11).text(`Dr. ${doctorName}`);
+                if (specialization) doc.text(`Specialization: ${specialization}`);
+                if (qualification) doc.text(`Qualification: ${qualification}`);
+                doc.moveDown(1);
+
+                // Patient Information
+                doc.fontSize(12).text("Consultation Details:", { underline: true });
+                doc.moveDown(0.3);
+                doc.fontSize(11).text(`Date: ${appointmentDate}`);
+                doc.text(`Consultation ID: ${roomId}`);
+                doc.moveDown(1);
+
+                // Prescription Notes
+                doc.fontSize(12).text("Prescription & Recommendations:", { underline: true });
+                doc.moveDown(0.3);
                 doc.fontSize(11).text(notes);
+
+                doc.moveDown(2);
+                doc.fontSize(10).text("This is an electronic prescription generated by TeleHealth.", { align: "center" });
+                doc.text("Please consult your doctor for any follow-up questions.", { align: "center" });
 
                 doc.end();
             } catch (err) {
@@ -1564,7 +1596,7 @@ protectedRoutes(app, PROJECT_ROOT);
 // Add this to test Supabase connection
 app.get("/debug/appointments", authenticate, async (req, res) => {
     try {
-        console.log("🔍 Testing appointments for user:", req.user.id, "role:", req.user.role);
+        
 
         // Test doctor query
         const doctorResult = await db.query(
