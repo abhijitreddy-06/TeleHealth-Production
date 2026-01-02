@@ -77,7 +77,7 @@ const supabase = createClient(
 // ==============================================
 // DATABASE CONFIGURATION (POOLING)
 // ==============================================
-const { Pool } = pg;
+
 const db = new Pool({
     connectionString: process.env.DATABASE_URL || "postgresql://postgres:Abhi.data@localhost:5432/CottonCure",
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

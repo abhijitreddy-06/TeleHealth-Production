@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "TeleHealth Production Application",
   "main": "server.js",
-  "type": "commonjs",  
-    "scripts": {
+  "type": "commonjs",
+  "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "build": "echo 'No build step required'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
