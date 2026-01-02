@@ -1436,6 +1436,7 @@ function videoDashboardRoutes(app) {
 
 // Video Socket Function
 // Video Socket Function - UPDATED
+// Video Socket Function - UPDATED
 function videoSocket(io) {
     io.on("connection", socket => {
         console.log(`Socket connected: ${socket.id}`);
@@ -1457,12 +1458,12 @@ function videoSocket(io) {
             socket.to(roomId).emit("signal", payload);
         });
 
-        // Add this new event handler for call ending with prescription
-        socket.on("call-ended-with-prescription", async ({ roomId, appointmentId, notes }) => {
-            console.log(`Call ended in room ${roomId} with prescription`);
+        // Add this new event handler for when doctor ends call
+        socket.on("doctor-end-call", async ({ roomId, appointmentId, notes }) => {
+            console.log(`Doctor ending call in room ${roomId}`);
 
             try {
-                // Save the prescription to database first
+                // Save the prescription to database
                 if (notes && notes.trim()) {
                     await db.query(
                         `INSERT INTO doctor_notes (room_id, appointment_id, notes, sent)
@@ -1471,18 +1472,41 @@ function videoSocket(io) {
                          DO UPDATE SET notes = EXCLUDED.notes, sent = TRUE`,
                         [roomId, appointmentId, notes]
                     );
+
+                    console.log(`Prescription saved for room ${roomId}`);
                 }
 
-                // Notify user to download prescription
-                socket.to(roomId).emit("call-ended-prescription-ready", { roomId });
+                // Update appointment status to completed
+                await db.query(
+                    `UPDATE appointments 
+                     SET status = 'completed'
+                     WHERE room_id = $1`,
+                    [roomId]
+                );
 
-                // Also send regular call-ended for disconnection
-                socket.to(roomId).emit("call-ended", { roomId });
+                console.log(`Appointment completed for room ${roomId}`);
+
+                // Notify user that prescription is ready and call is ending
+                socket.to(roomId).emit("call-ended-with-prescription", {
+                    roomId,
+                    message: "Doctor ended the consultation. Prescription is ready."
+                });
+
+                // Also send regular call-ended for backward compatibility
+                socket.to(roomId).emit("call-ended", {
+                    roomId,
+                    message: "Doctor ended the consultation"
+                });
+
+                console.log(`Notification sent to user in room ${roomId}`);
 
             } catch (error) {
-                console.error("Error saving prescription:", error);
+                console.error("Error ending call:", error);
                 // Still notify user but without prescription
-                socket.to(roomId).emit("call-ended", { roomId });
+                socket.to(roomId).emit("call-ended", {
+                    roomId,
+                    message: "Consultation ended"
+                });
             }
         });
 

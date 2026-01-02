@@ -1140,10 +1140,11 @@
 
             // End call handler
            // End call handler - UPDATED
+            // In doc_video.ejs, update the endCallHandler function:
             async function endCallHandler() {
                 const notes = notesText.value.trim();
 
-                // Save notes first (for doctor's own records)
+                // Save notes locally first
                 if (notes) {
                     try {
                         await fetch("/api/notes/save", {
@@ -1159,13 +1160,13 @@
                     }
                 }
 
-                // Complete appointment
-                try {
-                    await fetch(`/appointments/${APPOINTMENT_ID}/complete`, {
-                        method: "POST"
+                // Notify server and user that doctor is ending call WITH PRESCRIPTION
+                if (socket) {
+                    socket.emit('doctor-end-call', {
+                        roomId: ROOM_ID,
+                        appointmentId: APPOINTMENT_ID,
+                        notes: notes
                     });
-                } catch (error) {
-                    console.error('Error completing appointment:', error);
                 }
 
                 // Close peer connection
@@ -1180,13 +1181,17 @@
                     localStream = null;
                 }
 
-                // Notify other participant WITH PRESCRIPTION DATA
-                if (socket) {
-                    socket.emit('call-ended-with-prescription', {
-                        roomId: ROOM_ID,
-                        appointmentId: APPOINTMENT_ID,
-                        notes: notes
+                // Complete appointment on server (already done in socket handler)
+                try {
+                    await fetch(`/appointments/${APPOINTMENT_ID}/complete`, {
+                        method: "POST"
                     });
+                } catch (error) {
+                    console.error('Error completing appointment:', error);
+                }
+
+                // Disconnect socket
+                if (socket) {
                     socket.disconnect();
                 }
 
