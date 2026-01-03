@@ -1682,7 +1682,7 @@
             }
         }
 
-        // File Download Function
+        // File Download Function - UPDATED
         async function downloadFile(fileId, fileName, button) {
             try {
                 console.log(`Starting download for file ${fileId}: ${fileName}`);
@@ -1692,42 +1692,71 @@
                 button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
                 button.disabled = true;
 
-                // Try the new API endpoint first
+                // First, try the direct download endpoint
                 const response = await fetch(`/api/vault/download/${fileId}`);
 
-                if (!response.ok) {
-                    // If API endpoint fails, try the old method
-                    console.log('API endpoint failed, trying redirect method');
-                    window.open(`/vault/file/${fileId}`, '_blank');
+                if (response.ok) {
+                    // Create blob from response
+                    const blob = await response.blob();
 
-                    // Reset button after delay
-                    setTimeout(() => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    // Clean up
+                    window.URL.revokeObjectURL(url);
+
+                    // Reset button
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+
+                    console.log('File downloaded successfully via API');
+
+                } else if (response.status === 404 || response.status === 500) {
+                    // If API fails, fall back to the old method
+                    console.log('API endpoint failed, trying redirect method');
+
+                    // Create hidden iframe for download
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = `/vault/file/${fileId}`;
+
+                    iframe.onload = function () {
+                        console.log('Iframe loaded');
+                        // Reset button after delay
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                            document.body.removeChild(iframe);
+                        }, 2000);
+                    };
+
+                    iframe.onerror = function () {
+                        console.error('Iframe loading error');
                         button.innerHTML = originalText;
                         button.disabled = false;
-                    }, 2000);
-                    return;
+                        document.body.removeChild(iframe);
+
+                        // Last resort: try the direct URL from database
+                        setTimeout(() => {
+                            // This would require storing the URL in data attribute
+                            const record = getRecordById(fileId);
+                            if (record && record.file_path) {
+                                window.open(record.file_path, '_blank');
+                            }
+                        }, 500);
+                    };
+
+                    document.body.appendChild(iframe);
+
+                } else {
+                    throw new Error(`Server returned ${response.status}`);
                 }
-
-                // Create blob from response
-                const blob = await response.blob();
-
-                // Create download link
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                // Clean up
-                window.URL.revokeObjectURL(url);
-
-                // Reset button
-                button.innerHTML = originalText;
-                button.disabled = false;
-
-                console.log('File downloaded successfully');
 
             } catch (error) {
                 console.error('Download error:', error);
@@ -1741,7 +1770,7 @@
                     alert('Unable to download file. Please try again or contact support.');
                 }, 100);
 
-                // Fallback to old method
+                // Fallback: open in new tab
                 setTimeout(() => {
                     window.open(`/vault/file/${fileId}`, '_blank');
                 }, 500);
