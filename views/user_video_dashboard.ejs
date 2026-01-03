@@ -741,51 +741,94 @@
     </div>
 
     <!-- ================= MAIN CONTENT ================= -->
-    <main>
-        <div class="dashboard-header">
-            <h1>Video Consultation Dashboard</h1>
-            <p>Join your scheduled virtual appointments with healthcare professionals</p>
-        </div>
+<main>
+    <div class="dashboard-header">
+        <h1>Video Consultation Dashboard</h1>
+        <p>Join your scheduled virtual appointments with healthcare professionals</p>
+    </div>
 
-        <div class="dashboard-grid">
-            <!-- Appointment Details Card -->
-            <div class="appointment-card">
-                <div class="appointment-header">
-                    <div class="appointment-icon">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                    <h2>Your Appointment</h2>
+    <div class="dashboard-grid">
+        <!-- Appointment Details Card -->
+        <div class="appointment-card">
+            <div class="appointment-header">
+                <div class="appointment-icon">
+                    <i class="fas fa-user-md"></i>
                 </div>
+                <h2>Your Appointment</h2>
+            </div>
 
-                <div class="info-group">
+            <div class="info-group">
+                <% if (appointment) { %>
                     <div class="info-item">
                         <span class="info-label">Doctor:</span>
-                        <span class="info-value" id="doctorName">Loading...</span>
+                        <span class="info-value" id="doctorName">
+                            <%= appointment.doctor_name %> (<%= appointment.specialization %>)
+                        </span>
                     </div>
 
                     <div class="info-item">
                         <span class="info-label">Date:</span>
-                        <span class="info-value" id="apptDate">—</span>
+                        <span class="info-value" id="apptDate">
+                            <%= appointment.appointment_date %>
+                        </span>
                     </div>
 
                     <div class="info-item">
                         <span class="info-label">Time:</span>
-                        <span class="info-value" id="apptTime">—</span>
+                        <span class="info-value" id="apptTime">
+                            <%= appointment.appointment_time %>
+                        </span>
                     </div>
-                </div>
-
-                <div class="status-container">
-                    <p id="statusText" class="status">
-                        <i class="fas fa-sync-alt fa-spin"></i>
-                        Checking appointment status...
-                    </p>
-                </div>
-
-<button id="joinBtn" class="btn btn-primary btn-full" disabled>
-    <i class="fas fa-video"></i>
-    Join Video Call
-</button>
+                    <% } else { %>
+                        <div class="info-item">
+                            <span class="info-label">Doctor:</span>
+                            <span class="info-value">—</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Date:</span>
+                            <span class="info-value">—</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Time:</span>
+                            <span class="info-value">—</span>
+                        </div>
+                        <% } %>
             </div>
+
+            <div class="status-container">
+                <p id="statusText" class="status">
+                    <% if (hasAppointment) { %>
+                        <% if (appointment.status==='scheduled' ) { %>
+                            <i class="fas fa-clock"></i>
+                            Waiting for doctor to start the call...
+                            <% } else if (appointment.status==='started' ) { %>
+                                <i class="fas fa-check-circle"></i>
+                                Doctor has started the call
+                                <% } else { %>
+                                    <i class="fas fa-calendar-times"></i>
+                                    No active appointments.
+                                    <% } %>
+                                        <% } else { %>
+                                            <i class="fas fa-calendar-times"></i>
+                                            No active appointments.
+                                            <% } %>
+                </p>
+            </div>
+
+            <% if (hasAppointment && appointment.status==='started' ) { %>
+                <button id="joinBtn" class="btn btn-primary btn-full">
+                    <i class="fas fa-video"></i>
+                    <a href="/user_video/<%= appointment.room_id %>" style="color: white; text-decoration: none;">
+                        Join Video Call
+                    </a>
+                </button>
+                <% } else { %>
+                    <button id="joinBtn" class="btn btn-primary btn-full" disabled>
+                        <i class="fas fa-video"></i>
+                        Join Video Call
+                    </button>
+                    <% } %>
+        </div>
 
             <!-- Instructions Card -->
             <div class="instructions-card">
@@ -852,162 +895,64 @@
 
 
     <!-- ================= SCRIPTS ================= -->
+<!-- ================= SCRIPTS ================= -->
 <script defer>
     document.addEventListener('DOMContentLoaded', function () {
-        let roomId = null;
-        let polling = null;
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+        const html = document.documentElement;
 
-        async function loadAppointment() {
-            try {
-                const res = await fetch("/api/appointments/user");
-                const appointments = await res.json();
-
-                // No active appointments
-                if (!appointments.length) {
-                    clearInterval(polling);
-                    document.getElementById("doctorName").innerText = "—";
-                    document.getElementById("apptDate").innerText = "—";
-                    document.getElementById("apptTime").innerText = "—";
-                    document.getElementById("statusText").innerHTML = `
-                        <i class="fas fa-calendar-times"></i>
-                        No active appointments.
-                    `;
-                    document.getElementById("statusText").className = "status completed";
-                    document.getElementById("joinBtn").disabled = true;
-                    return;
-                }
-
-                const appt = appointments[0];
-
-                document.getElementById("doctorName").innerText =
-                    `${appt.doctor_name} (${appt.specialization})`;
-
-                document.getElementById("apptDate").innerText =
-                    appt.appointment_date;
-
-                document.getElementById("apptTime").innerText =
-                    appt.appointment_time;
-
-                const joinBtn = document.getElementById("joinBtn");
-
-                // Scheduled
-                if (appt.status === "scheduled") {
-                    document.getElementById("statusText").innerHTML = `
-                        <i class="fas fa-clock"></i>
-                        Waiting for doctor to start the call...
-                    `;
-                    document.getElementById("statusText").className = "status waiting";
-                    joinBtn.disabled = true;
-                    joinBtn.onclick = null;
-                }
-
-                // Started
-                if (appt.status === "started" && appt.room_id) {
-                    roomId = appt.room_id;
-                    document.getElementById("statusText").innerHTML = `
-                        <i class="fas fa-check-circle"></i>
-                        Doctor has started the call
-                    `;
-                    document.getElementById("statusText").className = "status ready";
-                    joinBtn.disabled = false;
-                    joinBtn.onclick = function () {
-                        window.location.href = `/user_video/${roomId}`;
-                    };
-                }
-
-                // Completed
-                if (appt.status === "completed") {
-                    clearInterval(polling);
-                    document.getElementById("statusText").innerHTML = `
-                        <i class="fas fa-check-circle"></i>
-                        Appointment completed
-                    `;
-                    document.getElementById("statusText").className = "status completed";
-                    joinBtn.disabled = true;
-                    joinBtn.onclick = null;
-                }
-
-            } catch (err) {
-               
-                document.getElementById("statusText").innerHTML = `
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Failed to load appointment
-                `;
-            }
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
         }
 
-            // Theme Toggle (from user_home)
-            const themeToggle = document.getElementById('themeToggle');
-            const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-            const html = document.documentElement;
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            if (savedTheme) {
-                html.setAttribute('data-theme', savedTheme);
-                updateThemeIcon(savedTheme);
-            }
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
 
-            function toggleTheme() {
-                const currentTheme = html.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        function updateThemeIcon(theme) {
+            const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+            themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+            mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
 
-                html.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateThemeIcon(newTheme);
-            }
+        themeToggle.addEventListener('click', toggleTheme);
+        mobileThemeToggle.addEventListener('click', toggleTheme);
 
-            function updateThemeIcon(theme) {
-                const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-                themeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-                mobileThemeToggle.innerHTML = `<i class="fas ${icon}"></i>`;
-            }
+        // Mobile Menu
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenu');
+        const mobileMenu = document.getElementById('mobileMenu');
 
-            themeToggle.addEventListener('click', toggleTheme);
-            mobileThemeToggle.addEventListener('click', toggleTheme);
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mobileMenu.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
 
-            // Mobile Menu (from user_home)
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const closeMenuBtn = document.getElementById('closeMenu');
-            const mobileMenu = document.getElementById('mobileMenu');
+        closeMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        });
 
-            mobileMenuBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                mobileMenu.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            });
-
-            closeMenuBtn.addEventListener('click', () => {
+        document.addEventListener('click', (e) => {
+            if (mobileMenu.classList.contains('active') &&
+                !mobileMenu.contains(e.target) &&
+                e.target !== mobileMenuBtn) {
                 mobileMenu.classList.remove('active');
                 document.body.style.overflow = '';
-            });
-
-            document.addEventListener('click', (e) => {
-                if (mobileMenu.classList.contains('active') &&
-                    !mobileMenu.contains(e.target) &&
-                    e.target !== mobileMenuBtn) {
-                    mobileMenu.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-
-            // Chatbot functionality (from user_home)
-            const chatBubble = document.getElementById('chat-bubble');
-            const chatbot = document.getElementById('chatbot');
-
-            setTimeout(() => {
-                chatBubble.classList.add('active');
-            }, 3000);
-
-            chatbot.addEventListener('click', () => {
-                alert('Chatbot feature would open here. This is a frontend demonstration.');
-            });
-
-            // Initialize appointment loading
-            loadAppointment();
-            polling = setInterval(loadAppointment, 5000);
-
+            }
         });
-    </script>
+    });
+</script>
 </body>
 
 </html>
