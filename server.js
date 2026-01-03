@@ -1139,103 +1139,79 @@ function userVideoRoutes(app) {
 // Vault Routes (with Supabase storage) - UPDATED
 // Vault Routes (with Supabase storage) - UPDATED
 function vaultRoutes(app) {
-    // User: upload record - SIMPLIFIED FOR PUBLIC BUCKET
+    // User: upload record - SIMPLIFIED
     app.post(
         "/vault/upload",
         authenticate,
         authorize("user"),
         upload.single("file"),
         async (req, res) => {
-            if (!req.file) return res.status(400).send("No file uploaded");
-
             try {
+                if (!req.file) {
+                    return res.status(400).json({ error: "No file uploaded" });
+                }
+
                 console.log("📤 Upload attempt for user:", req.user.id);
-                console.log("📄 File details:", {
-                    originalname: req.file.originalname,
-                    mimetype: req.file.mimetype,
-                    size: req.file.size
-                });
 
                 const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                 const filePath = `user_${req.user.id}/${fileName}`;
 
-                console.log("📍 File path for storage:", filePath);
+                console.log("📍 File path:", filePath);
 
-                // 1. Upload to Supabase Storage
+                // Upload to Supabase
                 const { data: uploadData, error: uploadError } = await supabaseService.storage
                     .from('uploads')
                     .upload(filePath, req.file.buffer, {
                         contentType: req.file.mimetype,
-                        upsert: false,
-                        cacheControl: '3600'
+                        upsert: false
                     });
 
                 if (uploadError) {
-                    console.error("❌ Storage upload error:", uploadError);
-                    return res.status(500).send(`
-                        <h3>Storage Upload Error</h3>
-                        <p>${uploadError.message}</p>
-                        <a href="/records">Back to Records</a>
-                    `);
+                    console.error("❌ Supabase upload error:", uploadError);
+                    return res.status(500).json({
+                        error: "Upload failed",
+                        details: uploadError.message
+                    });
                 }
 
-                console.log("✅ File uploaded to storage:", uploadData);
+                console.log("✅ Upload successful:", uploadData);
 
-                // 2. For PUBLIC bucket: Generate the correct public URL
-                // The correct format is: https://project-id.supabase.co/storage/v1/object/public/bucket-name/file-path
+                // Generate public URL
                 const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/${filePath}`;
+
                 console.log("🔗 Public URL:", publicUrl);
 
-                // 3. Insert into database
-                try {
-                    const dbResult = await db.query(
-                        `INSERT INTO medical_records 
-                         (user_id, file_name, file_path, record_type, uploaded_at)
-                         VALUES ($1, $2, $3, $4, $5)
-                         RETURNING id`,
-                        [
-                            req.user.id,
-                            req.file.originalname,
-                            publicUrl, // Store the correct public URL
-                            req.body.recordType || "general",
-                            new Date().toISOString()
-                        ]
-                    );
+                // Save to database
+                const dbResult = await db.query(
+                    `INSERT INTO medical_records 
+                     (user_id, file_name, file_path, record_type, uploaded_at)
+                     VALUES ($1, $2, $3, $4, $5)
+                     RETURNING id`,
+                    [
+                        req.user.id,
+                        req.file.originalname,
+                        publicUrl,
+                        req.body.recordType || "general",
+                        new Date().toISOString()
+                    ]
+                );
 
-                    console.log("💾 Database record created with ID:", dbResult.rows[0].id);
+                console.log("💾 Database record ID:", dbResult.rows[0].id);
 
-                    // Redirect with success parameter
-                    res.redirect("/records?upload=success");
-
-                } catch (dbError) {
-                    console.error("❌ Database insert error:", dbError);
-
-                    // Try to delete the uploaded file since DB insert failed
-                    try {
-                        await supabaseService.storage
-                            .from('uploads')
-                            .remove([filePath]);
-                        console.log("🗑️ Removed orphaned file from storage");
-                    } catch (cleanupError) {
-                        console.error("⚠️ Failed to cleanup storage file:", cleanupError);
-                    }
-
-                    return res.status(500).send(`
-                        <h3>Database Error</h3>
-                        <p>File uploaded but failed to save record in database.</p>
-                        <p>Error: ${dbError.message}</p>
-                        <a href="/records">Back to Records</a>
-                    `);
-                }
+                // Return JSON response for AJAX
+                res.json({
+                    success: true,
+                    message: "File uploaded successfully",
+                    fileId: dbResult.rows[0].id,
+                    fileName: req.file.originalname
+                });
 
             } catch (err) {
-                console.error("❌ Vault upload error:", err);
-                res.status(500).send(`
-                    <h3>Server Error</h3>
-                    <p>${err.message}</p>
-                    <p>Please try again or contact support.</p>
-                    <a href="/records">Back to Records</a>
-                `);
+                console.error("❌ Upload error:", err);
+                res.status(500).json({
+                    error: "Server error",
+                    details: err.message
+                });
             }
         }
     );
@@ -1255,154 +1231,35 @@ function vaultRoutes(app) {
                     [req.user.id]
                 );
 
-                // For public bucket, all URLs should work
-                // Just return the records as-is
                 res.json(result.rows);
             } catch (err) {
-                console.error("List user vault error:", err);
+                console.error("List records error:", err);
                 res.status(500).json({ error: "Failed to load records" });
             }
         }
     );
 
-    // Main download endpoint - SIMPLIFIED FOR PUBLIC BUCKET
+    // Simple download endpoint
     app.get(
         "/vault/file/:id",
         authenticate,
         async (req, res) => {
             try {
-                console.log("📥 Download request for file ID:", req.params.id);
+                console.log("📥 Download request for ID:", req.params.id);
 
-                // Get file info from database
-                const fileInfo = await db.query(
+                // Get file from database
+                const result = await db.query(
                     `SELECT file_path, file_name, user_id
                      FROM medical_records
                      WHERE id = $1`,
                     [req.params.id]
                 );
 
-                if (!fileInfo.rows.length) {
-                    console.log("❌ File not found in database");
-                    return res.status(404).send(`
-                        <h2>File Not Found</h2>
-                        <p>The requested file does not exist.</p>
-                        <a href="/records">Back to Records</a>
-                    `);
+                if (!result.rows.length) {
+                    return res.status(404).send("File not found");
                 }
 
-                const record = fileInfo.rows[0];
-                console.log("📄 File record found:", {
-                    file_name: record.file_name,
-                    user_id: record.user_id,
-                    file_path: record.file_path ? "URL exists" : "No URL"
-                });
-
-                // Check permissions
-                let hasPermission = false;
-
-                // User owns the file
-                if (record.user_id === req.user.id) {
-                    hasPermission = true;
-                    console.log("✅ User owns the file");
-                }
-                // Doctor access
-                else if (req.user.role === "doctor") {
-                    const permissionCheck = await db.query(
-                        `SELECT a.id FROM appointments a
-                         WHERE a.doctor_id = $1 AND a.user_id = $2
-                           AND a.records_allowed = true
-                         LIMIT 1`,
-                        [req.user.id, record.user_id]
-                    );
-
-                    if (permissionCheck.rows.length > 0) {
-                        hasPermission = true;
-                        console.log("✅ Doctor has permission via appointment");
-                    }
-                }
-
-                if (!hasPermission) {
-                    console.log("❌ Access denied for user:", req.user.id);
-                    return res.status(403).send(`
-                        <h2>Access Denied</h2>
-                        <p>You do not have permission to download this file.</p>
-                        <a href="/records">Back to Records</a>
-                    `);
-                }
-
-                // Check if file_path exists
-                if (!record.file_path) {
-                    console.log("❌ No file path in record");
-                    return res.status(404).send(`
-                        <h2>File Not Found</h2>
-                        <p>File path is missing from the database.</p>
-                        <a href="/records">Back to Records</a>
-                    `);
-                }
-
-                console.log("🔗 Redirecting to:", record.file_path);
-
-                // For public bucket, just redirect to the URL
-                // Set download headers
-                res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
-
-                // Set content type based on file extension
-                if (record.file_name.toLowerCase().endsWith('.pdf')) {
-                    res.setHeader('Content-Type', 'application/pdf');
-                }
-                // For images
-                else if (record.file_name.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/)) {
-                    const ext = record.file_name.toLowerCase().split('.').pop();
-                    res.setHeader('Content-Type', `image/${ext === 'jpg' ? 'jpeg' : ext}`);
-                }
-                // For documents
-                else if (record.file_name.toLowerCase().endsWith('.doc')) {
-                    res.setHeader('Content-Type', 'application/msword');
-                }
-                else if (record.file_name.toLowerCase().endsWith('.docx')) {
-                    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-                }
-                else {
-                    res.setHeader('Content-Type', 'application/octet-stream');
-                }
-
-                // Redirect to the public URL
-                return res.redirect(record.file_path);
-
-            } catch (err) {
-                console.error("❌ Download error:", err);
-                res.status(500).send(`
-                    <h2>Download Error</h2>
-                    <p>${err.message}</p>
-                    <p>Please try again or contact support.</p>
-                    <a href="/records">Back to Records</a>
-                `);
-            }
-        }
-    );
-
-    // Alternative download endpoint that streams the file
-    app.get(
-        "/api/vault/download/:id",
-        authenticate,
-        async (req, res) => {
-            try {
-                const fileId = req.params.id;
-                console.log("🚀 Direct download for file:", fileId);
-
-                // Get file info
-                const fileInfo = await db.query(
-                    `SELECT file_path, file_name, user_id
-                     FROM medical_records
-                     WHERE id = $1`,
-                    [fileId]
-                );
-
-                if (!fileInfo.rows.length) {
-                    return res.status(404).json({ error: 'File not found' });
-                }
-
-                const record = fileInfo.rows[0];
+                const record = result.rows[0];
 
                 // Check permissions
                 if (record.user_id !== req.user.id) {
@@ -1416,167 +1273,67 @@ function vaultRoutes(app) {
                         );
 
                         if (!permissionCheck.rows.length) {
-                            return res.status(403).json({ error: 'Access denied' });
+                            return res.status(403).send("Access denied");
                         }
                     } else {
-                        return res.status(403).json({ error: 'Access denied' });
+                        return res.status(403).send("Access denied");
                     }
                 }
 
-                // Check if URL is accessible
-                if (!record.file_path) {
-                    return res.status(404).json({ error: 'File URL not found' });
-                }
+                console.log("🔗 Redirecting to:", record.file_path);
 
-                console.log("📡 Fetching file from:", record.file_path);
-
-                // Try to fetch the file
-                const response = await fetch(record.file_path);
-
-                if (!response.ok) {
-                    console.error("❌ Fetch failed:", response.status, response.statusText);
-
-                    // Try to fix the URL if it's in wrong format
-                    let fixedUrl = record.file_path;
-
-                    // If URL contains /sign/, replace with /public/
-                    if (fixedUrl.includes('/sign/')) {
-                        fixedUrl = fixedUrl.replace('/sign/', '/public/');
-                        // Remove token parameter
-                        const urlObj = new URL(fixedUrl);
-                        urlObj.search = '';
-                        fixedUrl = urlObj.toString();
-                        console.log("🔄 Trying fixed URL:", fixedUrl);
-
-                        const fixedResponse = await fetch(fixedUrl);
-                        if (fixedResponse.ok) {
-                            // Forward the response
-                            res.setHeader('Content-Type', fixedResponse.headers.get('content-type') || 'application/octet-stream');
-                            res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
-                            fixedResponse.body.pipe(res);
-                            return;
-                        }
-                    }
-
-                    throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
-                }
-
-                // Forward the response
-                res.setHeader('Content-Type', response.headers.get('content-type') || 'application/octet-stream');
+                // Set download headers
                 res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
 
-                // Pipe the response
-                response.body.pipe(res);
+                // Redirect to Supabase public URL
+                res.redirect(record.file_path);
 
-            } catch (error) {
-                console.error("❌ Direct download error:", error);
-                res.status(500).json({
-                    error: 'Download failed',
-                    message: error.message,
-                    suggestion: 'Please check if the file exists in the bucket'
-                });
+            } catch (err) {
+                console.error("❌ Download error:", err);
+                res.status(500).send("Download failed");
             }
         }
     );
 
-    // Debug endpoint to check bucket status
+    // Test if file is accessible
     app.get(
-        "/debug/bucket-status",
+        "/api/vault/test/:id",
         authenticate,
         async (req, res) => {
             try {
-                // Test listing files
-                const { data: files, error: listError } = await supabaseService.storage
-                    .from('uploads')
-                    .list('', {
-                        limit: 10,
-                        offset: 0
-                    });
-
-                // Test bucket info
-                const { data: buckets, error: bucketError } = await supabaseService.storage
-                    .listBuckets();
-
-                // Get uploads bucket details
-                const uploadsBucket = buckets?.find(b => b.name === 'uploads');
-
-                res.json({
-                    status: 'OK',
-                    bucket: {
-                        name: 'uploads',
-                        public: uploadsBucket?.public || false,
-                        exists: !!uploadsBucket
-                    },
-                    fileCount: files?.length || 0,
-                    sampleFiles: files?.slice(0, 5) || [],
-                    errors: {
-                        list: listError?.message,
-                        bucket: bucketError?.message
-                    },
-                    publicUrlExample: uploadsBucket?.public ?
-                        `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/user_12/sample-file.pdf` :
-                        'Bucket is not public'
-                });
-
-            } catch (error) {
-                res.json({
-                    status: 'ERROR',
-                    error: error.message
-                });
-            }
-        }
-    );
-
-    // Utility endpoint to fix existing URLs in database
-    app.post(
-        "/debug/fix-file-urls",
-        authenticate,
-        authorize("user"),
-        async (req, res) => {
-            try {
-                // Get all records for the current user
-                const userRecords = await db.query(
-                    `SELECT id, file_path FROM medical_records WHERE user_id = $1`,
-                    [req.user.id]
+                const result = await db.query(
+                    `SELECT file_path, file_name
+                     FROM medical_records
+                     WHERE id = $1 AND user_id = $2`,
+                    [req.params.id, req.user.id]
                 );
 
-                let fixedCount = 0;
+                if (!result.rows.length) {
+                    return res.json({ error: "File not found" });
+                }
 
-                for (const record of userRecords.rows) {
-                    let newPath = record.file_path;
+                const record = result.rows[0];
 
-                    // If it contains /sign/, replace with /public/
-                    if (newPath && newPath.includes('/sign/')) {
-                        newPath = newPath.replace('/sign/', '/public/');
+                // Test if URL is accessible
+                let isAccessible = false;
+                let testError = null;
 
-                        // Remove token parameter
-                        try {
-                            const urlObj = new URL(newPath);
-                            urlObj.search = '';
-                            newPath = urlObj.toString();
-                        } catch (e) {
-                            console.error("Error parsing URL:", e);
-                        }
-
-                        // Update in database
-                        await db.query(
-                            `UPDATE medical_records SET file_path = $1 WHERE id = $2`,
-                            [newPath, record.id]
-                        );
-
-                        fixedCount++;
-                        console.log(`Fixed record ${record.id}: ${newPath}`);
-                    }
+                try {
+                    const response = await fetch(record.file_path, { method: 'HEAD' });
+                    isAccessible = response.ok;
+                } catch (error) {
+                    testError = error.message;
                 }
 
                 res.json({
-                    message: `Fixed ${fixedCount} file URLs`,
-                    totalRecords: userRecords.rows.length
+                    file: record,
+                    isAccessible,
+                    testError,
+                    bucketStatus: "uploads (public)"
                 });
 
-            } catch (error) {
-                console.error("Error fixing URLs:", error);
-                res.status(500).json({ error: error.message });
+            } catch (err) {
+                res.json({ error: err.message });
             }
         }
     );
@@ -2224,80 +1981,64 @@ protectedRoutes(app, PROJECT_ROOT);
 // Add this to test Supabase connection
 // Add this to your routes for testing
 // Add this to your server.js routes
-app.get("/debug/file/:id",
+// Test Supabase storage directly
+app.get("/api/test-supabase",
     authenticate,
     async (req, res) => {
         try {
-            const fileId = req.params.id;
+            // Test 1: List buckets
+            const { data: buckets, error: bucketsError } = await supabaseService.storage
+                .listBuckets();
 
-            // Get file info
-            const fileInfo = await db.query(
-                `SELECT id, file_name, file_path, user_id, record_type, uploaded_at
-                 FROM medical_records
-                 WHERE id = $1`,
-                [fileId]
-            );
+            // Test 2: List files
+            const { data: files, error: filesError } = await supabaseService.storage
+                .from('uploads')
+                .list('', { limit: 5 });
 
-            if (!fileInfo.rows.length) {
-                return res.json({ error: 'File not found in database' });
-            }
+            // Test 3: Try to upload a small test file
+            const testPath = `test_${req.user.id}/test-${Date.now()}.txt`;
+            const testContent = Buffer.from('Test file content');
 
-            const record = fileInfo.rows[0];
+            const { data: uploadData, error: uploadError } = await supabaseService.storage
+                .from('uploads')
+                .upload(testPath, testContent, {
+                    contentType: 'text/plain',
+                    upsert: true
+                });
 
-            // Check if user has access
-            const hasAccess = record.user_id === req.user.id ||
-                (req.user.role === "doctor" &&
-                    await checkDoctorAccess(req.user.id, record.user_id));
-
-            // Try to access the Supabase URL
-            let supabaseStatus = 'unknown';
-            if (record.file_path && record.file_path.startsWith('https://')) {
-                try {
-                    const response = await fetch(record.file_path, { method: 'HEAD' });
-                    supabaseStatus = response.status;
-                } catch (error) {
-                    supabaseStatus = `Error: ${error.message}`;
-                }
+            // Clean up: remove test file
+            if (!uploadError) {
+                await supabaseService.storage
+                    .from('uploads')
+                    .remove([testPath]);
             }
 
             res.json({
-                fileId,
-                record,
-                currentUser: {
-                    id: req.user.id,
-                    role: req.user.role
+                status: 'OK',
+                supabaseUrl: process.env.SUPABASE_URL,
+                bucketInfo: {
+                    name: 'uploads',
+                    exists: buckets?.some(b => b.name === 'uploads') || false,
+                    public: buckets?.find(b => b.name === 'uploads')?.public || false
                 },
-                hasAccess,
-                supabaseStatus,
-                filePathInfo: {
-                    isUrl: record.file_path ? record.file_path.startsWith('https://') : false,
-                    path: record.file_path,
-                    bucket: record.file_path ? record.file_path.includes('supabase') ? 'supabase' : 'unknown' : 'none'
+                filesCount: files?.length || 0,
+                sampleFiles: files || [],
+                uploadTest: uploadError ? { error: uploadError.message } : { success: true },
+                errors: {
+                    buckets: bucketsError?.message,
+                    files: filesError?.message
                 }
             });
 
         } catch (error) {
-            res.json({ error: error.message });
+            console.error("Supabase test error:", error);
+            res.status(500).json({
+                error: error.message,
+                stack: error.stack
+            });
         }
     }
 );
-
-async function checkDoctorAccess(doctorId, userId) {
-    try {
-        const result = await db.query(
-            `SELECT id FROM appointments
-             WHERE doctor_id = $1 AND user_id = $2
-               AND records_allowed = true
-               AND status IN ('started','completed')
-             LIMIT 1`,
-            [doctorId, userId]
-        );
-        return result.rows.length > 0;
-    } catch (error) {
-        console.error('Doctor access check error:', error);
-        return false;
-    }
-}
 // ==============================================
 // ERROR HANDLING MIDDLEWARE
 // ==============================================

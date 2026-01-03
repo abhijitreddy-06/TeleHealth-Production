@@ -1159,6 +1159,74 @@
                 <!-- Records will be loaded here -->
             </div>
         </div>
+   
+   - Add this debug section for testing -->
+<div style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; display: none;" id="debugSection">
+    <h3>Debug Tools</h3>
+    <button onclick="testUpload()" class="btn btn-sm" style="background: #666; color: white;">
+        Test Upload
+    </button>
+    <button onclick="testConnection()" class="btn btn-sm" style="background: #666; color: white;">
+        Test Connection
+    </button>
+    <div id="debugOutput" style="margin-top: 10px; padding: 10px; background: white; border-radius: 3px;"></div>
+</div>
+
+<script>
+    // Debug functions
+    function testUpload() {
+        // Create a test file
+        const testContent = "Test file content";
+        const blob = new Blob([testContent], { type: 'text/plain' });
+        const testFile = new File([blob], "test-file.txt", { type: 'text/plain' });
+
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(testFile);
+
+        const fileInput = document.getElementById('fileInput');
+        fileInput.files = dataTransfer.files;
+
+        // Update preview
+        updateFilePreview(testFile);
+
+        // Open modal
+        openUploadModal();
+    }
+
+    async function testConnection() {
+        const output = document.getElementById('debugOutput');
+        output.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+
+        try {
+            // Test bucket status
+            const bucketRes = await fetch('/debug/bucket-status');
+            const bucketData = await bucketRes.json();
+
+            // Test if we can list files
+            const listRes = await fetch('/api/vault/user');
+            const listData = await listRes.json();
+
+            output.innerHTML = `
+            <h4>Connection Test Results:</h4>
+            <p><strong>Bucket Status:</strong> ${bucketData.bucket.public ? '✅ Public' : '❌ Private'}</p>
+            <p><strong>Bucket Exists:</strong> ${bucketData.bucket.exists ? '✅ Yes' : '❌ No'}</p>
+            <p><strong>Files in Database:</strong> ${listData.length}</p>
+            <p><strong>Sample URL:</strong> ${bucketData.publicUrlExample}</p>
+            <p><strong>Your User ID:</strong> ${listData.length > 0 ? listData[0].user_id || 'Unknown' : 'No files'}</p>
+        `;
+
+        } catch (error) {
+            output.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        }
+    }
+
+    // Show debug section on Shift+D
+    document.addEventListener('keydown', function (e) {
+        if (e.shiftKey && e.key === 'D') {
+            document.getElementById('debugSection').style.display = 'block';
+        }
+    });
+</script>
     </div>
 
     <!-- Upload Modal - Large for Web View -->
@@ -1769,11 +1837,15 @@
         });
 
         // Form submission handling
+        // Form submission handling - UPDATED FOR AJAX
         const uploadForm = document.getElementById('uploadForm');
-        uploadForm.addEventListener('submit', function (e) {
+        uploadForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
             const fileInput = document.querySelector('input[type="file"]');
+            const recordTypeSelect = document.getElementById('recordType');
+
             if (!fileInput.files.length) {
-                e.preventDefault();
                 alert('Please select a file to upload.');
                 return;
             }
@@ -1784,12 +1856,48 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
             submitBtn.disabled = true;
 
-            // The form will submit normally, we'll handle the response
-            // Reset button after form submission
-            setTimeout(() => {
+            // Create FormData
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('recordType', recordTypeSelect.value);
+
+            try {
+                console.log("🔄 Starting upload...");
+
+                const response = await fetch('/vault/upload', {
+                    method: 'POST',
+                    body: formData
+                    // Note: Don't set Content-Type header for FormData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    console.log("✅ Upload successful:", result);
+
+                    // Close modal
+                    closeUploadModal();
+
+                    // Show success message
+                    alert('File uploaded successfully!');
+
+                    // Refresh records list
+                    loadRecords();
+
+                } else {
+                    console.error("❌ Upload failed:", result);
+                    alert(`Upload failed: ${result.error || 'Unknown error'}`);
+                }
+
+            } catch (error) {
+                console.error("❌ Network error:", error);
+                alert('Network error. Please check your connection and try again.');
+
+            } finally {
+                // Reset button
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
-            }, 3000);
+            }
         });
 
         // Close modals with Escape key
