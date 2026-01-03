@@ -63,6 +63,9 @@ if (process.env.NODE_ENV !== 'production') {
 // ==============================================
 // SUPABASE CONFIGURATION
 // ==============================================
+console.log("🔧 Supabase Configuration Check:");
+console.log("   URL:", process.env.SUPABASE_URL ? "✅ Set" : "❌ Missing");
+console.log("   Service Key:", process.env.SUPABASE_SERVICE_KEY ? "✅ Set (first 10 chars): " + process.env.SUPABASE_SERVICE_KEY.substring(0, 10) + "..." : "❌ Missing");
 const supabaseService = createClient(
     process.env.SUPABASE_URL || "",
     process.env.SUPABASE_SERVICE_KEY || "", // Use service key explicitly
@@ -73,7 +76,48 @@ const supabaseService = createClient(
         }
     }
 );
+// Test Supabase connection
+async function testSupabaseConnection() {
+    try {
+        console.log("🔍 Testing Supabase connection...");
 
+        // Test 1: Check if we can list buckets
+        const { data: buckets, error: bucketsError } = await supabaseService.storage
+            .listBuckets();
+
+        if (bucketsError) {
+            console.error("❌ Supabase storage error:", bucketsError.message);
+        } else {
+            console.log("✅ Supabase storage buckets:", buckets.map(b => b.name));
+        }
+
+        // Test 2: Try to create a test bucket if 'uploads' doesn't exist
+        const uploadsBucketExists = buckets?.some(b => b.name === 'uploads');
+
+        if (!uploadsBucketExists) {
+            console.log("⚠️ 'uploads' bucket not found. Creating...");
+            const { data: newBucket, error: createError } = await supabaseService.storage
+                .createBucket('uploads', {
+                    public: true,
+                    fileSizeLimit: 10485760 // 10MB
+                });
+
+            if (createError) {
+                console.error("❌ Failed to create 'uploads' bucket:", createError.message);
+            } else {
+                console.log("✅ Created 'uploads' bucket");
+            }
+        } else {
+            console.log("✅ 'uploads' bucket exists");
+        }
+
+    } catch (error) {
+        console.error("❌ Supabase connection test failed:", error.message);
+    }
+}
+
+// Run the test
+testSupabaseConnection();
 
 // ==============================================
 // DATABASE CONFIGURATION (POOLING)
@@ -1079,8 +1123,9 @@ function userVideoRoutes(app) {
 }
 
 // Vault Routes (with Supabase storage)
+// Vault Routes (with Supabase storage) - UPDATED
 function vaultRoutes(app) {
-    // User: upload record
+    // User: upload record - FIXED
     app.post(
         "/vault/upload",
         authenticate,
@@ -1090,58 +1135,94 @@ function vaultRoutes(app) {
             if (!req.file) return res.status(400).send("No file uploaded");
 
             try {
-               
+                console.log("📤 Upload attempt for user:", req.user.id);
+                console.log("📄 File details:", {
+                    originalname: req.file.originalname,
+                    mimetype: req.file.mimetype,
+                    size: req.file.size
+                });
 
-                const fileName = `${Date.now()}-${req.file.originalname}`;
+                const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                 const filePath = `user_${req.user.id}/${fileName}`;
 
-                // 1. Upload to Supabase Storage
+                console.log("📍 File path for storage:", filePath);
+
+                // 1. Upload to Supabase Storage - FIXED METHOD
                 const { data: uploadData, error: uploadError } = await supabaseService.storage
                     .from('uploads')
-                    .insert(filePath, req.file.buffer, {
+                    .upload(filePath, req.file.buffer, {
                         contentType: req.file.mimetype,
-                        upsert: false
+                        upsert: false,
+                        cacheControl: '3600'
                     });
 
                 if (uploadError) {
-                    console.error("Storage upload error:", uploadError);
-                    return res.status(500).send(`Storage error: ${uploadError.message}`);
+                    console.error("❌ Storage upload error:", uploadError);
+                    return res.status(500).send(`
+                        <h3>Storage Upload Error</h3>
+                        <p>${uploadError.message}</p>
+                        <a href="/records">Back to Records</a>
+                    `);
                 }
 
-                console.log("File uploaded to storage:", uploadData);
+                console.log("✅ File uploaded to storage:", uploadData);
 
-                // 2. Get public URL
-                const { data: urlData } = supabase.storage
+                // 2. Get public URL - FIXED METHOD
+                const { data: urlData } = supabaseService.storage
                     .from('uploads')
                     .getPublicUrl(filePath);
 
-                console.log("Public URL:", urlData.publicUrl);
+                console.log("🔗 Public URL generated:", urlData.publicUrl);
 
-                // 3. Insert into database using Supabase client (bypasses RLS with service key)
-                const { data: dbData, error: dbError } = await supabase
-                    .from('medical_records')
-                    .insert([
-                        {
-                            user_id: req.user.id,
-                            file_name: req.file.originalname,
-                            file_path: urlData.publicUrl,
-                            record_type: req.body.recordType || "general",
-                            uploaded_at: new Date().toISOString()
-                        }
-                    ]);
+                // 3. Insert into database using PostgreSQL directly
+                try {
+                    const dbResult = await db.query(
+                        `INSERT INTO medical_records 
+                         (user_id, file_name, file_path, record_type, uploaded_at)
+                         VALUES ($1, $2, $3, $4, $5)
+                         RETURNING id`,
+                        [
+                            req.user.id,
+                            req.file.originalname,
+                            urlData.publicUrl,
+                            req.body.recordType || "general",
+                            new Date().toISOString()
+                        ]
+                    );
 
-                if (dbError) {
-        
-                    return res.status(500).send(`Database error: ${dbError.message}`);
+                    console.log("💾 Database record created with ID:", dbResult.rows[0].id);
+
+                    res.redirect("/records");
+
+                } catch (dbError) {
+                    console.error("❌ Database insert error:", dbError);
+
+                    // Try to delete the uploaded file since DB insert failed
+                    try {
+                        await supabaseService.storage
+                            .from('uploads')
+                            .remove([filePath]);
+                        console.log("🗑️ Removed orphaned file from storage");
+                    } catch (cleanupError) {
+                        console.error("⚠️ Failed to cleanup storage file:", cleanupError);
+                    }
+
+                    return res.status(500).send(`
+                        <h3>Database Error</h3>
+                        <p>File uploaded but failed to save record in database.</p>
+                        <p>Error: ${dbError.message}</p>
+                        <a href="/records">Back to Records</a>
+                    `);
                 }
 
-                console.log("Database record created:", dbData);
-
-                res.redirect("/records");
-
             } catch (err) {
-                console.error("Vault upload error:", err);
-                res.status(500).send(`Server error: ${err.message}`);
+                console.error("❌ Vault upload error:", err);
+                res.status(500).send(`
+                    <h3>Server Error</h3>
+                    <p>${err.message}</p>
+                    <p>Please try again or contact support.</p>
+                    <a href="/records">Back to Records</a>
+                `);
             }
         }
     );
@@ -1154,13 +1235,51 @@ function vaultRoutes(app) {
         async (req, res) => {
             try {
                 const result = await db.query(
-                    `SELECT id, file_name, record_type, uploaded_at
+                    `SELECT id, file_name, record_type, uploaded_at, file_path
                      FROM medical_records
                      WHERE user_id = $1
                      ORDER BY uploaded_at DESC`,
                     [req.user.id]
                 );
-                res.json(result.rows);
+
+                // Check if files still exist in storage
+                const recordsWithStatus = await Promise.all(
+                    result.rows.map(async (record) => {
+                        if (record.file_path && record.file_path.includes('supabase')) {
+                            try {
+                                // Extract file path from URL
+                                const url = new URL(record.file_path);
+                                const pathParts = url.pathname.split('/');
+                                const bucket = pathParts[1];
+                                const filePath = pathParts.slice(2).join('/');
+
+                                // Check if file exists
+                                const { data: fileExists } = await supabaseService.storage
+                                    .from(bucket)
+                                    .list(filePath.split('/').slice(0, -1).join('/') || '');
+
+                                const exists = fileExists?.some(file => file.name === filePath.split('/').pop());
+
+                                return {
+                                    ...record,
+                                    status: exists ? 'available' : 'missing'
+                                };
+                            } catch (error) {
+                                console.error(`Error checking file ${record.id}:`, error);
+                                return {
+                                    ...record,
+                                    status: 'unknown'
+                                };
+                            }
+                        }
+                        return {
+                            ...record,
+                            status: 'available'
+                        };
+                    })
+                );
+
+                res.json(recordsWithStatus);
             } catch (err) {
                 logger.error("List user vault error:", err);
                 res.status(500).json({ error: "Failed to load records" });
@@ -1192,7 +1311,7 @@ function vaultRoutes(app) {
                 }
 
                 const records = await db.query(
-                    `SELECT id, file_name, record_type, uploaded_at
+                    `SELECT id, file_name, record_type, uploaded_at, file_path
                      FROM medical_records
                      WHERE user_id = $1
                      ORDER BY uploaded_at DESC`,
@@ -1900,58 +2019,47 @@ protectedRoutes(app, PROJECT_ROOT);
 
 // Add this to test Supabase connection
 // Add this to your routes for testing
-app.get("/api/prescription/test/:roomId",
+// Add this to your routes (before the error handlers)
+app.get("/debug/supabase-test",
     authenticate,
     async (req, res) => {
         try {
-            const { roomId } = req.params;
+            // List buckets
+            const { data: buckets, error: bucketsError } = await supabaseService.storage
+                .listBuckets();
 
-            const notesQuery = await db.query(
-                `SELECT notes, created_at, sent
-                 FROM doctor_notes
-                 WHERE room_id = $1`,
-                [roomId]
-            );
+            // List files in uploads bucket
+            let files = [];
+            let filesError = null;
 
-            const appointmentQuery = await db.query(
-                `SELECT id, user_id, doctor_id, status, appointment_date
-                 FROM appointments
-                 WHERE room_id = $1`,
-                [roomId]
-            );
+            if (!bucketsError) {
+                const { data: filesData, error: filesErr } = await supabaseService.storage
+                    .from('uploads')
+                    .list('', {
+                        limit: 10,
+                        offset: 0
+                    });
+                files = filesData || [];
+                filesError = filesErr;
+            }
 
             res.json({
-                roomId,
-                notesExists: notesQuery.rows.length > 0,
-                notes: notesQuery.rows[0] || null,
-                appointmentExists: appointmentQuery.rows.length > 0,
-                appointment: appointmentQuery.rows[0] || null,
-                tables: {
-                    doctor_notes: await tableExists('doctor_notes'),
-                    appointments: await tableExists('appointments')
-                }
+                supabaseConfigured: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY),
+                bucketsError: bucketsError?.message,
+                buckets: buckets?.map(b => ({ name: b.name, id: b.id })) || [],
+                filesError: filesError?.message,
+                files: files,
+                uploadsBucketExists: buckets?.some(b => b.name === 'uploads') || false
             });
 
         } catch (error) {
-            res.json({ error: error.message });
+            res.json({
+                error: error.message,
+                stack: error.stack
+            });
         }
     }
 );
-
-async function tableExists(tableName) {
-    try {
-        const result = await db.query(
-            `SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_name = $1
-            )`,
-            [tableName]
-        );
-        return result.rows[0].exists;
-    } catch {
-        return false;
-    }
-}
 // ==============================================
 // ERROR HANDLING MIDDLEWARE
 // ==============================================
