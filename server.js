@@ -1140,74 +1140,120 @@ function userVideoRoutes(app) {
 // Vault Routes (with Supabase storage) - UPDATED
 function vaultRoutes(app) {
     // User: upload record - SIMPLIFIED
+    // User: upload record - FIXED VERSION
     app.post(
         "/vault/upload",
         authenticate,
         authorize("user"),
         upload.single("file"),
         async (req, res) => {
+            if (!req.file) return res.status(400).send("No file uploaded");
+
             try {
-                if (!req.file) {
-                    return res.status(400).json({ error: "No file uploaded" });
-                }
-
                 console.log("📤 Upload attempt for user:", req.user.id);
+                console.log("📄 File details:", {
+                    originalname: req.file.originalname,
+                    mimetype: req.file.mimetype,
+                    size: req.file.size
+                });
 
-                const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                // Clean filename and create path
+                const safeFileName = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+                const fileName = `${Date.now()}-${safeFileName}`;
                 const filePath = `user_${req.user.id}/${fileName}`;
 
-                console.log("📍 File path:", filePath);
+                console.log("📍 File path for storage:", filePath);
+                console.log("🔧 MIME type:", req.file.mimetype);
 
-                // Upload to Supabase
+                // 1. Upload to Supabase Storage
                 const { data: uploadData, error: uploadError } = await supabaseService.storage
                     .from('uploads')
                     .upload(filePath, req.file.buffer, {
                         contentType: req.file.mimetype,
-                        upsert: false
+                        upsert: false,
+                        cacheControl: '3600'
                     });
 
                 if (uploadError) {
-                    console.error("❌ Supabase upload error:", uploadError);
+                    console.error("❌ Storage upload error:", uploadError);
+                    console.error("Full error details:", JSON.stringify(uploadError, null, 2));
+
+                    // Check if it's a MIME type error
+                    if (uploadError.message.includes('mime type')) {
+                        return res.status(400).json({
+                            error: 'File type not supported',
+                            message: `The file type ${req.file.mimetype} is not allowed. Please upload PDF, images, or documents.`
+                        });
+                    }
+
                     return res.status(500).json({
                         error: "Upload failed",
                         details: uploadError.message
                     });
                 }
 
-                console.log("✅ Upload successful:", uploadData);
+                console.log("✅ File uploaded to storage:", uploadData);
 
-                // Generate public URL
+                // 2. Generate public URL
                 const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/${filePath}`;
-
                 console.log("🔗 Public URL:", publicUrl);
 
-                // Save to database
-                const dbResult = await db.query(
-                    `INSERT INTO medical_records 
+                // 3. Test if URL is accessible
+                try {
+                    const testResponse = await fetch(publicUrl, { method: 'HEAD' });
+                    console.log("✅ URL accessibility test:", testResponse.status);
+                } catch (testError) {
+                    console.warn("⚠️ URL test failed:", testError.message);
+                }
+
+                // 4. Insert into database
+                try {
+                    const dbResult = await db.query(
+                        `INSERT INTO medical_records
                      (user_id, file_name, file_path, record_type, uploaded_at)
                      VALUES ($1, $2, $3, $4, $5)
                      RETURNING id`,
-                    [
-                        req.user.id,
-                        req.file.originalname,
-                        publicUrl,
-                        req.body.recordType || "general",
-                        new Date().toISOString()
-                    ]
-                );
+                        [
+                            req.user.id,
+                            req.file.originalname,
+                            publicUrl,
+                            req.body.recordType || "general",
+                            new Date().toISOString()
+                        ]
+                    );
 
-                console.log("💾 Database record ID:", dbResult.rows[0].id);
+                    console.log("💾 Database record created with ID:", dbResult.rows[0].id);
 
-                // Return JSON response for AJAX
-                res.json({
-                    success: true,
-                    message: "File uploaded successfully",
-                    fileId: dbResult.rows[0].id,
-                    fileName: req.file.originalname
-                });
+                    // 5. Return success response
+                    res.json({
+                        success: true,
+                        message: "File uploaded successfully",
+                        fileId: dbResult.rows[0].id,
+                        fileName: req.file.originalname,
+                        fileUrl: publicUrl
+                    });
+
+                } catch (dbError) {
+                    console.error("❌ Database insert error:", dbError);
+
+                    // Try to delete the uploaded file since DB insert failed
+                    try {
+                        await supabaseService.storage
+                            .from('uploads')
+                            .remove([filePath]);
+                        console.log("🗑️ Removed orphaned file from storage");
+                    } catch (cleanupError) {
+                        console.error("⚠️ Failed to cleanup storage file:", cleanupError);
+                    }
+
+                    return res.status(500).json({
+                        error: "Database error",
+                        details: dbError.message
+                    });
+                }
 
             } catch (err) {
-                console.error("❌ Upload error:", err);
+                console.error("❌ Vault upload error:", err);
                 res.status(500).json({
                     error: "Server error",
                     details: err.message
@@ -1295,6 +1341,97 @@ function vaultRoutes(app) {
         }
     );
 
+    // Add this route - DIRECT DOWNLOAD ENDPOINT
+    app.get(
+        "/api/vault/download/:id",
+        authenticate,
+        async (req, res) => {
+            try {
+                const fileId = req.params.id;
+                console.log("🚀 Direct download for file ID:", fileId);
+
+                // Get file info
+                const fileInfo = await db.query(
+                    `SELECT file_path, file_name, user_id
+                     FROM medical_records
+                     WHERE id = $1`,
+                    [fileId]
+                );
+
+                if (!fileInfo.rows.length) {
+                    return res.status(404).json({ error: 'File not found in database' });
+                }
+
+                const record = fileInfo.rows[0];
+
+                // Check permissions
+                if (record.user_id !== req.user.id) {
+                    if (req.user.role === "doctor") {
+                        const permissionCheck = await db.query(
+                            `SELECT a.id FROM appointments a
+                             WHERE a.doctor_id = $1 AND a.user_id = $2
+                               AND a.records_allowed = true
+                             LIMIT 1`,
+                            [req.user.id, record.user_id]
+                        );
+
+                        if (!permissionCheck.rows.length) {
+                            return res.status(403).json({ error: 'Access denied' });
+                        }
+                    } else {
+                        return res.status(403).json({ error: 'Access denied' });
+                    }
+                }
+
+                if (!record.file_path) {
+                    return res.status(404).json({ error: 'File URL not found' });
+                }
+
+                console.log("📡 Fetching file from:", record.file_path);
+
+                // Try to fetch the file
+                const response = await fetch(record.file_path);
+
+                if (!response.ok) {
+                    console.error("❌ Fetch failed:", response.status, response.statusText);
+
+                    // Check if the file exists in the bucket
+                    const { data: fileExists } = await supabaseService.storage
+                        .from('uploads')
+                        .list(`user_${record.user_id}`, {
+                            search: record.file_name
+                        });
+
+                    console.log("🔍 File exists check:", fileExists);
+
+                    return res.status(404).json({
+                        error: 'File not accessible',
+                        details: `HTTP ${response.status}`,
+                        existsInBucket: !!fileExists?.length,
+                        suggestion: 'Check if the file exists in the bucket'
+                    });
+                }
+
+                // Get the file as a buffer
+                const fileBuffer = await response.arrayBuffer();
+
+                // Set headers
+                res.setHeader('Content-Type', response.headers.get('content-type') || 'application/octet-stream');
+                res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
+                res.setHeader('Content-Length', fileBuffer.byteLength);
+
+                // Send the file
+                res.send(Buffer.from(fileBuffer));
+
+            } catch (error) {
+                console.error("❌ Direct download error:", error);
+                res.status(500).json({
+                    error: 'Download failed',
+                    message: error.message
+                });
+            }
+        }
+    );
     // Test if file is accessible
     app.get(
         "/api/vault/test/:id",
@@ -1334,6 +1471,62 @@ function vaultRoutes(app) {
 
             } catch (err) {
                 res.json({ error: err.message });
+            }
+        }
+    );
+    // Debug: List files in user folder
+    app.get(
+        "/debug/list-files/:userId",
+        authenticate,
+        async (req, res) => {
+            try {
+                const userId = req.params.userId || req.user.id;
+                const folderPath = `user_${userId}`;
+
+                console.log("📁 Listing files in:", folderPath);
+
+                const { data: files, error } = await supabaseService.storage
+                    .from('uploads')
+                    .list(folderPath);
+
+                if (error) {
+                    console.error("❌ List error:", error);
+                    return res.json({
+                        error: error.message,
+                        folderPath,
+                        exists: false
+                    });
+                }
+
+                // Get details of each file
+                const fileDetails = await Promise.all(
+                    (files || []).map(async (file) => {
+                        const filePath = `${folderPath}/${file.name}`;
+                        const { data: urlData } = supabaseService.storage
+                            .from('uploads')
+                            .getPublicUrl(filePath);
+
+                        return {
+                            name: file.name,
+                            path: filePath,
+                            url: urlData.publicUrl,
+                            size: file.metadata?.size,
+                            mimeType: file.metadata?.mimetype,
+                            updated: file.updated_at
+                        };
+                    })
+                );
+
+                res.json({
+                    folderPath,
+                    exists: true,
+                    fileCount: fileDetails.length,
+                    files: fileDetails
+                });
+
+            } catch (error) {
+                console.error("❌ List files error:", error);
+                res.json({ error: error.message });
             }
         }
     );
@@ -1982,60 +2175,55 @@ protectedRoutes(app, PROJECT_ROOT);
 // Add this to your routes for testing
 // Add this to your server.js routes
 // Test Supabase storage directly
-app.get("/api/test-supabase",
+// Simple test upload endpoint
+app.post(
+    "/debug/test-upload",
     authenticate,
     async (req, res) => {
         try {
-            // Test 1: List buckets
-            const { data: buckets, error: bucketsError } = await supabaseService.storage
-                .listBuckets();
+            // Create a simple text file
+            const content = "Test file content " + Date.now();
+            const fileName = `test-${Date.now()}.txt`;
+            const filePath = `user_${req.user.id}/${fileName}`;
+            const buffer = Buffer.from(content, 'utf8');
 
-            // Test 2: List files
-            const { data: files, error: filesError } = await supabaseService.storage
+            console.log("🧪 Test upload to:", filePath);
+
+            // Upload to Supabase
+            const { data, error } = await supabaseService.storage
                 .from('uploads')
-                .list('', { limit: 5 });
-
-            // Test 3: Try to upload a small test file
-            const testPath = `test_${req.user.id}/test-${Date.now()}.txt`;
-            const testContent = Buffer.from('Test file content');
-
-            const { data: uploadData, error: uploadError } = await supabaseService.storage
-                .from('uploads')
-                .upload(testPath, testContent, {
+                .upload(filePath, buffer, {
                     contentType: 'text/plain',
                     upsert: true
                 });
 
-            // Clean up: remove test file
-            if (!uploadError) {
-                await supabaseService.storage
-                    .from('uploads')
-                    .remove([testPath]);
+            if (error) {
+                console.error("❌ Test upload error:", error);
+                return res.json({
+                    success: false,
+                    error: error.message,
+                    suggestion: 'Check bucket MIME type restrictions'
+                });
             }
 
+            // Generate URL
+            const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/${filePath}`;
+
+            // Test if accessible
+            const testResponse = await fetch(publicUrl, { method: 'HEAD' });
+
             res.json({
-                status: 'OK',
-                supabaseUrl: process.env.SUPABASE_URL,
-                bucketInfo: {
-                    name: 'uploads',
-                    exists: buckets?.some(b => b.name === 'uploads') || false,
-                    public: buckets?.find(b => b.name === 'uploads')?.public || false
-                },
-                filesCount: files?.length || 0,
-                sampleFiles: files || [],
-                uploadTest: uploadError ? { error: uploadError.message } : { success: true },
-                errors: {
-                    buckets: bucketsError?.message,
-                    files: filesError?.message
-                }
+                success: true,
+                message: "Test upload successful",
+                filePath,
+                url: publicUrl,
+                accessible: testResponse.ok,
+                status: testResponse.status
             });
 
         } catch (error) {
-            console.error("Supabase test error:", error);
-            res.status(500).json({
-                error: error.message,
-                stack: error.stack
-            });
+            console.error("❌ Test error:", error);
+            res.json({ success: false, error: error.message });
         }
     }
 );

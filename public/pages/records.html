@@ -1838,6 +1838,7 @@
 
         // Form submission handling
         // Form submission handling - UPDATED FOR AJAX
+        // Form submission handling - UPDATED WITH BETTER ERROR HANDLING
         const uploadForm = document.getElementById('uploadForm');
         uploadForm.addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -1850,6 +1851,29 @@
                 return;
             }
 
+            // Validate file size (10MB limit)
+            const file = fileInput.files[0];
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+
+            // Validate file type
+            const allowedTypes = [
+                'application/pdf',
+                'image/jpeg',
+                'image/jpg',
+                'image/png',
+                'image/gif',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ];
+
+            if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|jpe?g|png|gif|docx?)$/i)) {
+                alert('Please upload a valid file type (PDF, JPG, PNG, GIF, DOC, DOCX).');
+                return;
+            }
+
             // Show loading state
             const submitBtn = uploadForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
@@ -1858,7 +1882,7 @@
 
             // Create FormData
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            formData.append('file', file);
             formData.append('recordType', recordTypeSelect.value);
 
             try {
@@ -1866,8 +1890,8 @@
 
                 const response = await fetch('/vault/upload', {
                     method: 'POST',
-                    body: formData
-                    // Note: Don't set Content-Type header for FormData
+                    body: formData,
+                    // Note: Don't set Content-Type header for FormData - browser sets it automatically
                 });
 
                 const result = await response.json();
@@ -1879,14 +1903,16 @@
                     closeUploadModal();
 
                     // Show success message
-                    alert('File uploaded successfully!');
+                    alert(`File uploaded successfully! File ID: ${result.fileId}`);
 
-                    // Refresh records list
-                    loadRecords();
+                    // Refresh records list after a short delay
+                    setTimeout(() => {
+                        loadRecords();
+                    }, 1000);
 
                 } else {
                     console.error("❌ Upload failed:", result);
-                    alert(`Upload failed: ${result.error || 'Unknown error'}`);
+                    alert(`Upload failed: ${result.error || result.details || 'Unknown error'}`);
                 }
 
             } catch (error) {
@@ -1899,7 +1925,6 @@
                 submitBtn.disabled = false;
             }
         });
-
         // Close modals with Escape key
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
