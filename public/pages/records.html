@@ -1284,13 +1284,16 @@
     </footer>
 
 <script defer>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.openUploadModal = openUploadModal;
-            window.closeUploadModal = closeUploadModal;
-            window.removeSelectedFile = removeSelectedFile;
-            window.openPreviewModal = openPreviewModal;
-            window.closePreviewModal = closePreviewModal;
+    document.addEventListener('DOMContentLoaded', function () {
+        // Make functions globally available
+        window.openUploadModal = openUploadModal;
+        window.closeUploadModal = closeUploadModal;
+        window.removeSelectedFile = removeSelectedFile;
+        window.openPreviewModal = openPreviewModal;
+        window.closePreviewModal = closePreviewModal;
+        window.loadRecords = loadRecords;
 
+        // Theme Toggle
         const themeToggle = document.getElementById('themeToggle');
         const mobileThemeToggle = document.getElementById('mobileThemeToggle');
         const html = document.documentElement;
@@ -1319,7 +1322,7 @@
         themeToggle.addEventListener('click', toggleTheme);
         mobileThemeToggle.addEventListener('click', toggleTheme);
 
-
+        // Mobile Menu
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const closeMenuBtn = document.getElementById('closeMenu');
         const mobileMenu = document.getElementById('mobileMenu');
@@ -1344,11 +1347,10 @@
             }
         });
 
-        // Upload Modal
+        // Upload Modal Functions
         function openUploadModal() {
             document.getElementById('uploadModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-            // Reset form when opening
             resetUploadForm();
         }
 
@@ -1365,7 +1367,6 @@
             document.getElementById('fileSize').innerHTML = '<i class="fas fa-weight-hanging"></i> 0 KB';
             document.getElementById('fileType').innerHTML = '<i class="fas fa-file-alt"></i> No file type';
 
-            // Reset icon
             const fileIcon = document.getElementById('fileIcon');
             fileIcon.innerHTML = '<i class="fas fa-file"></i>';
             fileIcon.style.color = 'var(--primary)';
@@ -1378,15 +1379,13 @@
             document.getElementById('fileSize').innerHTML = '<i class="fas fa-weight-hanging"></i> 0 KB';
             document.getElementById('fileType').innerHTML = '<i class="fas fa-file-alt"></i> No file type';
 
-            // Reset icon
             const fileIcon = document.getElementById('fileIcon');
             fileIcon.innerHTML = '<i class="fas fa-file"></i>';
             fileIcon.style.color = 'var(--primary)';
         }
 
-        // View/Preview Modal
+        // View/Preview Modal Functions
         function openPreviewModal(recordId) {
-            // Find the record data
             const record = getRecordById(recordId);
             if (!record) {
                 alert('Record not found!');
@@ -1398,42 +1397,42 @@
             const fileType = getFileTypeFromName(record.file_name);
 
             previewBody.innerHTML = `
-    <div class="preview-document">
-        <div class="preview-icon">
-            <i class="fas ${icon}"></i>
-        </div>
-        <h4>${record.file_name}</h4>
-        <p>This is a preview of your medical document. In a real application, this would display the actual document content.</p>
+                <div class="preview-document">
+                    <div class="preview-icon">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <h4>${record.file_name}</h4>
+                    <p>This is a preview of your medical document. Click download to get the file.</p>
 
-        <div class="preview-info">
-            <div class="info-item">
-                <span class="info-label">Document Type:</span>
-                <span class="info-value">${formatRecordType(record.record_type)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">File Type:</span>
-                <span class="info-value">${fileType.toUpperCase()}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Upload Date:</span>
-                <span class="info-value">${formatDate(new Date(record.uploaded_at || new Date()))}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Document ID:</span>
-                <span class="info-value">${record.id}</span>
-            </div>
-        </div>
+                    <div class="preview-info">
+                        <div class="info-item">
+                            <span class="info-label">Document Type:</span>
+                            <span class="info-value">${formatRecordType(record.record_type)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">File Type:</span>
+                            <span class="info-value">${fileType.toUpperCase()}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Upload Date:</span>
+                            <span class="info-value">${formatDate(new Date(record.uploaded_at || new Date()))}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Document ID:</span>
+                            <span class="info-value">${record.id}</span>
+                        </div>
+                    </div>
 
-        <div class="preview-actions">
-            <a href="/vault/file/${record.id}" class="btn btn-primary" download>
-                <i class="fas fa-download"></i> Download
-            </a>
-            <button class="btn btn-outline" onclick="closePreviewModal()">
-                <i class="fas fa-times"></i> Close
-            </button>
-        </div>
-    </div>
-    `;
+                    <div class="preview-actions">
+                        <button class="btn btn-primary download-btn" data-file-id="${record.id}" data-file-name="${record.file_name}">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                        <button class="btn btn-outline" onclick="closePreviewModal()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                </div>
+            `;
 
             document.getElementById('previewModal').classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -1445,8 +1444,6 @@
         }
 
         function getRecordById(recordId) {
-            // This would normally come from the API, but for demo we'll use session data
-            // In a real app, you would fetch this from the server
             const storedRecords = localStorage.getItem('telehealth_records');
             if (storedRecords) {
                 const records = JSON.parse(storedRecords);
@@ -1455,9 +1452,46 @@
             return null;
         }
 
+        // Helper Functions
         function getFileTypeFromName(fileName) {
             const extension = fileName.split('.').pop().toLowerCase();
             return extension || 'unknown';
+        }
+
+        function getRecordIcon(recordType) {
+            const icons = {
+                'prescription': 'fa-prescription-bottle-alt',
+                'report': 'fa-file-medical-alt',
+                'lab': 'fa-flask',
+                'imaging': 'fa-x-ray',
+                'insurance': 'fa-file-invoice-dollar',
+                'general': 'fa-file-medical'
+            };
+            return icons[recordType] || 'fa-file-medical';
+        }
+
+        function getRecordTypeClass(recordType) {
+            const classes = {
+                'prescription': 'prescription',
+                'report': 'report',
+                'lab': 'lab',
+                'imaging': 'imaging',
+                'insurance': 'insurance',
+                'general': 'general'
+            };
+            return classes[recordType] || 'general';
+        }
+
+        function formatRecordType(type) {
+            return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
         }
 
         // Drag and Drop functionality
@@ -1567,15 +1601,18 @@
             fileIcon.style.color = iconColor;
         }
 
-        // Load Records
+        // Load Records Function
         async function loadRecords() {
             try {
                 const res = await fetch("/api/vault/user");
-                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(`Server returned ${res.status}`);
+                }
 
+                const data = await res.json();
                 const recordsGrid = document.getElementById("recordsGrid");
 
-                if (data.length === 0) {
+                if (!data || data.length === 0) {
                     recordsGrid.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-icon">
@@ -1601,86 +1638,135 @@
                     const recordCard = document.createElement("div");
                     recordCard.className = "record-card";
                     recordCard.innerHTML = `
-    <div class="record-icon">
-        <i class="fas ${icon}"></i>
-    </div>
-    <div class="record-info">
-        <h3>${r.file_name}</h3>
-        <span class="record-type ${typeClass}">${formatRecordType(r.record_type)}</span>
-        <div class="record-date">
-            <i class="far fa-calendar"></i>
-            ${formatDate(date)}
-        </div>
-        <div class="record-actions">
-            <a href="/vault/file/${r.id}" class="btn btn-primary" title="Download">
-                <i class="fas fa-download"></i> Download
-            </a>
-            <button class="btn btn-outline" onclick="openPreviewModal('${r.id}')" title="Preview">
-                <i class="fas fa-eye"></i> View
-            </button>
-        </div>
-    </div>
-    `;
+                        <div class="record-icon">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="record-info">
+                            <h3>${r.file_name}</h3>
+                            <span class="record-type ${typeClass}">${formatRecordType(r.record_type)}</span>
+                            <div class="record-date">
+                                <i class="far fa-calendar"></i>
+                                ${formatDate(date)}
+                            </div>
+                            <div class="record-actions">
+                                <button class="btn btn-primary download-btn" data-file-id="${r.id}" data-file-name="${r.file_name}" title="Download">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                <button class="btn btn-outline" onclick="openPreviewModal('${r.id}')" title="Preview">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </div>
+                        </div>
+                    `;
                     recordsGrid.appendChild(recordCard);
                 });
 
                 // Store records for preview modal access
                 localStorage.setItem('telehealth_records', JSON.stringify(data));
+
             } catch (error) {
-         
+                console.error('Error loading records:', error);
                 const recordsGrid = document.getElementById("recordsGrid");
                 recordsGrid.innerHTML = `
-    <div class="empty-state">
-        <div class="empty-icon">
-            <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <h3>Unable to Load Records</h3>
-        <p>Please try again later.</p>
-        <button class="btn btn-primary" onclick="loadRecords()">
-            <i class="fas fa-redo"></i> Retry
-        </button>
-    </div>
-    `;
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h3>Unable to Load Records</h3>
+                        <p>Please try again later.</p>
+                        <button class="btn btn-primary" onclick="loadRecords()">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
             }
         }
 
-        function getRecordIcon(recordType) {
-            const icons = {
-                'prescription': 'fa-prescription-bottle-alt',
-                'report': 'fa-file-medical-alt',
-                'lab': 'fa-flask',
-                'imaging': 'fa-x-ray',
-                'insurance': 'fa-file-invoice-dollar',
-                'general': 'fa-file-medical'
-            };
-            return icons[recordType] || 'fa-file-medical';
+        // File Download Function
+        async function downloadFile(fileId, fileName, button) {
+            try {
+                console.log(`Starting download for file ${fileId}: ${fileName}`);
+
+                // Show loading state
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+                button.disabled = true;
+
+                // Try the new API endpoint first
+                const response = await fetch(`/api/vault/download/${fileId}`);
+
+                if (!response.ok) {
+                    // If API endpoint fails, try the old method
+                    console.log('API endpoint failed, trying redirect method');
+                    window.open(`/vault/file/${fileId}`, '_blank');
+
+                    // Reset button after delay
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 2000);
+                    return;
+                }
+
+                // Create blob from response
+                const blob = await response.blob();
+
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                // Clean up
+                window.URL.revokeObjectURL(url);
+
+                // Reset button
+                button.innerHTML = originalText;
+                button.disabled = false;
+
+                console.log('File downloaded successfully');
+
+            } catch (error) {
+                console.error('Download error:', error);
+
+                // Reset button
+                button.innerHTML = '<i class="fas fa-download"></i> Try Again';
+                button.disabled = false;
+
+                // Show error message
+                setTimeout(() => {
+                    alert('Unable to download file. Please try again or contact support.');
+                }, 100);
+
+                // Fallback to old method
+                setTimeout(() => {
+                    window.open(`/vault/file/${fileId}`, '_blank');
+                }, 500);
+            }
         }
 
-        function getRecordTypeClass(recordType) {
-            const classes = {
-                'prescription': 'prescription',
-                'report': 'report',
-                'lab': 'lab',
-                'imaging': 'imaging',
-                'insurance': 'insurance',
-                'general': 'general'
-            };
-            return classes[recordType] || 'general';
-        }
+        // Event delegation for download buttons
+        document.addEventListener('click', function (e) {
+            // Handle download button clicks
+            if (e.target.closest('.download-btn')) {
+                e.preventDefault();
+                const button = e.target.closest('.download-btn');
+                const fileId = button.getAttribute('data-file-id');
+                const fileName = button.getAttribute('data-file-name');
 
-        function formatRecordType(type) {
-            return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
-        }
+                if (fileId && fileName) {
+                    downloadFile(fileId, fileName, button);
+                } else {
+                    console.error('Missing file data:', { fileId, fileName });
+                    alert('Unable to download: Missing file information.');
+                }
+            }
+        });
 
-        function formatDate(date) {
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        }
-
-        // Form submission feedback
+        // Form submission handling
         const uploadForm = document.getElementById('uploadForm');
         uploadForm.addEventListener('submit', function (e) {
             const fileInput = document.querySelector('input[type="file"]');
@@ -1696,16 +1782,12 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
             submitBtn.disabled = true;
 
-            // Reset button after submission (in real app, this would be after successful upload)
+            // The form will submit normally, we'll handle the response
+            // Reset button after form submission
             setTimeout(() => {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
-                closeUploadModal();
-                loadRecords(); // Refresh records list
-
-                // Show success message
-                alert('File uploaded successfully!');
-            }, 2000);
+            }, 3000);
         });
 
         // Close modals with Escape key
@@ -1719,6 +1801,15 @@
         // Initialize
         loadRecords();
 
+        // Check for URL parameters to show success message
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('upload') && urlParams.get('upload') === 'success') {
+            setTimeout(() => {
+                alert('File uploaded successfully!');
+                // Remove the parameter from URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 500);
+        }
     });
 </script>
 </body>

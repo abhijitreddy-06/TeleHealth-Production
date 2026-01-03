@@ -1327,52 +1327,219 @@ function vaultRoutes(app) {
     );
 
     // Download (user or doctor)
+    // Download (user or doctor) - UPDATED
     app.get(
         "/vault/file/:id",
         authenticate,
         async (req, res) => {
             try {
-                // user owns
-                const userFile = await db.query(
-                    `SELECT file_path
-                     FROM medical_records
-                     WHERE id = $1 AND user_id = $2`,
-                    [req.params.id, req.user.id]
+                // First, get the file record
+                const fileQuery = await db.query(
+                    `SELECT file_path, file_name, user_id, record_type
+                 FROM medical_records
+                 WHERE id = $1`,
+                    [req.params.id]
                 );
 
-                if (userFile.rows.length) {
-                    // If it's a Supabase URL, redirect to it
-                    if (userFile.rows[0].file_path.startsWith('http')) {
-                        return res.redirect(userFile.rows[0].file_path);
-                    }
-                    // If it's a local path (legacy)
-                    return res.sendFile(path.resolve(userFile.rows[0].file_path));
+                if (!fileQuery.rows.length) {
+                    return res.status(404).send("File not found");
                 }
 
-                // doctor via appointment permission
-                if (req.user.role === "doctor") {
-                    const docFile = await db.query(
-                        `SELECT mr.file_path
-                         FROM medical_records mr
-                         JOIN appointments a ON a.user_id = mr.user_id
-                         WHERE mr.id = $1
-                           AND a.doctor_id = $2
-                           AND a.records_allowed = true`,
+                const record = fileQuery.rows[0];
+
+                // Check if user has permission
+                let hasPermission = false;
+
+                // User owns the file
+                if (record.user_id === req.user.id) {
+                    hasPermission = true;
+                }
+                // Doctor accessing via appointment
+                else if (req.user.role === "doctor") {
+                    const permissionCheck = await db.query(
+                        `SELECT a.id
+                     FROM appointments a
+                     JOIN medical_records mr ON mr.user_id = a.user_id
+                     WHERE mr.id = $1
+                       AND a.doctor_id = $2
+                       AND a.records_allowed = true
+                       AND a.status IN ('started','completed')`,
                         [req.params.id, req.user.id]
                     );
 
-                    if (docFile.rows.length) {
-                        if (docFile.rows[0].file_path.startsWith('http')) {
-                            return res.redirect(docFile.rows[0].file_path);
-                        }
-                        return res.sendFile(path.resolve(docFile.rows[0].file_path));
+                    if (permissionCheck.rows.length > 0) {
+                        hasPermission = true;
                     }
                 }
 
-                res.sendStatus(403);
+                if (!hasPermission) {
+                    return res.status(403).send("Access denied");
+                }
+
+                console.log("File record found:", {
+                    file_path: record.file_path,
+                    file_name: record.file_name,
+                    user_id: record.user_id
+                });
+
+                // If it's a Supabase URL (new format)
+                if (record.file_path && record.file_path.startsWith('https://')) {
+                    console.log("Redirecting to Supabase URL:", record.file_path);
+
+                    // Set headers for download
+                    res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
+
+                    // For PDF files, set appropriate content type
+                    if (record.file_name.toLowerCase().endsWith('.pdf')) {
+                        res.setHeader('Content-Type', 'application/pdf');
+                    }
+                    // For images
+                    else if (record.file_name.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/)) {
+                        const ext = record.file_name.toLowerCase().split('.').pop();
+                        res.setHeader('Content-Type', `image/${ext === 'jpg' ? 'jpeg' : ext}`);
+                    }
+                    // For documents
+                    else if (record.file_name.toLowerCase().endsWith('.doc')) {
+                        res.setHeader('Content-Type', 'application/msword');
+                    }
+                    else if (record.file_name.toLowerCase().endsWith('.docx')) {
+                        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                    }
+                    else {
+                        res.setHeader('Content-Type', 'application/octet-stream');
+                    }
+
+                    // Redirect to Supabase URL
+                    return res.redirect(record.file_path);
+                }
+                // If it's a local path (legacy)
+                else if (record.file_path) {
+                    console.log("Serving local file:", record.file_path);
+                    return res.sendFile(path.resolve(PROJECT_ROOT, record.file_path));
+                }
+                // File not found in storage
+                else {
+                    console.error("File path is empty or invalid");
+                    return res.status(404).send("File not found in storage");
+                }
+
             } catch (err) {
-                logger.error("Download vault file error:", err);
-                res.status(500).send("Download failed");
+                console.error("Download vault file error:", err);
+
+                // Return a user-friendly error page
+                res.status(500).send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Download Error</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+                        .error-container { max-width: 600px; margin: 0 auto; }
+                        .error-icon { font-size: 48px; color: #f44336; margin-bottom: 20px; }
+                        h1 { color: #333; margin-bottom: 20px; }
+                        p { color: #666; line-height: 1.6; margin-bottom: 20px; }
+                        .btn { display: inline-block; padding: 12px 24px; background: #007bff; 
+                               color: white; text-decoration: none; border-radius: 4px; margin: 10px; }
+                        .btn:hover { background: #0056b3; }
+                    </style>
+                </head>
+                <body>
+                    <div class="error-container">
+                        <div class="error-icon">⚠️</div>
+                        <h1>Download Failed</h1>
+                        <p>We encountered an error while trying to download your file.</p>
+                        <p><strong>Error:</strong> ${err.message}</p>
+                        <p>Please try again or contact support if the problem persists.</p>
+                        <a href="/records" class="btn">Return to Records</a>
+                        <a href="/user_home" class="btn">Go to Home</a>
+                    </div>
+                </body>
+                </html>
+            `);
+            }
+        }
+    );
+    // Add this direct download endpoint
+    app.get("/api/vault/download/:id",
+        authenticate,
+        async (req, res) => {
+            try {
+                const fileId = req.params.id;
+
+                // Get file info
+                const fileInfo = await db.query(
+                    `SELECT file_path, file_name, user_id
+                 FROM medical_records
+                 WHERE id = $1`,
+                    [fileId]
+                );
+
+                if (!fileInfo.rows.length) {
+                    return res.status(404).json({ error: 'File not found' });
+                }
+
+                const record = fileInfo.rows[0];
+
+                // Check if user owns the file
+                if (record.user_id !== req.user.id) {
+                    // Check if doctor has permission
+                    if (req.user.role === "doctor") {
+                        const permissionCheck = await db.query(
+                            `SELECT a.id FROM appointments a
+                         WHERE a.doctor_id = $1 AND a.user_id = $2
+                           AND a.records_allowed = true
+                         LIMIT 1`,
+                            [req.user.id, record.user_id]
+                        );
+
+                        if (!permissionCheck.rows.length) {
+                            return res.status(403).json({ error: 'Access denied' });
+                        }
+                    } else {
+                        return res.status(403).json({ error: 'Access denied' });
+                    }
+                }
+
+                // If it's a Supabase URL, fetch and stream the file
+                if (record.file_path && record.file_path.startsWith('https://')) {
+                    console.log('Direct download from Supabase:', record.file_path);
+
+                    try {
+                        const response = await fetch(record.file_path);
+
+                        if (!response.ok) {
+                            throw new Error(`Supabase returned ${response.status}`);
+                        }
+
+                        // Set headers
+                        res.setHeader('Content-Type', response.headers.get('content-type') || 'application/octet-stream');
+                        res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
+                        res.setHeader('Content-Length', response.headers.get('content-length') || '');
+
+                        // Stream the response
+                        const reader = response.body.getReader();
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            res.write(value);
+                        }
+
+                        res.end();
+
+                    } catch (fetchError) {
+                        console.error('Error fetching from Supabase:', fetchError);
+                        // Fall back to redirect
+                        return res.redirect(record.file_path);
+                    }
+                } else {
+                    // Local file
+                    res.download(path.resolve(PROJECT_ROOT, record.file_path), record.file_name);
+                }
+
+            } catch (error) {
+                console.error('Direct download error:', error);
+                res.status(500).json({ error: error.message });
             }
         }
     );
@@ -2019,47 +2186,81 @@ protectedRoutes(app, PROJECT_ROOT);
 
 // Add this to test Supabase connection
 // Add this to your routes for testing
-// Add this to your routes (before the error handlers)
-app.get("/debug/supabase-test",
+// Add this to your server.js routes
+app.get("/debug/file/:id",
     authenticate,
     async (req, res) => {
         try {
-            // List buckets
-            const { data: buckets, error: bucketsError } = await supabaseService.storage
-                .listBuckets();
+            const fileId = req.params.id;
 
-            // List files in uploads bucket
-            let files = [];
-            let filesError = null;
+            // Get file info
+            const fileInfo = await db.query(
+                `SELECT id, file_name, file_path, user_id, record_type, uploaded_at
+                 FROM medical_records
+                 WHERE id = $1`,
+                [fileId]
+            );
 
-            if (!bucketsError) {
-                const { data: filesData, error: filesErr } = await supabaseService.storage
-                    .from('uploads')
-                    .list('', {
-                        limit: 10,
-                        offset: 0
-                    });
-                files = filesData || [];
-                filesError = filesErr;
+            if (!fileInfo.rows.length) {
+                return res.json({ error: 'File not found in database' });
+            }
+
+            const record = fileInfo.rows[0];
+
+            // Check if user has access
+            const hasAccess = record.user_id === req.user.id ||
+                (req.user.role === "doctor" &&
+                    await checkDoctorAccess(req.user.id, record.user_id));
+
+            // Try to access the Supabase URL
+            let supabaseStatus = 'unknown';
+            if (record.file_path && record.file_path.startsWith('https://')) {
+                try {
+                    const response = await fetch(record.file_path, { method: 'HEAD' });
+                    supabaseStatus = response.status;
+                } catch (error) {
+                    supabaseStatus = `Error: ${error.message}`;
+                }
             }
 
             res.json({
-                supabaseConfigured: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY),
-                bucketsError: bucketsError?.message,
-                buckets: buckets?.map(b => ({ name: b.name, id: b.id })) || [],
-                filesError: filesError?.message,
-                files: files,
-                uploadsBucketExists: buckets?.some(b => b.name === 'uploads') || false
+                fileId,
+                record,
+                currentUser: {
+                    id: req.user.id,
+                    role: req.user.role
+                },
+                hasAccess,
+                supabaseStatus,
+                filePathInfo: {
+                    isUrl: record.file_path ? record.file_path.startsWith('https://') : false,
+                    path: record.file_path,
+                    bucket: record.file_path ? record.file_path.includes('supabase') ? 'supabase' : 'unknown' : 'none'
+                }
             });
 
         } catch (error) {
-            res.json({
-                error: error.message,
-                stack: error.stack
-            });
+            res.json({ error: error.message });
         }
     }
 );
+
+async function checkDoctorAccess(doctorId, userId) {
+    try {
+        const result = await db.query(
+            `SELECT id FROM appointments
+             WHERE doctor_id = $1 AND user_id = $2
+               AND records_allowed = true
+               AND status IN ('started','completed')
+             LIMIT 1`,
+            [doctorId, userId]
+        );
+        return result.rows.length > 0;
+    } catch (error) {
+        console.error('Doctor access check error:', error);
+        return false;
+    }
+}
 // ==============================================
 // ERROR HANDLING MIDDLEWARE
 // ==============================================
