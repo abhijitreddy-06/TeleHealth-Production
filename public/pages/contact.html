@@ -804,7 +804,337 @@ footer {
                 font-size: 0.85rem;
             }
         }
+    .contact-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.5rem;
+        width: 100%;
+    }
 
+    .contact-info, .contact-form {
+        background-color: var(--card-bg);
+        border-radius: var(--radius);
+        padding: 2rem;
+        box-shadow: var(--shadow);
+        animation: fadeIn 0.6s ease-out;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Ensure both containers have equal height on large screens */
+    @media (min-width: 769px) {
+        .contact-info {
+            min-height: 100%;
+        }
+        
+        .contact-form {
+            min-height: 100%;
+        }
+    }
+
+    /* Contact Information Container */
+    .contact-info {
+        padding: 2rem;
+    }
+
+    .contact-info h2 {
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .contact-info h2::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 40px;
+        height: 3px;
+        background: var(--primary);
+        border-radius: 2px;
+    }
+
+    .contact-method {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.2rem;
+        margin-bottom: 1.8rem;
+        width: 100%;
+    }
+
+    .contact-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .contact-details {
+        flex: 1;
+        min-width: 0; /* Prevents overflow */
+    }
+
+    .contact-details h3 {
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .contact-details p {
+        color: var(--text-medium);
+        word-wrap: break-word;
+    }
+
+    .hours {
+        margin-top: auto;
+        padding-top: 1.5rem;
+        width: 100%;
+    }
+
+    .hours h3 {
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .hours ul {
+        list-style: none;
+    }
+
+    .hours li {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .hours li:last-child {
+        border-bottom: none;
+    }
+
+    /* Contact Form Container */
+    .contact-form {
+        padding: 2rem;
+    }
+
+    .contact-form h2 {
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .contact-form h2::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 40px;
+        height: 3px;
+        background: var(--primary);
+        border-radius: 2px;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+        width: 100%;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.9rem 1.2rem;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        font-size: 1rem;
+        background-color: transparent;
+        color: var(--text-dark);
+        transition: var(--transition);
+    }
+
+    .form-control:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+
+    textarea.form-control {
+        min-height: 150px;
+        resize: vertical;
+    }
+
+    /* Responsive Design for Contact Page */
+    @media (max-width: 992px) {
+        .contact-container {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        .contact-info, .contact-form {
+            padding: 1.8rem;
+        }
+        
+        .contact-info h2,
+        .contact-form h2 {
+            font-size: 1.6rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .contact-info, .contact-form {
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .contact-method {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .contact-icon {
+            width: 45px;
+            height: 45px;
+            font-size: 1.1rem;
+        }
+        
+        .contact-details h3 {
+            font-size: 1rem;
+        }
+        
+        .hours li {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .hours li span:first-child {
+            font-weight: 600;
+        }
+        
+        .form-control {
+            padding: 0.8rem 1rem;
+            font-size: 16px; /* Prevents zoom on iOS */
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .contact-container {
+            gap: 1.5rem;
+        }
+        
+        .contact-info, .contact-form {
+            padding: 1.2rem;
+        }
+        
+        .contact-info h2,
+        .contact-form h2 {
+            font-size: 1.4rem;
+        }
+        
+        .contact-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .contact-method {
+            gap: 0.8rem;
+        }
+        
+        .hours h3 {
+            font-size: 1.1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        .form-control {
+            padding: 0.7rem 0.9rem;
+        }
+        
+        button[type="submit"] {
+            padding: 0.9rem !important;
+            font-size: 1rem !important;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .contact-info, .contact-form {
+            padding: 1rem;
+        }
+        
+        .contact-info h2,
+        .contact-form h2 {
+            font-size: 1.3rem;
+        }
+        
+        .contact-method {
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .contact-details h3 {
+            font-size: 0.95rem;
+        }
+        
+        .contact-details p {
+            font-size: 0.9rem;
+        }
+        
+        .hours h3 {
+            font-size: 1rem;
+        }
+        
+        .hours li {
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Fix for landscape mode */
+    @media (max-height: 600px) and (orientation: landscape) {
+        .contact-container {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .contact-info, .contact-form {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .hours {
+            margin-top: 1rem;
+        }
+    }
+
+    /* Ensure form button is properly styled */
+    .contact-form button[type="submit"] {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+    }
     </style>
 
 </head>
@@ -943,7 +1273,7 @@ footer {
             <div class="map-container">
             
                 <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d52860.78943010464!2d-118.4145455!3d34.1003495!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c2bc35fbd217ef%3A0xcf1ef9352700d95c!2sBeverly%20Hills%2C%20CA%2C%20USA!5e0!3m2!1sen!2s!4v1718755939281!5m2!1sen!2s"
+                    src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d15713.414811487228!2d77.59369!3d12.97194!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin!4v1700000000000"
                     allowfullscreen="" loading="lazy"></iframe>
             </div>
         </div>
@@ -960,14 +1290,14 @@ footer {
                     <span>TeleHealth</span>
                     </a>
                     <div class="copyright">
-                        © 2025 TeleHealth. All rights reserved.
+                        © 2026 TeleHealth. All rights reserved.
                 </div>
             </div>
 
             <div class="footer-links">
-                <a href="/privacy">Privacy Policy</a>
+                <a href="">Privacy Policy</a>
                 <span class="separator">|</span>
-                <a href="/terms">Terms of Service</a>
+                <a href="">Terms of Service</a>
                 <span class="separator">|</span>
                 <a href="/contact">Contact</a>
             </div>

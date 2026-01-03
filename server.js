@@ -2171,62 +2171,6 @@ protectedRoutes(app, PROJECT_ROOT);
 // HEALTH CHECK ENDPOINT
 // ==============================================
 
-// Add this to test Supabase connection
-// Add this to your routes for testing
-// Add this to your server.js routes
-// Test Supabase storage directly
-// Simple test upload endpoint
-app.post(
-    "/debug/test-upload",
-    authenticate,
-    async (req, res) => {
-        try {
-            // Create a simple text file
-            const content = "Test file content " + Date.now();
-            const fileName = `test-${Date.now()}.txt`;
-            const filePath = `user_${req.user.id}/${fileName}`;
-            const buffer = Buffer.from(content, 'utf8');
-
-            console.log("🧪 Test upload to:", filePath);
-
-            // Upload to Supabase
-            const { data, error } = await supabaseService.storage
-                .from('uploads')
-                .upload(filePath, buffer, {
-                    contentType: 'text/plain',
-                    upsert: true
-                });
-
-            if (error) {
-                console.error("❌ Test upload error:", error);
-                return res.json({
-                    success: false,
-                    error: error.message,
-                    suggestion: 'Check bucket MIME type restrictions'
-                });
-            }
-
-            // Generate URL
-            const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/${filePath}`;
-
-            // Test if accessible
-            const testResponse = await fetch(publicUrl, { method: 'HEAD' });
-
-            res.json({
-                success: true,
-                message: "Test upload successful",
-                filePath,
-                url: publicUrl,
-                accessible: testResponse.ok,
-                status: testResponse.status
-            });
-
-        } catch (error) {
-            console.error("❌ Test error:", error);
-            res.json({ success: false, error: error.message });
-        }
-    }
-);
 // ==============================================
 // ERROR HANDLING MIDDLEWARE
 // ==============================================
