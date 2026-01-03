@@ -93,6 +93,7 @@ async function generateSignedUrl(filePath) {
     }
 }
 
+// Test Supabase connection
 async function testSupabaseConnection() {
     try {
         console.log("🔍 Testing Supabase connection...");
@@ -108,33 +109,26 @@ async function testSupabaseConnection() {
 
         console.log("✅ Supabase storage buckets:", buckets.map(b => b.name));
 
-        // Check if 'uploads' bucket exists
-        const uploadsBucketExists = buckets?.some(b => b.name === 'uploads');
+        // Check if 'uploads' bucket exists and is public
+        const uploadsBucket = buckets?.find(b => b.name === 'uploads');
 
-        if (!uploadsBucketExists) {
-            console.log("⚠️ 'uploads' bucket not found. Creating...");
-            const { data: newBucket, error: createError } = await supabaseService.storage
-                .createBucket('uploads', {
-                    public: true, // Set to true for public access
-                    fileSizeLimit: 10485760 // 10MB
-                });
-
-            if (createError) {
-                console.error("❌ Failed to create 'uploads' bucket:", createError.message);
-            } else {
-                console.log("✅ Created 'uploads' bucket as public");
-            }
+        if (!uploadsBucket) {
+            console.log("❌ 'uploads' bucket not found!");
         } else {
-            // Check if bucket is public
-            const uploadsBucket = buckets.find(b => b.name === 'uploads');
-            console.log(`✅ 'uploads' bucket exists (public: ${uploadsBucket?.public})`);
+            console.log(`✅ 'uploads' bucket exists (public: ${uploadsBucket.public})`);
+
+            if (!uploadsBucket.public) {
+                console.warn("⚠️ WARNING: 'uploads' bucket is NOT public. Files won't be accessible via URL.");
+                console.warn("   Go to Supabase Dashboard → Storage → 'uploads' bucket → Toggle 'Public' to ON");
+            } else {
+                console.log("✅ Bucket is public - files will be accessible");
+            }
         }
 
     } catch (error) {
         console.error("❌ Supabase connection test failed:", error.message);
     }
 }
-
 // Run the test
 testSupabaseConnection();
 
@@ -1145,7 +1139,7 @@ function userVideoRoutes(app) {
 // Vault Routes (with Supabase storage) - UPDATED
 // Vault Routes (with Supabase storage) - UPDATED
 function vaultRoutes(app) {
-    // User: upload record - FIXED FOR PUBLIC BUCKETS
+    // User: upload record - SIMPLIFIED FOR PUBLIC BUCKET
     app.post(
         "/vault/upload",
         authenticate,
@@ -1156,6 +1150,11 @@ function vaultRoutes(app) {
 
             try {
                 console.log("📤 Upload attempt for user:", req.user.id);
+                console.log("📄 File details:", {
+                    originalname: req.file.originalname,
+                    mimetype: req.file.mimetype,
+                    size: req.file.size
+                });
 
                 const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                 const filePath = `user_${req.user.id}/${fileName}`;
@@ -1167,7 +1166,8 @@ function vaultRoutes(app) {
                     .from('uploads')
                     .upload(filePath, req.file.buffer, {
                         contentType: req.file.mimetype,
-                        upsert: false
+                        upsert: false,
+                        cacheControl: '3600'
                     });
 
                 if (uploadError) {
@@ -1181,7 +1181,8 @@ function vaultRoutes(app) {
 
                 console.log("✅ File uploaded to storage:", uploadData);
 
-                // 2. For PUBLIC bucket: Construct the public URL
+                // 2. For PUBLIC bucket: Generate the correct public URL
+                // The correct format is: https://project-id.supabase.co/storage/v1/object/public/bucket-name/file-path
                 const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/${filePath}`;
                 console.log("🔗 Public URL:", publicUrl);
 
@@ -1195,7 +1196,7 @@ function vaultRoutes(app) {
                         [
                             req.user.id,
                             req.file.originalname,
-                            publicUrl, // Store public URL
+                            publicUrl, // Store the correct public URL
                             req.body.recordType || "general",
                             new Date().toISOString()
                         ]
@@ -1239,7 +1240,7 @@ function vaultRoutes(app) {
         }
     );
 
-    // User: list own records - UPDATED FOR PUBLIC URLS
+    // User: list own records
     app.get(
         "/api/vault/user",
         authenticate,
@@ -1264,62 +1265,123 @@ function vaultRoutes(app) {
         }
     );
 
-    // Download (user or doctor) - SIMPLIFIED FOR PUBLIC BUCKET
+    // Main download endpoint - SIMPLIFIED FOR PUBLIC BUCKET
     app.get(
         "/vault/file/:id",
         authenticate,
         async (req, res) => {
             try {
+                console.log("📥 Download request for file ID:", req.params.id);
+
                 // Get file info from database
                 const fileInfo = await db.query(
                     `SELECT file_path, file_name, user_id
-                 FROM medical_records
-                 WHERE id = $1`,
+                     FROM medical_records
+                     WHERE id = $1`,
                     [req.params.id]
                 );
 
                 if (!fileInfo.rows.length) {
-                    return res.status(404).send("File not found");
+                    console.log("❌ File not found in database");
+                    return res.status(404).send(`
+                        <h2>File Not Found</h2>
+                        <p>The requested file does not exist.</p>
+                        <a href="/records">Back to Records</a>
+                    `);
                 }
 
                 const record = fileInfo.rows[0];
+                console.log("📄 File record found:", {
+                    file_name: record.file_name,
+                    user_id: record.user_id,
+                    file_path: record.file_path ? "URL exists" : "No URL"
+                });
 
-                // Check permissions (same as before)
-                // ... permission checking code ...
+                // Check permissions
+                let hasPermission = false;
 
-                // Extract file path from stored URL
-                let filePath = record.file_path;
+                // User owns the file
+                if (record.user_id === req.user.id) {
+                    hasPermission = true;
+                    console.log("✅ User owns the file");
+                }
+                // Doctor access
+                else if (req.user.role === "doctor") {
+                    const permissionCheck = await db.query(
+                        `SELECT a.id FROM appointments a
+                         WHERE a.doctor_id = $1 AND a.user_id = $2
+                           AND a.records_allowed = true
+                         LIMIT 1`,
+                        [req.user.id, record.user_id]
+                    );
 
-                // If it's a full URL, extract just the path part
-                if (filePath.includes('supabase.co/storage/v1/object/')) {
-                    const urlParts = filePath.split('/storage/v1/object/');
-                    if (urlParts.length > 1) {
-                        filePath = urlParts[1];
-                        // Remove bucket name if present
-                        if (filePath.startsWith('uploads/')) {
-                            filePath = filePath.substring('uploads/'.length);
-                        }
+                    if (permissionCheck.rows.length > 0) {
+                        hasPermission = true;
+                        console.log("✅ Doctor has permission via appointment");
                     }
                 }
 
-                // Generate signed URL
-                const signedUrl = await generateSignedUrl(filePath);
-
-                if (!signedUrl) {
-                    return res.status(500).send("Unable to generate download link");
+                if (!hasPermission) {
+                    console.log("❌ Access denied for user:", req.user.id);
+                    return res.status(403).send(`
+                        <h2>Access Denied</h2>
+                        <p>You do not have permission to download this file.</p>
+                        <a href="/records">Back to Records</a>
+                    `);
                 }
 
-                // Redirect to signed URL
-                return res.redirect(signedUrl);
+                // Check if file_path exists
+                if (!record.file_path) {
+                    console.log("❌ No file path in record");
+                    return res.status(404).send(`
+                        <h2>File Not Found</h2>
+                        <p>File path is missing from the database.</p>
+                        <a href="/records">Back to Records</a>
+                    `);
+                }
+
+                console.log("🔗 Redirecting to:", record.file_path);
+
+                // For public bucket, just redirect to the URL
+                // Set download headers
+                res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
+
+                // Set content type based on file extension
+                if (record.file_name.toLowerCase().endsWith('.pdf')) {
+                    res.setHeader('Content-Type', 'application/pdf');
+                }
+                // For images
+                else if (record.file_name.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/)) {
+                    const ext = record.file_name.toLowerCase().split('.').pop();
+                    res.setHeader('Content-Type', `image/${ext === 'jpg' ? 'jpeg' : ext}`);
+                }
+                // For documents
+                else if (record.file_name.toLowerCase().endsWith('.doc')) {
+                    res.setHeader('Content-Type', 'application/msword');
+                }
+                else if (record.file_name.toLowerCase().endsWith('.docx')) {
+                    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                }
+                else {
+                    res.setHeader('Content-Type', 'application/octet-stream');
+                }
+
+                // Redirect to the public URL
+                return res.redirect(record.file_path);
 
             } catch (err) {
-                console.error("Download error:", err);
-                res.status(500).send("Download failed");
+                console.error("❌ Download error:", err);
+                res.status(500).send(`
+                    <h2>Download Error</h2>
+                    <p>${err.message}</p>
+                    <p>Please try again or contact support.</p>
+                    <a href="/records">Back to Records</a>
+                `);
             }
         }
     );
 
-    // NEW: Direct download endpoint with better error handling
+    // Alternative download endpoint that streams the file
     app.get(
         "/api/vault/download/:id",
         authenticate,
@@ -1374,17 +1436,24 @@ function vaultRoutes(app) {
                 if (!response.ok) {
                     console.error("❌ Fetch failed:", response.status, response.statusText);
 
-                    // Try alternative URL format
-                    if (record.file_path.includes('supabase.co')) {
-                        const altUrl = record.file_path.replace('/sign/', '/public/');
-                        console.log("🔄 Trying alternative URL:", altUrl);
+                    // Try to fix the URL if it's in wrong format
+                    let fixedUrl = record.file_path;
 
-                        const altResponse = await fetch(altUrl);
-                        if (altResponse.ok) {
+                    // If URL contains /sign/, replace with /public/
+                    if (fixedUrl.includes('/sign/')) {
+                        fixedUrl = fixedUrl.replace('/sign/', '/public/');
+                        // Remove token parameter
+                        const urlObj = new URL(fixedUrl);
+                        urlObj.search = '';
+                        fixedUrl = urlObj.toString();
+                        console.log("🔄 Trying fixed URL:", fixedUrl);
+
+                        const fixedResponse = await fetch(fixedUrl);
+                        if (fixedResponse.ok) {
                             // Forward the response
-                            res.setHeader('Content-Type', altResponse.headers.get('content-type') || 'application/octet-stream');
+                            res.setHeader('Content-Type', fixedResponse.headers.get('content-type') || 'application/octet-stream');
                             res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
-                            altResponse.body.pipe(res);
+                            fixedResponse.body.pipe(res);
                             return;
                         }
                     }
@@ -1404,8 +1473,110 @@ function vaultRoutes(app) {
                 res.status(500).json({
                     error: 'Download failed',
                     message: error.message,
-                    suggestion: 'Make sure the bucket is public or use signed URLs'
+                    suggestion: 'Please check if the file exists in the bucket'
                 });
+            }
+        }
+    );
+
+    // Debug endpoint to check bucket status
+    app.get(
+        "/debug/bucket-status",
+        authenticate,
+        async (req, res) => {
+            try {
+                // Test listing files
+                const { data: files, error: listError } = await supabaseService.storage
+                    .from('uploads')
+                    .list('', {
+                        limit: 10,
+                        offset: 0
+                    });
+
+                // Test bucket info
+                const { data: buckets, error: bucketError } = await supabaseService.storage
+                    .listBuckets();
+
+                // Get uploads bucket details
+                const uploadsBucket = buckets?.find(b => b.name === 'uploads');
+
+                res.json({
+                    status: 'OK',
+                    bucket: {
+                        name: 'uploads',
+                        public: uploadsBucket?.public || false,
+                        exists: !!uploadsBucket
+                    },
+                    fileCount: files?.length || 0,
+                    sampleFiles: files?.slice(0, 5) || [],
+                    errors: {
+                        list: listError?.message,
+                        bucket: bucketError?.message
+                    },
+                    publicUrlExample: uploadsBucket?.public ?
+                        `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/user_12/sample-file.pdf` :
+                        'Bucket is not public'
+                });
+
+            } catch (error) {
+                res.json({
+                    status: 'ERROR',
+                    error: error.message
+                });
+            }
+        }
+    );
+
+    // Utility endpoint to fix existing URLs in database
+    app.post(
+        "/debug/fix-file-urls",
+        authenticate,
+        authorize("user"),
+        async (req, res) => {
+            try {
+                // Get all records for the current user
+                const userRecords = await db.query(
+                    `SELECT id, file_path FROM medical_records WHERE user_id = $1`,
+                    [req.user.id]
+                );
+
+                let fixedCount = 0;
+
+                for (const record of userRecords.rows) {
+                    let newPath = record.file_path;
+
+                    // If it contains /sign/, replace with /public/
+                    if (newPath && newPath.includes('/sign/')) {
+                        newPath = newPath.replace('/sign/', '/public/');
+
+                        // Remove token parameter
+                        try {
+                            const urlObj = new URL(newPath);
+                            urlObj.search = '';
+                            newPath = urlObj.toString();
+                        } catch (e) {
+                            console.error("Error parsing URL:", e);
+                        }
+
+                        // Update in database
+                        await db.query(
+                            `UPDATE medical_records SET file_path = $1 WHERE id = $2`,
+                            [newPath, record.id]
+                        );
+
+                        fixedCount++;
+                        console.log(`Fixed record ${record.id}: ${newPath}`);
+                    }
+                }
+
+                res.json({
+                    message: `Fixed ${fixedCount} file URLs`,
+                    totalRecords: userRecords.rows.length
+                });
+
+            } catch (error) {
+                console.error("Error fixing URLs:", error);
+                res.status(500).json({ error: error.message });
             }
         }
     );
