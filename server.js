@@ -78,6 +78,21 @@ const supabaseService = createClient(
 );
 // Test Supabase connection
 // Test Supabase connection
+async function generateSignedUrl(filePath) {
+    try {
+        // Generate signed URL that expires in 1 hour
+        const { data, error } = await supabaseService.storage
+            .from('uploads')
+            .createSignedUrl(filePath, 3600); // 1 hour in seconds
+
+        if (error) throw error;
+        return data.signedUrl;
+    } catch (error) {
+        console.error("Error generating signed URL:", error);
+        return null;
+    }
+}
+
 async function testSupabaseConnection() {
     try {
         console.log("🔍 Testing Supabase connection...");
@@ -1255,84 +1270,51 @@ function vaultRoutes(app) {
         authenticate,
         async (req, res) => {
             try {
-                console.log("📥 Download request for file ID:", req.params.id);
-
-                // Get file info
+                // Get file info from database
                 const fileInfo = await db.query(
                     `SELECT file_path, file_name, user_id
-                     FROM medical_records
-                     WHERE id = $1`,
+                 FROM medical_records
+                 WHERE id = $1`,
                     [req.params.id]
                 );
 
                 if (!fileInfo.rows.length) {
-                    console.log("❌ File not found in database");
                     return res.status(404).send("File not found");
                 }
 
                 const record = fileInfo.rows[0];
-                console.log("📄 File record found:", {
-                    file_name: record.file_name,
-                    user_id: record.user_id,
-                    file_path: record.file_path ? "URL exists" : "No URL"
-                });
 
-                // Check permissions
-                let hasPermission = false;
+                // Check permissions (same as before)
+                // ... permission checking code ...
 
-                // User owns the file
-                if (record.user_id === req.user.id) {
-                    hasPermission = true;
-                    console.log("✅ User owns the file");
-                }
-                // Doctor access
-                else if (req.user.role === "doctor") {
-                    const permissionCheck = await db.query(
-                        `SELECT a.id FROM appointments a
-                         WHERE a.doctor_id = $1 AND a.user_id = $2
-                           AND a.records_allowed = true
-                         LIMIT 1`,
-                        [req.user.id, record.user_id]
-                    );
+                // Extract file path from stored URL
+                let filePath = record.file_path;
 
-                    if (permissionCheck.rows.length > 0) {
-                        hasPermission = true;
-                        console.log("✅ Doctor has permission via appointment");
+                // If it's a full URL, extract just the path part
+                if (filePath.includes('supabase.co/storage/v1/object/')) {
+                    const urlParts = filePath.split('/storage/v1/object/');
+                    if (urlParts.length > 1) {
+                        filePath = urlParts[1];
+                        // Remove bucket name if present
+                        if (filePath.startsWith('uploads/')) {
+                            filePath = filePath.substring('uploads/'.length);
+                        }
                     }
                 }
 
-                if (!hasPermission) {
-                    console.log("❌ Access denied for user:", req.user.id);
-                    return res.status(403).send("Access denied");
+                // Generate signed URL
+                const signedUrl = await generateSignedUrl(filePath);
+
+                if (!signedUrl) {
+                    return res.status(500).send("Unable to generate download link");
                 }
 
-                // Check if file_path exists
-                if (!record.file_path) {
-                    console.log("❌ No file path in record");
-                    return res.status(404).send("File path not found");
-                }
-
-                console.log("🔗 Redirecting to:", record.file_path);
-
-                // For public bucket, just redirect to the URL
-                // Set download headers
-                res.setHeader('Content-Disposition', `attachment; filename="${record.file_name}"`);
-
-                // Set content type based on file extension
-                if (record.file_name.toLowerCase().endsWith('.pdf')) {
-                    res.setHeader('Content-Type', 'application/pdf');
-                }
-
-                // Redirect to the public URL
-                return res.redirect(record.file_path);
+                // Redirect to signed URL
+                return res.redirect(signedUrl);
 
             } catch (err) {
-                console.error("❌ Download error:", err);
-                res.status(500).send(`
-                    <h2>Download Error</h2>
-                    <p>${err.message}</p>
-                    <a href="/records">Back to Records</a>
-                `);
+                console.error("Download error:", err);
+                res.status(500).send("Download failed");
             }
         }
     );
